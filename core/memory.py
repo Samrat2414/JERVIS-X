@@ -38,3 +38,13 @@ def remember(key, value):
 def recall(key):
     memory = load_memory()
     return memory.get(key)
+
+
+def remember_fact(key, value):
+    key = key.strip().lower().replace(" ", "_")
+    remember(key, value.strip())
+
+
+def recall_fact(key):
+    key = key.strip().lower().replace(" ", "_")
+    return recall(key)

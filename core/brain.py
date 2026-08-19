@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from core.ai_brain import ask_ai
-from core.memory import remember, recall
+from core.memory import remember, recall, remember_fact, recall_fact
 from core.automation import (
     open_website,
     open_application,
@@ -59,6 +59,43 @@ def process_command(command):
             return f"Your name is {name}."
 
         return "I don't know your name yet. Tell me by saying: My name is Samrat."
+
+    # Smart memory - remember generic personal facts
+    if command.startswith("remember that "):
+        fact_text = original_command[len("remember that "):].strip()
+
+        if fact_text.lower().startswith("my "):
+            fact_text = fact_text[3:].strip()
+
+        if " is " in fact_text.lower():
+            lower_fact = fact_text.lower()
+            split_index = lower_fact.find(" is ")
+
+            key = fact_text[:split_index].strip()
+            value = fact_text[split_index + 4:].strip()
+
+            if key and value:
+                remember_fact(key, value)
+                return f"I will remember that your {key} is {value}."
+
+        return (
+            "Please use this format: "
+            "Remember that my favorite language is Python."
+        )
+
+    # Smart memory - recall generic personal facts
+    if command.startswith("what is my "):
+        key = original_command[len("what is my "):].strip()
+
+        if key.endswith("?"):
+            key = key[:-1].strip()
+
+        value = recall_fact(key)
+
+        if value:
+            return f"Your {key} is {value}."
+
+        return f"I don't remember your {key} yet."
 
     # Basic commands
     if "hello" in command or command == "hi":
