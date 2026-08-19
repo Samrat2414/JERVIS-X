@@ -1,10 +1,13 @@
 import math
-import customtkinter as ctk
+import threading
 from datetime import datetime
 
+import customtkinter as ctk
 import psutil
 
 from core.router import route_command
+from voice.speech import listen_once
+from voice.tts import speak
 
 
 ctk.set_appearance_mode("dark")
@@ -22,6 +25,7 @@ class JervisApp(ctk.CTk):
         self.command_history = []
         self.orb_phase = 0.0
         self.orb_state = "IDLE"
+        self.voice_busy = False
 
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -69,7 +73,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 3 • Animated GUI",
+            text="JERVIS X\nStep 4 • Voice",
             font=("Arial", 11)
         ).pack(side="bottom", pady=20)
 
@@ -84,12 +88,7 @@ class JervisApp(ctk.CTk):
         self.create_dashboard_page()
         self.create_chat_page()
         self.create_calculator_page()
-
-        self.create_placeholder_page(
-            "Voice",
-            "Voice System",
-            "Voice commands will be added in Step 4."
-        )
+        self.create_voice_page()
         self.create_placeholder_page(
             "Automation",
             "Automation Center",
@@ -148,7 +147,6 @@ class JervisApp(ctk.CTk):
             pady=(5, 15),
             sticky="ew"
         )
-
         orb_frame.grid_columnconfigure(0, weight=1)
 
         self.orb_canvas = ctk.CTkCanvas(
@@ -205,10 +203,7 @@ class JervisApp(ctk.CTk):
             font=("Arial", 18, "bold")
         ).grid(row=0, column=0, padx=15, pady=(15, 8), sticky="w")
 
-        self.history_box = ctk.CTkTextbox(
-            history_frame,
-            font=("Arial", 13)
-        )
+        self.history_box = ctk.CTkTextbox(history_frame, font=("Arial", 13))
         self.history_box.grid(
             row=1,
             column=0,
@@ -248,13 +243,7 @@ class JervisApp(ctk.CTk):
             page,
             text="JERVIS AI CHAT",
             font=("Arial", 24, "bold")
-        ).grid(
-            row=0,
-            column=0,
-            padx=25,
-            pady=(25, 10),
-            sticky="w"
-        )
+        ).grid(row=0, column=0, padx=25, pady=(25, 10), sticky="w")
 
         self.chat_box = ctk.CTkTextbox(page, font=("Arial", 15))
         self.chat_box.grid(
@@ -305,6 +294,14 @@ class JervisApp(ctk.CTk):
             command=self.send_command
         ).grid(row=0, column=1)
 
+        ctk.CTkButton(
+            input_frame,
+            text="🎙 Mic",
+            width=110,
+            height=45,
+            command=self.start_voice_command
+        ).grid(row=0, column=2, padx=(10, 0))
+
     def create_calculator_page(self):
         page = ctk.CTkFrame(self.page_container)
         self.pages["Calculator"] = page
@@ -342,19 +339,40 @@ class JervisApp(ctk.CTk):
         )
         self.calc_result.pack(pady=20)
 
+    def create_voice_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Voice"] = page
+
         ctk.CTkLabel(
             page,
-            text=(
-                "Examples:\n"
-                "25 * 48\n"
-                "25% of 2000\n"
-                "sin 30\n"
-                "sqrt(225)\n"
-                "log10 1000"
-            ),
-            justify="left",
-            font=("Arial", 13)
-        ).pack(pady=10)
+            text="JERVIS VOICE CONTROL",
+            font=("Arial", 28, "bold")
+        ).pack(pady=(70, 20))
+
+        self.voice_status_label = ctk.CTkLabel(
+            page,
+            text="Status: Ready",
+            font=("Arial", 18)
+        )
+        self.voice_status_label.pack(pady=10)
+
+        self.voice_text_label = ctk.CTkLabel(
+            page,
+            text='Press the microphone and say: "Jervis, what time is it?"',
+            font=("Arial", 15),
+            wraplength=650
+        )
+        self.voice_text_label.pack(pady=20)
+
+        self.voice_button = ctk.CTkButton(
+            page,
+            text="🎙 START LISTENING",
+            width=260,
+            height=58,
+            font=("Arial", 16, "bold"),
+            command=self.start_voice_command
+        )
+        self.voice_button.pack(pady=20)
 
     def create_placeholder_page(self, name, title_text, message):
         page = ctk.CTkFrame(self.page_container)
@@ -376,29 +394,20 @@ class JervisApp(ctk.CTk):
         for page in self.pages.values():
             page.grid_forget()
 
-        self.pages[page_name].grid(
-            row=0,
-            column=0,
-            sticky="nsew"
-        )
+        self.pages[page_name].grid(row=0, column=0, sticky="nsew")
 
     def add_message(self, sender, message):
         self.chat_box.configure(state="normal")
-        self.chat_box.insert(
-            "end",
-            f"{sender}: {message}\n\n"
-        )
+        self.chat_box.insert("end", f"{sender}: {message}\n\n")
         self.chat_box.see("end")
         self.chat_box.configure(state="disabled")
 
     def add_history(self, command, response):
         timestamp = datetime.now().strftime("%H:%M:%S")
-
         self.command_history.insert(
             0,
             f"[{timestamp}] {command} -> {response}"
         )
-
         self.command_history = self.command_history[:10]
         self.refresh_history_box()
 
@@ -426,27 +435,18 @@ class JervisApp(ctk.CTk):
         center_x = 150
         center_y = 115
 
-        if self.orb_state == "PROCESSING":
-            speed = 0.24
-            base_radius = 58
-            pulse = 10
-        elif self.orb_state == "RESPONDING":
-            speed = 0.18
-            base_radius = 62
-            pulse = 14
-        elif self.orb_state == "LISTENING":
-            speed = 0.30
-            base_radius = 60
-            pulse = 18
+        if self.orb_state == "LISTENING":
+            speed, base_radius, pulse = 0.30, 60, 18
+        elif self.orb_state == "PROCESSING":
+            speed, base_radius, pulse = 0.24, 58, 10
+        elif self.orb_state in ("RESPONDING", "SPEAKING"):
+            speed, base_radius, pulse = 0.18, 62, 14
         else:
-            speed = 0.10
-            base_radius = 56
-            pulse = 6
+            speed, base_radius, pulse = 0.10, 56, 6
 
         self.orb_phase += speed
         radius = base_radius + math.sin(self.orb_phase) * pulse
 
-        # Outer rings
         for extra in (35, 23, 12):
             r = radius + extra
             self.orb_canvas.create_oval(
@@ -458,7 +458,6 @@ class JervisApp(ctk.CTk):
                 width=2
             )
 
-        # Core
         self.orb_canvas.create_oval(
             center_x - radius,
             center_y - radius,
@@ -480,7 +479,6 @@ class JervisApp(ctk.CTk):
             width=2
         )
 
-        # Rotating orbit point
         angle = self.orb_phase * 1.6
         orbit_r = radius + 28
         dot_x = center_x + math.cos(angle) * orbit_r
@@ -505,30 +503,121 @@ class JervisApp(ctk.CTk):
 
         self.command_entry.delete(0, "end")
         self.add_message("YOU", command)
+        self.process_command_async(command, speak_response=False)
 
+    def process_command_async(self, command, speak_response):
         self.set_orb_state("PROCESSING")
-        self.after(
-            250,
-            lambda: self.finish_command(command)
-        )
 
-    def finish_command(self, command):
-        if command.lower() in ["exit", "quit", "bye"]:
-            response = "Goodbye!"
-        else:
-            response = route_command(command)
+        def worker():
+            if command.lower() in ["exit", "quit", "bye"]:
+                response = "Goodbye!"
+            else:
+                response = route_command(command)
+                if response is None:
+                    response = "Sorry, I don't understand that command yet."
 
-            if response is None:
-                response = "Sorry, I don't understand that command yet."
+            self.after(
+                0,
+                lambda: self.finish_response(
+                    command,
+                    response,
+                    speak_response
+                )
+            )
 
-        self.set_orb_state("RESPONDING")
+        threading.Thread(target=worker, daemon=True).start()
+
+    def finish_response(self, command, response, speak_response):
         self.add_message("JERVIS", response)
         self.add_history(command, response)
 
+        if speak_response:
+            self.set_orb_state("SPEAKING")
+
+            if hasattr(self, "voice_status_label"):
+                self.voice_status_label.configure(text="Status: Speaking")
+
+            threading.Thread(
+                target=self.speak_worker,
+                args=(response,),
+                daemon=True
+            ).start()
+        else:
+            self.set_orb_state("RESPONDING")
+            self.after(800, lambda: self.set_orb_state("IDLE"))
+
+    def speak_worker(self, response):
+        try:
+            speak(response)
+        finally:
+            self.after(0, self.voice_cycle_complete)
+
+    def voice_cycle_complete(self):
+        self.voice_busy = False
+        self.set_orb_state("IDLE")
+
+        if hasattr(self, "voice_status_label"):
+            self.voice_status_label.configure(text="Status: Ready")
+
+        if hasattr(self, "voice_button"):
+            self.voice_button.configure(
+                state="normal",
+                text="🎙 START LISTENING"
+            )
+
+    def start_voice_command(self):
+        if self.voice_busy:
+            return
+
+        self.voice_busy = True
+        self.set_orb_state("LISTENING")
+
+        if hasattr(self, "voice_status_label"):
+            self.voice_status_label.configure(text="Status: Listening...")
+
+        if hasattr(self, "voice_button"):
+            self.voice_button.configure(
+                state="disabled",
+                text="LISTENING..."
+            )
+
+        threading.Thread(
+            target=self.voice_listener_worker,
+            daemon=True
+        ).start()
+
+    def voice_listener_worker(self):
+        command = listen_once()
         self.after(
-            800,
-            lambda: self.set_orb_state("IDLE")
+            0,
+            lambda: self.handle_voice_result(command)
         )
+
+    def handle_voice_result(self, command):
+        if not command:
+            self.voice_busy = False
+            self.set_orb_state("IDLE")
+
+            if hasattr(self, "voice_status_label"):
+                self.voice_status_label.configure(
+                    text="Status: I could not understand. Try again."
+                )
+
+            if hasattr(self, "voice_button"):
+                self.voice_button.configure(
+                    state="normal",
+                    text="🎙 START LISTENING"
+                )
+
+            return
+
+        if hasattr(self, "voice_text_label"):
+            self.voice_text_label.configure(
+                text=f'You said: "{command}"'
+            )
+
+        self.add_message("YOU", f"[VOICE] {command}")
+        self.process_command_async(command, speak_response=True)
 
     def calculate_from_page(self):
         expression = self.calc_entry.get().strip()
@@ -539,11 +628,7 @@ class JervisApp(ctk.CTk):
             )
             return
 
-        self.set_orb_state("PROCESSING")
-
-        response = route_command(
-            f"calculate {expression}"
-        )
+        response = route_command(f"calculate {expression}")
 
         if response is None:
             response = "Calculation failed."
@@ -554,19 +639,12 @@ class JervisApp(ctk.CTk):
             response
         )
 
-        self.set_orb_state("RESPONDING")
-        self.after(
-            800,
-            lambda: self.set_orb_state("IDLE")
-        )
-
     def update_dashboard(self):
         now = datetime.now()
 
         self.clock_card["value"].configure(
             text=now.strftime("%I:%M:%S %p")
         )
-
         self.date_card["value"].configure(
             text=now.strftime("%d %B %Y")
         )
@@ -574,13 +652,8 @@ class JervisApp(ctk.CTk):
         cpu = psutil.cpu_percent(interval=None)
         ram = psutil.virtual_memory().percent
 
-        self.cpu_card["value"].configure(
-            text=f"{cpu}%"
-        )
-
-        self.ram_card["value"].configure(
-            text=f"{ram}%"
-        )
+        self.cpu_card["value"].configure(text=f"{cpu}%")
+        self.ram_card["value"].configure(text=f"{ram}%")
 
         self.after(1000, self.update_dashboard)
 
