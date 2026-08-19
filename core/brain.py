@@ -1,3 +1,7 @@
+from datetime import datetime
+
+from core.ai_brain import ask_ai
+from core.memory import remember, recall
 from core.automation import (
     open_website,
     open_application,
@@ -17,8 +21,6 @@ from core.automation import (
     wifi_status,
     system_info,
 )
-from datetime import datetime
-
 from core.calculator import calculate
 from core.engineering import (
     ohms_law,
@@ -30,10 +32,33 @@ from core.engineering import (
 
 
 def process_command(command):
-    command = command.lower().strip()
+    original_command = command.strip()
+    command = original_command.lower()
 
     if not command:
         return "Please enter a command."
+
+    # Personal memory - remember user's name
+    if command.startswith("my name is "):
+        name = original_command[len("my name is "):].strip()
+
+        if name:
+            remember("user_name", name)
+            return f"Nice to meet you, {name}. I will remember your name."
+
+    # Personal memory - recall user's name
+    if command in [
+        "what is my name",
+        "what is my name?",
+        "do you remember my name",
+        "tell me my name",
+    ]:
+        name = recall("user_name")
+
+        if name:
+            return f"Your name is {name}."
+
+        return "I don't know your name yet. Tell me by saying: My name is Samrat."
 
     # Basic commands
     if "hello" in command or command == "hi":
@@ -149,11 +174,11 @@ def process_command(command):
 
     # Web searches
     if command.startswith("search google "):
-        query = command.replace("search google ", "", 1).strip()
+        query = original_command[len("search google "):].strip()
         return search_google(query)
 
     if command.startswith("search youtube "):
-        query = command.replace("search youtube ", "", 1).strip()
+        query = original_command[len("search youtube "):].strip()
         return search_youtube(query)
 
     # Screenshot
@@ -215,4 +240,5 @@ def process_command(command):
 
         return open_application(target)
 
-    return None
+    # AI fallback
+    return ask_ai(original_command)
