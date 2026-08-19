@@ -1,11 +1,21 @@
 from core.automation import (
     open_website,
     open_application,
+    close_application,
+    search_google,
+    search_youtube,
+    lock_pc,
+    open_special_folder,
     take_screenshot,
     volume_up,
     volume_down,
     mute_volume,
     unmute_volume,
+    brightness_up,
+    brightness_down,
+    battery_status,
+    wifi_status,
+    system_info,
 )
 from datetime import datetime
 
@@ -137,6 +147,15 @@ def process_command(command):
         except ValueError:
             return "Use: parallel resistance 10 20"
 
+    # Web searches
+    if command.startswith("search google "):
+        query = command.replace("search google ", "", 1).strip()
+        return search_google(query)
+
+    if command.startswith("search youtube "):
+        query = command.replace("search youtube ", "", 1).strip()
+        return search_youtube(query)
+
     # Screenshot
     if command in ["take screenshot", "screenshot", "take a screenshot"]:
         return take_screenshot()
@@ -153,6 +172,37 @@ def process_command(command):
 
     if command in ["unmute", "unmute volume", "unmute sound"]:
         return unmute_volume()
+
+    # Brightness controls
+    if command in ["brightness up", "increase brightness", "raise brightness"]:
+        return brightness_up()
+
+    if command in ["brightness down", "decrease brightness", "lower brightness"]:
+        return brightness_down()
+
+    # Status
+    if command in ["battery status", "battery", "check battery"]:
+        return battery_status()
+
+    if command in ["wifi status", "wi-fi status", "check wifi", "check wi-fi"]:
+        return wifi_status()
+
+    if command in ["system info", "system information", "pc status"]:
+        return system_info()
+
+    # Special folders
+    if command in ["open desktop", "open documents", "open downloads"]:
+        folder_name = command.replace("open ", "", 1).strip()
+        return open_special_folder(folder_name)
+
+    # Lock PC
+    if command in ["lock pc", "lock computer", "lock my pc"]:
+        return lock_pc()
+
+    # Close application
+    if command.startswith("close "):
+        target = command.replace("close ", "", 1).strip()
+        return close_application(target)
 
     # Open website/application
     if command.startswith("open "):
