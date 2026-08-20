@@ -8,6 +8,7 @@ import psutil
 from core.router import route_command
 from voice.speech import listen_once
 from voice.tts import speak
+from voice.wake_word import wait_for_wake_word
 
 
 ctk.set_appearance_mode("dark")
@@ -28,6 +29,8 @@ class JervisApp(ctk.CTk):
 
         self.voice_busy = False
         self.continuous_voice_enabled = False
+        self.wake_word_enabled = False
+        self.wake_word_busy = False
 
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -87,7 +90,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 9 • Continuous Voice",
+            text="JERVIS X\nStep 11 • Wake Word Mode",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -512,6 +515,18 @@ class JervisApp(ctk.CTk):
             command=self.toggle_continuous_voice,
         )
         self.continuous_button.pack(
+            pady=12,
+        )
+
+        self.wake_word_button = ctk.CTkButton(
+            page,
+            text="▶ START WAKE WORD MODE",
+            width=280,
+            height=58,
+            font=("Arial", 16, "bold"),
+            command=self.toggle_wake_word_mode,
+        )
+        self.wake_word_button.pack(
             pady=12,
         )
 
@@ -1029,6 +1044,189 @@ class JervisApp(ctk.CTk):
         self.voice_button.configure(
             state="normal",
             text="🎙 LISTEN ONCE",
+        )
+
+    def toggle_wake_word_mode(self):
+        if self.wake_word_enabled:
+            self.stop_wake_word_mode()
+            return
+
+        # Avoid two microphone loops running at the same time.
+        if self.continuous_voice_enabled:
+            self.stop_continuous_voice(
+                "Continuous voice mode stopped for wake word mode.",
+            )
+
+        self.wake_word_enabled = True
+        self.wake_word_button.configure(
+            text="■ STOP WAKE WORD MODE",
+        )
+        self.voice_status_label.configure(
+            text='Status: Waiting for "Hey Jervis"...',
+        )
+        self.voice_text_label.configure(
+            text='Wake word mode active. Say "Hey Jervis".',
+        )
+        self.start_wake_word_cycle()
+
+    def start_wake_word_cycle(self):
+        if not self.wake_word_enabled or self.wake_word_busy:
+            return
+
+        self.wake_word_busy = True
+        self.set_orb_state("IDLE")
+
+        threading.Thread(
+            target=self.wake_word_worker,
+            daemon=True,
+        ).start()
+
+    def wake_word_worker(self):
+        detected = wait_for_wake_word()
+        self.after(
+            0,
+            lambda: self.handle_wake_word_result(detected),
+        )
+
+    def handle_wake_word_result(self, detected):
+        self.wake_word_busy = False
+
+        if not self.wake_word_enabled:
+            return
+
+        if not detected:
+            self.voice_status_label.configure(
+                text="Status: Wake word service stopped.",
+            )
+            self.after(800, self.start_wake_word_cycle)
+            return
+
+        self.set_orb_state("LISTENING")
+        self.voice_status_label.configure(
+            text="Status: Wake word detected. Listening for command...",
+        )
+        self.voice_text_label.configure(
+            text='Wake word detected. Now say your command.',
+        )
+
+        threading.Thread(
+            target=speak,
+            args=("Yes, I'm listening.",),
+            daemon=True,
+        ).start()
+
+        # Give the short acknowledgement time to finish before opening the mic.
+        self.after(1400, self.start_wake_command_listener)
+
+    def start_wake_command_listener(self):
+        if not self.wake_word_enabled:
+            return
+
+        threading.Thread(
+            target=self.wake_command_worker,
+            daemon=True,
+        ).start()
+
+    def wake_command_worker(self):
+        command = listen_once()
+        self.after(
+            0,
+            lambda: self.handle_wake_command(command),
+        )
+
+    def handle_wake_command(self, command):
+        if not self.wake_word_enabled:
+            return
+
+        if not command:
+            self.voice_status_label.configure(
+                text='Status: No command heard. Waiting for "Hey Jervis"...',
+            )
+            self.after(700, self.start_wake_word_cycle)
+            return
+
+        if command.lower().strip() in {
+            "stop wake word mode",
+            "disable wake word mode",
+            "stop listening",
+        }:
+            self.stop_wake_word_mode()
+            threading.Thread(
+                target=speak,
+                args=("Wake word mode stopped.",),
+                daemon=True,
+            ).start()
+            return
+
+        self.voice_text_label.configure(
+            text=f'Wake command: "{command}"',
+        )
+        self.add_message(
+            "YOU",
+            f"[WAKE] {command}",
+        )
+
+        self.process_wake_command_async(command)
+
+    def process_wake_command_async(self, command):
+        self.set_orb_state("PROCESSING")
+
+        def worker():
+            response = route_command(command)
+            if response is None:
+                response = "Sorry, I don't understand that command yet."
+
+            self.after(
+                0,
+                lambda: self.finish_wake_response(command, response),
+            )
+
+        threading.Thread(
+            target=worker,
+            daemon=True,
+        ).start()
+
+    def finish_wake_response(self, command, response):
+        self.add_message("JERVIS", response)
+        self.add_history(command, response)
+        self.set_orb_state("SPEAKING")
+        self.voice_status_label.configure(text="Status: Speaking")
+
+        threading.Thread(
+            target=self.wake_speak_worker,
+            args=(response,),
+            daemon=True,
+        ).start()
+
+    def wake_speak_worker(self, response):
+        try:
+            speak(response)
+        finally:
+            self.after(0, self.wake_response_complete)
+
+    def wake_response_complete(self):
+        if not self.wake_word_enabled:
+            return
+
+        self.set_orb_state("IDLE")
+        self.voice_status_label.configure(
+            text='Status: Waiting for "Hey Jervis"...',
+        )
+        self.voice_text_label.configure(
+            text='Say "Hey Jervis" for another command.',
+        )
+        self.after(600, self.start_wake_word_cycle)
+
+    def stop_wake_word_mode(self):
+        self.wake_word_enabled = False
+        self.wake_word_busy = False
+        self.set_orb_state("IDLE")
+        self.wake_word_button.configure(
+            text="▶ START WAKE WORD MODE",
+        )
+        self.voice_status_label.configure(text="Status: Ready")
+        self.voice_text_label.configure(
+            text="Wake word mode stopped.",
         )
 
     def calculate_from_page(self):
