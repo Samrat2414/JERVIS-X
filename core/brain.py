@@ -52,6 +52,12 @@ from core.automation import (
     battery_status,
     wifi_status,
     system_info,
+    open_windows_settings,
+    open_display_settings,
+    open_sound_settings,
+    open_wifi_settings,
+    open_bluetooth_settings,
+    open_task_manager,
 )
 from core.calculator import calculate
 from core.engineering import (
@@ -577,6 +583,48 @@ def process_command(command):
 
     if command in ["system info", "system information", "pc status"]:
         return system_info()
+
+    # Step 33: Advanced System Control Center
+    if command in [
+        "open windows settings",
+        "open settings",
+        "windows settings",
+    ]:
+        return open_windows_settings()
+
+    if command in [
+        "open display settings",
+        "display settings",
+        "screen settings",
+    ]:
+        return open_display_settings()
+
+    if command in [
+        "open sound settings",
+        "sound settings",
+        "audio settings",
+    ]:
+        return open_sound_settings()
+
+    if command in [
+        "open wifi settings",
+        "open wi-fi settings",
+        "wifi settings",
+        "wi-fi settings",
+    ]:
+        return open_wifi_settings()
+
+    if command in [
+        "open bluetooth settings",
+        "bluetooth settings",
+    ]:
+        return open_bluetooth_settings()
+
+    if command in [
+        "open task manager",
+        "task manager",
+    ]:
+        return open_task_manager()
 
     # Special folders
     if command in ["open desktop", "open documents", "open downloads"]:
