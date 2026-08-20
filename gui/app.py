@@ -19,6 +19,11 @@ from core.tasks import add_task, show_tasks, complete_task, delete_completed_tas
 from core.notes import add_note, show_notes, search_notes
 from core.weather import get_weather_data
 from core.news import get_news
+from core.web_search import (
+    search_web,
+    search_google_direct,
+    search_youtube_direct,
+)
 from core.history import (
     add_history as save_activity_history,
     show_history,
@@ -281,6 +286,7 @@ class JervisApp(ctk.CTk):
             "History",
             "Weather",
             "News",
+            "Web Search",
             "Voice",
             "Automation",
             "Files",
@@ -299,7 +305,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 30 • News Dashboard",
+            text="JERVIS X\nStep 32 • Web Search Dashboard",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -330,6 +336,7 @@ class JervisApp(ctk.CTk):
         self.create_history_page()
         self.create_weather_page()
         self.create_news_page()
+        self.create_web_search_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -2689,6 +2696,167 @@ class JervisApp(ctk.CTk):
         self.add_history(
             f"news {topic}",
             "Fetched live news headlines.",
+            source="GUI",
+        )
+
+    def create_web_search_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Web Search"] = page
+        page.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS WEB SEARCH",
+            font=("Arial", 28, "bold"),
+        ).grid(row=0, column=0, padx=30, pady=(30, 8), sticky="w")
+
+        ctk.CTkLabel(
+            page,
+            text="Search Google, the web, or YouTube directly from JERVIS.",
+            font=("Arial", 14),
+        ).grid(row=1, column=0, padx=30, pady=(0, 18), sticky="w")
+
+        search_frame = ctk.CTkFrame(page)
+        search_frame.grid(row=2, column=0, padx=30, pady=(0, 15), sticky="ew")
+        search_frame.grid_columnconfigure(0, weight=1)
+
+        self.web_search_entry = ctk.CTkEntry(
+            search_frame,
+            placeholder_text="What do you want to search?",
+            height=46,
+        )
+        self.web_search_entry.grid(
+            row=0, column=0, columnspan=3,
+            padx=15, pady=(15, 8), sticky="ew",
+        )
+        self.web_search_entry.bind(
+            "<Return>",
+            lambda event: self.gui_google_search(),
+        )
+
+        ctk.CTkButton(
+            search_frame,
+            text="🌐 Google",
+            height=42,
+            command=self.gui_google_search,
+        ).grid(row=1, column=0, padx=(15, 5), pady=(5, 15), sticky="ew")
+
+        ctk.CTkButton(
+            search_frame,
+            text="🔎 Web Search",
+            height=42,
+            command=self.gui_web_search,
+        ).grid(row=1, column=1, padx=5, pady=(5, 15), sticky="ew")
+
+        ctk.CTkButton(
+            search_frame,
+            text="▶ YouTube",
+            height=42,
+            command=self.gui_youtube_search,
+        ).grid(row=1, column=2, padx=(5, 15), pady=(5, 15), sticky="ew")
+
+        quick_frame = ctk.CTkFrame(page)
+        quick_frame.grid(row=3, column=0, padx=30, pady=(0, 15), sticky="ew")
+
+        ctk.CTkLabel(
+            quick_frame,
+            text="QUICK SEARCH",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=0, columnspan=2, padx=15, pady=(15, 8), sticky="w")
+
+        quick_queries = [
+            "Python developer jobs",
+            "Data analyst jobs",
+            "Latest AI technology",
+            "Electronics engineering jobs",
+        ]
+
+        for index, query in enumerate(quick_queries):
+            ctk.CTkButton(
+                quick_frame,
+                text=query,
+                height=40,
+                command=lambda value=query: self.gui_quick_web_search(value),
+            ).grid(
+                row=1 + index // 2,
+                column=index % 2,
+                padx=10,
+                pady=8,
+                sticky="ew",
+            )
+
+        quick_frame.grid_columnconfigure((0, 1), weight=1)
+
+        self.web_search_status_label = ctk.CTkLabel(
+            page,
+            text="Ready",
+            font=("Arial", 14),
+            wraplength=780,
+            justify="left",
+        )
+        self.web_search_status_label.grid(
+            row=4, column=0, padx=30, pady=(10, 25), sticky="w",
+        )
+
+    def _get_web_search_query(self):
+        query = self.web_search_entry.get().strip()
+
+        if not query:
+            self.web_search_status_label.configure(
+                text="Enter something to search first.",
+            )
+            return None
+
+        return query
+
+    def gui_google_search(self):
+        query = self._get_web_search_query()
+        if not query:
+            return
+
+        result = search_google_direct(query)
+        self.web_search_status_label.configure(text=result)
+        self.add_history(
+            f"google {query}",
+            result,
+            source="GUI",
+        )
+
+    def gui_web_search(self):
+        query = self._get_web_search_query()
+        if not query:
+            return
+
+        result = search_web(query)
+        self.web_search_status_label.configure(text=result)
+        self.add_history(
+            f"search {query}",
+            result,
+            source="GUI",
+        )
+
+    def gui_youtube_search(self):
+        query = self._get_web_search_query()
+        if not query:
+            return
+
+        result = search_youtube_direct(query)
+        self.web_search_status_label.configure(text=result)
+        self.add_history(
+            f"youtube {query}",
+            result,
+            source="GUI",
+        )
+
+    def gui_quick_web_search(self, query):
+        self.web_search_entry.delete(0, "end")
+        self.web_search_entry.insert(0, query)
+
+        result = search_google_direct(query)
+        self.web_search_status_label.configure(text=result)
+        self.add_history(
+            f"google {query}",
+            result,
             source="GUI",
         )
 
