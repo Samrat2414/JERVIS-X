@@ -17,6 +17,10 @@ from core.notes import (
     show_notes,
     search_notes,
 )
+from core.reminders import (
+    add_reminder,
+    show_reminders,
+)
 from core.automation import (
     open_website,
     open_application,
@@ -53,7 +57,7 @@ def process_command(command):
     if not command:
         return "Please enter a command."
 
-    # Step 10: smarter natural-language intent detection
+    # Smarter natural-language intent detection
     intent, intent_value = detect_intent(original_command)
 
     if intent == "open_youtube":
@@ -153,7 +157,7 @@ def process_command(command):
 
         return f"I don't remember your {key} yet."
 
-    # Step 15: Persistent Notes System
+    # Persistent Notes System
     if command.startswith("take a note "):
         note_text = original_command[len("take a note "):].strip()
         return add_note(note_text)
@@ -173,6 +177,32 @@ def process_command(command):
     if command.startswith("search notes "):
         search_text = original_command[len("search notes "):].strip()
         return search_notes(search_text)
+
+    # Step 16: Persistent Reminder System
+    if command.startswith("remind me to "):
+        reminder_text = original_command[len("remind me to "):].strip()
+
+        lower_reminder = reminder_text.lower()
+        split_index = lower_reminder.rfind(" at ")
+
+        if split_index == -1:
+            return "Please use this format: remind me to study Python at 8 PM."
+
+        task = reminder_text[:split_index].strip()
+        time_text = reminder_text[split_index + 4:].strip()
+
+        if not task or not time_text:
+            return "Please use this format: remind me to study Python at 8 PM."
+
+        return add_reminder(task, time_text)
+
+    if command in [
+        "show my reminders",
+        "show reminders",
+        "list my reminders",
+        "list reminders",
+    ]:
+        return show_reminders()
 
     # Step 14: Create text files and filter by file type
     if command.startswith("create text file "):
