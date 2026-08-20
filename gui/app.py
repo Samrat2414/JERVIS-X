@@ -17,6 +17,7 @@ from core.reminders import (
 )
 from core.tasks import add_task, show_tasks, complete_task, delete_completed_tasks
 from core.notes import add_note, show_notes, search_notes
+from core.weather import get_weather_data
 from core.history import (
     add_history as save_activity_history,
     show_history,
@@ -277,6 +278,7 @@ class JervisApp(ctk.CTk):
             "Notes",
             "Reminders",
             "History",
+            "Weather",
             "Voice",
             "Automation",
             "Files",
@@ -295,7 +297,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 26 • Persistent Activity History",
+            text="JERVIS X\nStep 28 • Weather Dashboard",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -324,6 +326,7 @@ class JervisApp(ctk.CTk):
         self.create_notes_page()
         self.create_reminders_page()
         self.create_history_page()
+        self.create_weather_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -2150,6 +2153,289 @@ class JervisApp(ctk.CTk):
             text=result,
         )
         self.refresh_history_page()
+
+    def create_weather_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Weather"] = page
+
+        page.grid_columnconfigure((0, 1), weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS LIVE WEATHER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Search a city to view current live weather conditions.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        search_frame = ctk.CTkFrame(page)
+        search_frame.grid(
+            row=2,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(0, 20),
+            sticky="ew",
+        )
+        search_frame.grid_columnconfigure(0, weight=1)
+
+        self.weather_city_entry = ctk.CTkEntry(
+            search_frame,
+            placeholder_text="Enter city, e.g. Kolkata",
+            height=44,
+        )
+        self.weather_city_entry.grid(
+            row=0,
+            column=0,
+            padx=(15, 8),
+            pady=15,
+            sticky="ew",
+        )
+        self.weather_city_entry.bind(
+            "<Return>",
+            lambda event: self.gui_fetch_weather(),
+        )
+
+        ctk.CTkButton(
+            search_frame,
+            text="🌦 Get Weather",
+            width=140,
+            height=44,
+            command=self.gui_fetch_weather,
+        ).grid(
+            row=0,
+            column=1,
+            padx=5,
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            search_frame,
+            text="↻ Refresh",
+            width=110,
+            height=44,
+            command=self.gui_refresh_weather,
+        ).grid(
+            row=0,
+            column=2,
+            padx=(5, 15),
+            pady=15,
+        )
+
+        self.weather_location_label = ctk.CTkLabel(
+            page,
+            text="No city selected",
+            font=("Arial", 22, "bold"),
+        )
+        self.weather_location_label.grid(
+            row=3,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.weather_condition_card = self.create_info_card(
+            page,
+            "CONDITION",
+            "--",
+        )
+        self.weather_condition_card["frame"].grid(
+            row=4,
+            column=0,
+            padx=(30, 10),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.weather_temp_card = self.create_info_card(
+            page,
+            "TEMPERATURE",
+            "-- °C",
+        )
+        self.weather_temp_card["frame"].grid(
+            row=4,
+            column=1,
+            padx=(10, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.weather_feels_card = self.create_info_card(
+            page,
+            "FEELS LIKE",
+            "-- °C",
+        )
+        self.weather_feels_card["frame"].grid(
+            row=5,
+            column=0,
+            padx=(30, 10),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.weather_humidity_card = self.create_info_card(
+            page,
+            "HUMIDITY",
+            "-- %",
+        )
+        self.weather_humidity_card["frame"].grid(
+            row=5,
+            column=1,
+            padx=(10, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.weather_wind_card = self.create_info_card(
+            page,
+            "WIND SPEED",
+            "-- km/h",
+        )
+        self.weather_wind_card["frame"].grid(
+            row=6,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.weather_status_label = ctk.CTkLabel(
+            page,
+            text="Ready",
+            font=("Arial", 13),
+            wraplength=780,
+            justify="left",
+        )
+        self.weather_status_label.grid(
+            row=7,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(15, 25),
+            sticky="w",
+        )
+
+        self.last_weather_city = None
+
+    def gui_fetch_weather(self):
+        city = self.weather_city_entry.get().strip()
+
+        if not city:
+            self.weather_status_label.configure(
+                text="Enter a city name first.",
+            )
+            return
+
+        self.weather_status_label.configure(
+            text="Loading live weather...",
+        )
+
+        threading.Thread(
+            target=self.weather_worker,
+            args=(city,),
+            daemon=True,
+        ).start()
+
+    def gui_refresh_weather(self):
+        city = self.last_weather_city
+
+        if not city:
+            city = self.weather_city_entry.get().strip()
+
+        if not city:
+            self.weather_status_label.configure(
+                text="Search a city first.",
+            )
+            return
+
+        self.weather_status_label.configure(
+            text="Refreshing live weather...",
+        )
+
+        threading.Thread(
+            target=self.weather_worker,
+            args=(city,),
+            daemon=True,
+        ).start()
+
+    def weather_worker(self, city):
+        data = get_weather_data(city)
+
+        self.after(
+            0,
+            lambda: self.finish_weather_update(
+                city,
+                data,
+            ),
+        )
+
+    def finish_weather_update(self, city, data):
+        if not data.get("success"):
+            self.weather_status_label.configure(
+                text=data.get(
+                    "error",
+                    "Could not load weather.",
+                ),
+            )
+            return
+
+        self.last_weather_city = city
+
+        self.weather_location_label.configure(
+            text=f"{data['city']}, {data['country']}",
+        )
+
+        self.weather_condition_card["value"].configure(
+            text=str(data["condition"]),
+        )
+        self.weather_temp_card["value"].configure(
+            text=f"{data['temperature']} °C",
+        )
+        self.weather_feels_card["value"].configure(
+            text=f"{data['feels_like']} °C",
+        )
+        self.weather_humidity_card["value"].configure(
+            text=f"{data['humidity']} %",
+        )
+        self.weather_wind_card["value"].configure(
+            text=f"{data['wind_speed']} km/h",
+        )
+
+        self.weather_status_label.configure(
+            text="Live weather updated successfully.",
+        )
+
+        self.add_history(
+            f"weather {city}",
+            (
+                f"{data['condition']}, "
+                f"{data['temperature']}°C, "
+                f"humidity {data['humidity']}%, "
+                f"wind {data['wind_speed']} km/h"
+            ),
+            source="GUI",
+        )
 
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)

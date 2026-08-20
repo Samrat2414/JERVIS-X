@@ -5,11 +5,43 @@ GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 
 
-def get_weather(city):
+def weather_code_to_text(code):
+    weather_codes = {
+        0: "Clear sky",
+        1: "Mainly clear",
+        2: "Partly cloudy",
+        3: "Overcast",
+        45: "Fog",
+        48: "Rime fog",
+        51: "Light drizzle",
+        53: "Moderate drizzle",
+        55: "Heavy drizzle",
+        61: "Light rain",
+        63: "Moderate rain",
+        65: "Heavy rain",
+        71: "Light snow",
+        73: "Moderate snow",
+        75: "Heavy snow",
+        80: "Light rain showers",
+        81: "Moderate rain showers",
+        82: "Heavy rain showers",
+        95: "Thunderstorm",
+    }
+
+    return weather_codes.get(
+        code,
+        "Unknown weather condition",
+    )
+
+
+def get_weather_data(city):
     city = city.strip()
 
     if not city:
-        return "Please tell me the city name."
+        return {
+            "success": False,
+            "error": "Please tell me the city name.",
+        }
 
     try:
         location_response = requests.get(
@@ -29,7 +61,10 @@ def get_weather(city):
         results = location_data.get("results")
 
         if not results:
-            return f"I could not find the city {city}."
+            return {
+                "success": False,
+                "error": f"I could not find the city {city}.",
+            }
 
         location = results[0]
 
@@ -67,53 +102,49 @@ def get_weather(city):
         wind_speed = current.get("wind_speed_10m")
         weather_code = current.get("weather_code")
 
-        condition = weather_code_to_text(weather_code)
-
-        return (
-            f"Weather in {city_name}, {country}:\n"
-            f"Condition: {condition}\n"
-            f"Temperature: {temperature}°C\n"
-            f"Feels like: {feels_like}°C\n"
-            f"Humidity: {humidity}%\n"
-            f"Wind speed: {wind_speed} km/h"
-        )
+        return {
+            "success": True,
+            "city": city_name,
+            "country": country,
+            "condition": weather_code_to_text(weather_code),
+            "temperature": temperature,
+            "feels_like": feels_like,
+            "humidity": humidity,
+            "wind_speed": wind_speed,
+        }
 
     except requests.RequestException as error:
-        return (
-            "I could not get live weather information. "
-            f"Please check your internet connection. Details: {error}"
-        )
+        return {
+            "success": False,
+            "error": (
+                "I could not get live weather information. "
+                f"Please check your internet connection. Details: {error}"
+            ),
+        }
 
     except Exception as error:
-        return f"Weather error: {error}"
+        return {
+            "success": False,
+            "error": f"Weather error: {error}",
+        }
 
 
-def weather_code_to_text(code):
-    weather_codes = {
-        0: "Clear sky",
-        1: "Mainly clear",
-        2: "Partly cloudy",
-        3: "Overcast",
-        45: "Fog",
-        48: "Rime fog",
-        51: "Light drizzle",
-        53: "Moderate drizzle",
-        55: "Heavy drizzle",
-        61: "Light rain",
-        63: "Moderate rain",
-        65: "Heavy rain",
-        71: "Light snow",
-        73: "Moderate snow",
-        75: "Heavy snow",
-        80: "Light rain showers",
-        81: "Moderate rain showers",
-        82: "Heavy rain showers",
-        95: "Thunderstorm",
-    }
+def get_weather(city):
+    data = get_weather_data(city)
 
-    return weather_codes.get(
-        code,
-        "Unknown weather condition",
+    if not data.get("success"):
+        return data.get(
+            "error",
+            "I could not get weather information.",
+        )
+
+    return (
+        f"Weather in {data['city']}, {data['country']}:\n"
+        f"Condition: {data['condition']}\n"
+        f"Temperature: {data['temperature']}°C\n"
+        f"Feels like: {data['feels_like']}°C\n"
+        f"Humidity: {data['humidity']}%\n"
+        f"Wind speed: {data['wind_speed']} km/h"
     )
 
 
