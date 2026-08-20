@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from core.ai_brain import ask_ai, clear_conversation
+from core.intent import detect_intent
 from core.memory import remember, recall, remember_fact, recall_fact
 from core.automation import (
     open_website,
@@ -37,6 +38,39 @@ def process_command(command):
 
     if not command:
         return "Please enter a command."
+
+    # Step 10: smarter natural-language intent detection
+    intent, intent_value = detect_intent(original_command)
+
+    if intent == "open_youtube":
+        return open_website("youtube")
+
+    if intent == "open_google":
+        return open_website("google")
+
+    if intent == "open_calculator":
+        return open_application("calculator")
+
+    if intent == "open_notepad":
+        return open_application("notepad")
+
+    if intent == "volume_up":
+        return volume_up()
+
+    if intent == "volume_down":
+        return volume_down()
+
+    if intent == "battery_status":
+        return battery_status()
+
+    if intent == "wifi_status":
+        return wifi_status()
+
+    if intent == "search_youtube":
+        return search_youtube(intent_value)
+
+    if intent == "search_google":
+        return search_google(intent_value)
 
     # Clear temporary AI conversation history
     if command in [
@@ -217,7 +251,7 @@ def process_command(command):
         except ValueError:
             return "Use: parallel resistance 10 20"
 
-    # Web searches
+    # Web searches - exact command fallback
     if command.startswith("search google "):
         query = original_command[len("search google "):].strip()
         return search_google(query)
