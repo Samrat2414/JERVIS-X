@@ -18,6 +18,7 @@ from core.reminders import (
 from core.tasks import add_task, show_tasks, complete_task, delete_completed_tasks
 from core.notes import add_note, show_notes, search_notes
 from core.weather import get_weather_data
+from core.news import get_news
 from core.history import (
     add_history as save_activity_history,
     show_history,
@@ -279,6 +280,7 @@ class JervisApp(ctk.CTk):
             "Reminders",
             "History",
             "Weather",
+            "News",
             "Voice",
             "Automation",
             "Files",
@@ -297,7 +299,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 28 • Weather Dashboard",
+            text="JERVIS X\nStep 30 • News Dashboard",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -327,6 +329,7 @@ class JervisApp(ctk.CTk):
         self.create_reminders_page()
         self.create_history_page()
         self.create_weather_page()
+        self.create_news_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -2434,6 +2437,258 @@ class JervisApp(ctk.CTk):
                 f"humidity {data['humidity']}%, "
                 f"wind {data['wind_speed']} km/h"
             ),
+            source="GUI",
+        )
+
+    def create_news_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["News"] = page
+
+        page.grid_columnconfigure(0, weight=1)
+        page.grid_rowconfigure(4, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS LIVE NEWS",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Search topics or use quick categories for live headlines.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        search_frame = ctk.CTkFrame(page)
+        search_frame.grid(
+            row=2,
+            column=0,
+            padx=30,
+            pady=(0, 12),
+            sticky="ew",
+        )
+        search_frame.grid_columnconfigure(0, weight=1)
+
+        self.news_topic_entry = ctk.CTkEntry(
+            search_frame,
+            placeholder_text="Enter topic, e.g. technology",
+            height=44,
+        )
+        self.news_topic_entry.grid(
+            row=0,
+            column=0,
+            padx=(15, 8),
+            pady=15,
+            sticky="ew",
+        )
+        self.news_topic_entry.bind(
+            "<Return>",
+            lambda event: self.gui_fetch_news(),
+        )
+
+        ctk.CTkButton(
+            search_frame,
+            text="📰 Get News",
+            width=130,
+            height=44,
+            command=self.gui_fetch_news,
+        ).grid(
+            row=0,
+            column=1,
+            padx=5,
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            search_frame,
+            text="↻ Refresh",
+            width=110,
+            height=44,
+            command=self.gui_refresh_news,
+        ).grid(
+            row=0,
+            column=2,
+            padx=(5, 15),
+            pady=15,
+        )
+
+        quick_frame = ctk.CTkFrame(page)
+        quick_frame.grid(
+            row=3,
+            column=0,
+            padx=30,
+            pady=(0, 12),
+            sticky="ew",
+        )
+
+        categories = [
+            "India",
+            "Technology",
+            "Business",
+            "Science",
+        ]
+
+        for index, category in enumerate(categories):
+            ctk.CTkButton(
+                quick_frame,
+                text=category,
+                height=40,
+                command=lambda value=category: self.gui_news_category(value),
+            ).grid(
+                row=0,
+                column=index,
+                padx=8,
+                pady=12,
+            )
+
+        news_frame = ctk.CTkFrame(page)
+        news_frame.grid(
+            row=4,
+            column=0,
+            padx=30,
+            pady=(0, 12),
+            sticky="nsew",
+        )
+        news_frame.grid_columnconfigure(0, weight=1)
+        news_frame.grid_rowconfigure(1, weight=1)
+
+        self.news_title_label = ctk.CTkLabel(
+            news_frame,
+            text="LATEST HEADLINES",
+            font=("Arial", 18, "bold"),
+        )
+        self.news_title_label.grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.news_box = ctk.CTkTextbox(
+            news_frame,
+            font=("Arial", 13),
+        )
+        self.news_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.news_box.configure(state="disabled")
+
+        self.news_status_label = ctk.CTkLabel(
+            page,
+            text="Ready",
+            font=("Arial", 13),
+            wraplength=780,
+            justify="left",
+        )
+        self.news_status_label.grid(
+            row=5,
+            column=0,
+            padx=30,
+            pady=(0, 25),
+            sticky="w",
+        )
+
+        self.last_news_topic = None
+
+    def _set_news_output(self, text):
+        self.news_box.configure(state="normal")
+        self.news_box.delete("1.0", "end")
+        self.news_box.insert("end", text)
+        self.news_box.configure(state="disabled")
+
+    def gui_fetch_news(self):
+        topic = self.news_topic_entry.get().strip()
+
+        if not topic:
+            self.news_status_label.configure(
+                text="Enter a news topic first.",
+            )
+            return
+
+        self.news_status_label.configure(
+            text="Loading live headlines...",
+        )
+
+        threading.Thread(
+            target=self.news_worker,
+            args=(topic,),
+            daemon=True,
+        ).start()
+
+    def gui_refresh_news(self):
+        topic = self.last_news_topic
+
+        if not topic:
+            topic = self.news_topic_entry.get().strip()
+
+        if not topic:
+            topic = "India"
+
+        self.news_status_label.configure(
+            text="Refreshing live headlines...",
+        )
+
+        threading.Thread(
+            target=self.news_worker,
+            args=(topic,),
+            daemon=True,
+        ).start()
+
+    def gui_news_category(self, topic):
+        self.news_topic_entry.delete(0, "end")
+        self.news_topic_entry.insert(0, topic)
+        self.news_status_label.configure(
+            text=f"Loading {topic} news...",
+        )
+
+        threading.Thread(
+            target=self.news_worker,
+            args=(topic,),
+            daemon=True,
+        ).start()
+
+    def news_worker(self, topic):
+        result = get_news(topic, limit=8)
+
+        self.after(
+            0,
+            lambda: self.finish_news_update(
+                topic,
+                result,
+            ),
+        )
+
+    def finish_news_update(self, topic, result):
+        self.last_news_topic = topic
+
+        self.news_title_label.configure(
+            text=f"LATEST HEADLINES — {topic.upper()}",
+        )
+        self._set_news_output(result)
+        self.news_status_label.configure(
+            text="Live news updated successfully.",
+        )
+
+        self.add_history(
+            f"news {topic}",
+            "Fetched live news headlines.",
             source="GUI",
         )
 
