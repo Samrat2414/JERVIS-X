@@ -12,6 +12,11 @@ from core.file_manager import (
     list_files_by_extension,
     find_files_by_extension,
 )
+from core.notes import (
+    add_note,
+    show_notes,
+    search_notes,
+)
 from core.automation import (
     open_website,
     open_application,
@@ -147,6 +152,27 @@ def process_command(command):
             return f"Your {key} is {value}."
 
         return f"I don't remember your {key} yet."
+
+    # Step 15: Persistent Notes System
+    if command.startswith("take a note "):
+        note_text = original_command[len("take a note "):].strip()
+        return add_note(note_text)
+
+    if command.startswith("note "):
+        note_text = original_command[len("note "):].strip()
+        return add_note(note_text)
+
+    if command in [
+        "show my notes",
+        "show notes",
+        "list my notes",
+        "list notes",
+    ]:
+        return show_notes()
+
+    if command.startswith("search notes "):
+        search_text = original_command[len("search notes "):].strip()
+        return search_notes(search_text)
 
     # Step 14: Create text files and filter by file type
     if command.startswith("create text file "):
