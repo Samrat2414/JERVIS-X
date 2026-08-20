@@ -15,6 +15,15 @@ from core.reminders import (
 )
 from core.tasks import add_task, show_tasks, complete_task, delete_completed_tasks
 from core.notes import add_note, show_notes, search_notes
+from core.file_manager import (
+    list_files,
+    find_files,
+    open_matching_file,
+    create_folder,
+    create_text_file,
+    list_files_by_extension,
+    find_files_by_extension,
+)
 from voice.speech import listen_once
 from voice.tts import speak
 from voice.wake_word import wait_for_wake_word
@@ -103,7 +112,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 20 • GUI Reminder Manager",
+            text="JERVIS X\nStep 21 • GUI Smart File Manager",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -138,11 +147,7 @@ class JervisApp(ctk.CTk):
             "Automation Center",
             "PC automation commands are active through JERVIS Chat and Voice.",
         )
-        self.create_placeholder_page(
-            "Files",
-            "Smart File Manager",
-            "Advanced file tools will be added later.",
-        )
+        self.create_files_page()
         self.create_placeholder_page(
             "Settings",
             "JERVIS Settings",
@@ -1172,6 +1177,363 @@ class JervisApp(ctk.CTk):
         )
         self.refresh_reminders_page()
 
+    def create_files_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Files"] = page
+
+        page.grid_columnconfigure(0, weight=1)
+        page.grid_rowconfigure(4, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART FILE MANAGER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Search, open, filter and create files safely.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        search_frame = ctk.CTkFrame(page)
+        search_frame.grid(
+            row=2,
+            column=0,
+            padx=30,
+            pady=(0, 12),
+            sticky="ew",
+        )
+        search_frame.grid_columnconfigure(0, weight=1)
+
+        self.file_search_entry = ctk.CTkEntry(
+            search_frame,
+            placeholder_text="Search file name, e.g. resume",
+            height=42,
+        )
+        self.file_search_entry.grid(
+            row=0,
+            column=0,
+            padx=(15, 8),
+            pady=15,
+            sticky="ew",
+        )
+
+        ctk.CTkButton(
+            search_frame,
+            text="🔎 Search",
+            width=110,
+            height=42,
+            command=self.gui_search_files,
+        ).grid(
+            row=0,
+            column=1,
+            padx=5,
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            search_frame,
+            text="📂 Open Match",
+            width=130,
+            height=42,
+            command=self.gui_open_matching_file,
+        ).grid(
+            row=0,
+            column=2,
+            padx=(5, 15),
+            pady=15,
+        )
+
+        filter_frame = ctk.CTkFrame(page)
+        filter_frame.grid(
+            row=3,
+            column=0,
+            padx=30,
+            pady=(0, 12),
+            sticky="ew",
+        )
+
+        ctk.CTkLabel(
+            filter_frame,
+            text="Folder:",
+            font=("Arial", 13, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 5),
+            pady=12,
+        )
+
+        self.file_folder_menu = ctk.CTkOptionMenu(
+            filter_frame,
+            values=["documents", "downloads", "desktop"],
+            width=140,
+        )
+        self.file_folder_menu.set("documents")
+        self.file_folder_menu.grid(
+            row=0,
+            column=1,
+            padx=5,
+            pady=12,
+        )
+
+        ctk.CTkLabel(
+            filter_frame,
+            text="Type:",
+            font=("Arial", 13, "bold"),
+        ).grid(
+            row=0,
+            column=2,
+            padx=(15, 5),
+            pady=12,
+        )
+
+        self.file_type_menu = ctk.CTkOptionMenu(
+            filter_frame,
+            values=["all", "pdf", "python", "text"],
+            width=130,
+        )
+        self.file_type_menu.set("all")
+        self.file_type_menu.grid(
+            row=0,
+            column=3,
+            padx=5,
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            filter_frame,
+            text="📄 Show Files",
+            width=120,
+            height=40,
+            command=self.gui_filter_files,
+        ).grid(
+            row=0,
+            column=4,
+            padx=(10, 15),
+            pady=12,
+        )
+
+        result_frame = ctk.CTkFrame(page)
+        result_frame.grid(
+            row=4,
+            column=0,
+            padx=30,
+            pady=(0, 12),
+            sticky="nsew",
+        )
+        result_frame.grid_columnconfigure(0, weight=1)
+        result_frame.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            result_frame,
+            text="FILE RESULTS",
+            font=("Arial", 18, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.files_box = ctk.CTkTextbox(
+            result_frame,
+            font=("Arial", 13),
+        )
+        self.files_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.files_box.configure(state="disabled")
+
+        create_frame = ctk.CTkFrame(page)
+        create_frame.grid(
+            row=5,
+            column=0,
+            padx=30,
+            pady=(0, 12),
+            sticky="ew",
+        )
+        create_frame.grid_columnconfigure(0, weight=1)
+
+        self.new_file_entry = ctk.CTkEntry(
+            create_frame,
+            placeholder_text="New text file name or folder name",
+            height=42,
+        )
+        self.new_file_entry.grid(
+            row=0,
+            column=0,
+            padx=(15, 8),
+            pady=15,
+            sticky="ew",
+        )
+
+        ctk.CTkButton(
+            create_frame,
+            text="📄 Create Text File",
+            width=145,
+            height=42,
+            command=self.gui_create_text_file,
+        ).grid(
+            row=0,
+            column=1,
+            padx=5,
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            create_frame,
+            text="📁 Create Folder",
+            width=135,
+            height=42,
+            command=self.gui_create_folder,
+        ).grid(
+            row=0,
+            column=2,
+            padx=(5, 15),
+            pady=15,
+        )
+
+        self.file_status_label = ctk.CTkLabel(
+            page,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.file_status_label.grid(
+            row=6,
+            column=0,
+            padx=30,
+            pady=(0, 20),
+            sticky="w",
+        )
+
+        self.refresh_files_page()
+
+    def _set_files_output(self, text):
+        self.files_box.configure(state="normal")
+        self.files_box.delete("1.0", "end")
+        self.files_box.insert("end", text)
+        self.files_box.configure(state="disabled")
+
+    def refresh_files_page(self):
+        folder = self.file_folder_menu.get()
+        result = list_files(folder)
+        self._set_files_output(result)
+
+        if hasattr(self, "file_status_label"):
+            self.file_status_label.configure(
+                text=f"Showing files in {folder}.",
+            )
+
+    def gui_search_files(self):
+        search_text = self.file_search_entry.get().strip()
+
+        if not search_text:
+            self.file_status_label.configure(
+                text="Enter a file name to search.",
+            )
+            return
+
+        result = find_files(search_text)
+        self._set_files_output(result)
+        self.file_status_label.configure(
+            text=f'Search results for "{search_text}".',
+        )
+
+    def gui_open_matching_file(self):
+        search_text = self.file_search_entry.get().strip()
+
+        if not search_text:
+            self.file_status_label.configure(
+                text="Enter a file name to open.",
+            )
+            return
+
+        result = open_matching_file(search_text)
+        self.file_status_label.configure(text=result)
+        self.add_history(
+            f"open file {search_text}",
+            result,
+        )
+
+    def gui_filter_files(self):
+        folder = self.file_folder_menu.get()
+        file_type = self.file_type_menu.get()
+
+        if file_type == "all":
+            result = list_files(folder)
+        else:
+            extension_map = {
+                "pdf": "pdf",
+                "python": "py",
+                "text": "txt",
+            }
+            result = list_files_by_extension(
+                folder,
+                extension_map[file_type],
+            )
+
+        self._set_files_output(result)
+        self.file_status_label.configure(
+            text=f"Showing {file_type} files in {folder}.",
+        )
+
+    def gui_create_text_file(self):
+        file_name = self.new_file_entry.get().strip()
+        folder = self.file_folder_menu.get()
+
+        if not file_name:
+            self.file_status_label.configure(
+                text="Enter a text file name.",
+            )
+            return
+
+        result = create_text_file(file_name, folder)
+        self.file_status_label.configure(text=result)
+        self.add_history(
+            f"create text file {file_name} in {folder}",
+            result,
+        )
+        self.new_file_entry.delete(0, "end")
+        self.refresh_files_page()
+
+    def gui_create_folder(self):
+        folder_name = self.new_file_entry.get().strip()
+        location = self.file_folder_menu.get()
+
+        if not folder_name:
+            self.file_status_label.configure(
+                text="Enter a folder name.",
+            )
+            return
+
+        result = create_folder(folder_name, location)
+        self.file_status_label.configure(text=result)
+        self.add_history(
+            f"create folder {folder_name} in {location}",
+            result,
+        )
+        self.new_file_entry.delete(0, "end")
+        self.refresh_files_page()
+
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
         self.pages["Voice"] = page
@@ -1287,6 +1649,9 @@ class JervisApp(ctk.CTk):
 
         if page_name == "Reminders" and hasattr(self, "reminders_box"):
             self.refresh_reminders_page()
+
+        if page_name == "Files" and hasattr(self, "files_box"):
+            self.refresh_files_page()
 
     def add_message(self, sender, message):
         self.chat_box.configure(
