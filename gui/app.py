@@ -9,6 +9,7 @@ from tkinter import messagebox
 from core.router import route_command
 from core.reminders import get_due_reminders
 from core.tasks import add_task, show_tasks, complete_task, delete_completed_tasks
+from core.notes import add_note, show_notes, search_notes
 from voice.speech import listen_once
 from voice.tts import speak
 from voice.wake_word import wait_for_wake_word
@@ -77,6 +78,7 @@ class JervisApp(ctk.CTk):
             "Chat",
             "Calculator",
             "Tasks",
+            "Notes",
             "Voice",
             "Automation",
             "Files",
@@ -95,7 +97,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 18 • GUI Task Manager",
+            text="JERVIS X\nStep 19 • GUI Notes Manager",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -121,6 +123,7 @@ class JervisApp(ctk.CTk):
         self.create_chat_page()
         self.create_calculator_page()
         self.create_tasks_page()
+        self.create_notes_page()
         self.create_voice_page()
 
         self.create_placeholder_page(
@@ -697,6 +700,232 @@ class JervisApp(ctk.CTk):
         self.add_history("delete completed tasks", result)
         self.refresh_tasks_page()
 
+    def create_notes_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Notes"] = page
+
+        page.grid_columnconfigure(0, weight=1)
+        page.grid_rowconfigure(3, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS NOTES MANAGER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Save, view and search your persistent notes.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        add_frame = ctk.CTkFrame(page)
+        add_frame.grid(
+            row=2,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="ew",
+        )
+        add_frame.grid_columnconfigure(0, weight=1)
+
+        self.note_entry = ctk.CTkEntry(
+            add_frame,
+            placeholder_text="Write a note...",
+            height=44,
+        )
+        self.note_entry.grid(
+            row=0,
+            column=0,
+            padx=(15, 10),
+            pady=15,
+            sticky="ew",
+        )
+        self.note_entry.bind(
+            "<Return>",
+            lambda event: self.gui_save_note(),
+        )
+
+        ctk.CTkButton(
+            add_frame,
+            text="➕ Save Note",
+            width=130,
+            height=44,
+            command=self.gui_save_note,
+        ).grid(
+            row=0,
+            column=1,
+            padx=(0, 15),
+            pady=15,
+        )
+
+        notes_frame = ctk.CTkFrame(page)
+        notes_frame.grid(
+            row=3,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        notes_frame.grid_columnconfigure(0, weight=1)
+        notes_frame.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            notes_frame,
+            text="SAVED NOTES",
+            font=("Arial", 18, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.notes_box = ctk.CTkTextbox(
+            notes_frame,
+            font=("Arial", 14),
+        )
+        self.notes_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.notes_box.configure(state="disabled")
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=4,
+            column=0,
+            padx=30,
+            pady=(0, 30),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(2, weight=1)
+
+        self.note_search_entry = ctk.CTkEntry(
+            controls,
+            placeholder_text="Search notes...",
+            height=42,
+        )
+        self.note_search_entry.grid(
+            row=0,
+            column=0,
+            padx=(15, 10),
+            pady=15,
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(0, weight=1)
+
+        self.note_search_entry.bind(
+            "<Return>",
+            lambda event: self.gui_search_notes(),
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="🔎 Search",
+            width=110,
+            height=42,
+            command=self.gui_search_notes,
+        ).grid(
+            row=0,
+            column=1,
+            padx=5,
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="↻ Refresh",
+            width=110,
+            height=42,
+            command=self.refresh_notes_page,
+        ).grid(
+            row=0,
+            column=2,
+            padx=(5, 15),
+            pady=15,
+            sticky="e",
+        )
+
+        self.note_status_label = ctk.CTkLabel(
+            page,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.note_status_label.grid(
+            row=5,
+            column=0,
+            padx=30,
+            pady=(0, 20),
+            sticky="w",
+        )
+
+        self.refresh_notes_page()
+
+    def refresh_notes_page(self):
+        result = show_notes()
+
+        self.notes_box.configure(state="normal")
+        self.notes_box.delete("1.0", "end")
+        self.notes_box.insert("end", result)
+        self.notes_box.configure(state="disabled")
+
+        if hasattr(self, "note_status_label"):
+            self.note_status_label.configure(
+                text="Showing all saved notes.",
+            )
+
+    def gui_save_note(self):
+        note_text = self.note_entry.get().strip()
+
+        if not note_text:
+            self.note_status_label.configure(
+                text="Enter a note first.",
+            )
+            return
+
+        result = add_note(note_text)
+
+        self.note_entry.delete(0, "end")
+        self.note_status_label.configure(text=result)
+        self.add_history(f"note {note_text}", result)
+        self.refresh_notes_page()
+
+    def gui_search_notes(self):
+        search_text = self.note_search_entry.get().strip()
+
+        if not search_text:
+            self.note_status_label.configure(
+                text="Enter something to search.",
+            )
+            return
+
+        result = search_notes(search_text)
+
+        self.notes_box.configure(state="normal")
+        self.notes_box.delete("1.0", "end")
+        self.notes_box.insert("end", result)
+        self.notes_box.configure(state="disabled")
+        self.note_status_label.configure(
+            text=f'Search results for "{search_text}".',
+        )
+
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
         self.pages["Voice"] = page
@@ -806,6 +1035,9 @@ class JervisApp(ctk.CTk):
 
         if page_name == "Tasks" and hasattr(self, "tasks_box"):
             self.refresh_tasks_page()
+
+        if page_name == "Notes" and hasattr(self, "notes_box"):
+            self.refresh_notes_page()
 
     def add_message(self, sender, message):
         self.chat_box.configure(
