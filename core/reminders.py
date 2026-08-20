@@ -75,6 +75,7 @@ def add_reminder(task, time_text):
                 timespec="seconds"
             ),
             "completed": False,
+            "completed_at": None,
         }
     )
 
@@ -107,3 +108,79 @@ def show_reminders():
         )
 
     return "Your reminders:\n" + "\n".join(lines)
+
+
+def get_due_reminders(now=None):
+    """
+    Return reminders due in the current minute and mark them completed.
+
+    The GUI can call this function every few seconds. Each reminder is returned
+    only once because it is marked completed immediately after it becomes due.
+    """
+    if now is None:
+        now = datetime.now()
+
+    current_time = now.strftime("%I:%M %p")
+    reminders = _load_reminders()
+
+    due_tasks = []
+    changed = False
+
+    for reminder in reminders:
+        if reminder.get("completed", False):
+            continue
+
+        if reminder.get("time") == current_time:
+            task = reminder.get("task", "").strip()
+
+            if task:
+                due_tasks.append(task)
+
+            reminder["completed"] = True
+            reminder["completed_at"] = now.isoformat(
+                timespec="seconds"
+            )
+            changed = True
+
+    if changed:
+        try:
+            _save_reminders(reminders)
+        except OSError:
+            # Do not crash the GUI if writing the completion state fails.
+            pass
+
+    return due_tasks
+
+
+def mark_reminder_completed(reminder_number):
+    """
+    Manually complete an active reminder by its displayed list number.
+    """
+    reminders = _load_reminders()
+
+    active_indexes = [
+        index
+        for index, reminder in enumerate(reminders)
+        if not reminder.get("completed", False)
+    ]
+
+    try:
+        number = int(reminder_number)
+    except (TypeError, ValueError):
+        return "Please provide a valid reminder number."
+
+    if number < 1 or number > len(active_indexes):
+        return "Reminder number not found."
+
+    real_index = active_indexes[number - 1]
+    reminders[real_index]["completed"] = True
+    reminders[real_index]["completed_at"] = datetime.now().isoformat(
+        timespec="seconds"
+    )
+
+    try:
+        _save_reminders(reminders)
+        return "Reminder marked as completed."
+
+    except OSError as error:
+        return f"I could not update the reminder: {error}"

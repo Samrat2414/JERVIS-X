@@ -4,8 +4,10 @@ from datetime import datetime
 
 import customtkinter as ctk
 import psutil
+from tkinter import messagebox
 
 from core.router import route_command
+from core.reminders import get_due_reminders
 from voice.speech import listen_once
 from voice.tts import speak
 from voice.wake_word import wait_for_wake_word
@@ -41,6 +43,7 @@ class JervisApp(ctk.CTk):
 
         self.update_dashboard()
         self.animate_orb()
+        self.check_due_reminders()
 
     def create_sidebar(self):
         self.sidebar = ctk.CTkFrame(
@@ -1228,6 +1231,75 @@ class JervisApp(ctk.CTk):
         self.voice_text_label.configure(
             text="Wake word mode stopped.",
         )
+
+    def check_due_reminders(self):
+        try:
+            due_tasks = get_due_reminders()
+
+            for task in due_tasks:
+                self.show_reminder_alert(task)
+
+        except Exception as error:
+            print(f"Reminder checker error: {error}")
+
+        finally:
+            # Check regularly while keeping all GUI work on Tk's main thread.
+            self.after(5000, self.check_due_reminders)
+
+    def show_reminder_alert(self, task):
+        message = f"Reminder: {task}"
+
+        self.add_message(
+            "JERVIS",
+            f"⏰ {message}",
+        )
+        self.add_history(
+            "REMINDER",
+            task,
+        )
+
+        self.set_orb_state("SPEAKING")
+        self.voice_status_label.configure(
+            text="Status: Reminder alert",
+        )
+
+        # Popup is scheduled on the GUI thread.
+        self.after(
+            0,
+            lambda: messagebox.showinfo(
+                "JERVIS Reminder",
+                message,
+                parent=self,
+            ),
+        )
+
+        threading.Thread(
+            target=self.reminder_speak_worker,
+            args=(message,),
+            daemon=True,
+        ).start()
+
+    def reminder_speak_worker(self, message):
+        try:
+            speak(message)
+
+        finally:
+            self.after(
+                0,
+                self.reminder_alert_complete,
+            )
+
+    def reminder_alert_complete(self):
+        # Do not interrupt an active voice/wake-word state unnecessarily.
+        if (
+            not self.voice_busy
+            and not self.continuous_voice_enabled
+            and not self.wake_word_busy
+        ):
+            self.set_orb_state("IDLE")
+            self.voice_status_label.configure(
+                text="Status: Ready",
+            )
 
     def calculate_from_page(self):
         expression = self.calc_entry.get().strip()
