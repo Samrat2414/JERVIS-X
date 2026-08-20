@@ -14,6 +14,13 @@ from core.file_manager import (
 )
 from core.weather import get_weather
 from core.news import get_news
+from core.clipboard_manager import (
+    get_clipboard_text,
+    copy_to_clipboard,
+    clear_clipboard,
+    show_clipboard_history,
+    clear_clipboard_history,
+)
 from core.web_search import (
     search_web,
     search_google_direct,
@@ -583,6 +590,42 @@ def process_command(command):
 
     if command in ["system info", "system information", "pc status"]:
         return system_info()
+
+    # Step 35: Clipboard Manager
+    if command in [
+        "show clipboard",
+        "read clipboard",
+        "what is in my clipboard",
+        "what's in my clipboard",
+    ]:
+        return get_clipboard_text()
+
+    if command.startswith("copy "):
+        text_to_copy = original_command[len("copy "):].strip()
+
+        if not text_to_copy:
+            return "Please provide text to copy."
+
+        return copy_to_clipboard(text_to_copy)
+
+    if command in [
+        "clear clipboard",
+        "empty clipboard",
+    ]:
+        return clear_clipboard()
+
+    if command in [
+        "show clipboard history",
+        "clipboard history",
+        "show my clipboard history",
+    ]:
+        return show_clipboard_history()
+
+    if command in [
+        "clear clipboard history",
+        "delete clipboard history",
+    ]:
+        return clear_clipboard_history()
 
     # Step 33: Advanced System Control Center
     if command in [
