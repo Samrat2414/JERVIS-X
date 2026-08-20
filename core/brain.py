@@ -13,6 +13,7 @@ from core.file_manager import (
     find_files_by_extension,
 )
 from core.weather import get_weather
+from core.news import get_news
 from core.notes import (
     add_note,
     show_notes,
@@ -330,6 +331,27 @@ def process_command(command):
             return create_folder(folder_name, "desktop")
 
         return create_folder(folder_name, "documents")
+
+    # Step 29: Live News
+    if command.startswith("news "):
+        topic = original_command[len("news "):].strip()
+        return get_news(topic or "India")
+
+    if command.startswith("latest news "):
+        topic = original_command[len("latest news "):].strip()
+        return get_news(topic or "India")
+
+    if command.endswith(" news") and not command.startswith("show "):
+        topic = original_command[:-len(" news")].strip()
+        if topic:
+            return get_news(topic)
+
+    if command in [
+        "news",
+        "latest news",
+        "show news",
+    ]:
+        return get_news("India")
 
     # Step 27: Live Weather
     if command.startswith("weather in "):
