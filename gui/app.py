@@ -7,7 +7,12 @@ import psutil
 from tkinter import messagebox
 
 from core.router import route_command
-from core.reminders import get_due_reminders
+from core.reminders import (
+    get_due_reminders,
+    add_reminder,
+    show_reminders,
+    mark_reminder_completed,
+)
 from core.tasks import add_task, show_tasks, complete_task, delete_completed_tasks
 from core.notes import add_note, show_notes, search_notes
 from voice.speech import listen_once
@@ -79,6 +84,7 @@ class JervisApp(ctk.CTk):
             "Calculator",
             "Tasks",
             "Notes",
+            "Reminders",
             "Voice",
             "Automation",
             "Files",
@@ -97,7 +103,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 19 • GUI Notes Manager",
+            text="JERVIS X\nStep 20 • GUI Reminder Manager",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -124,6 +130,7 @@ class JervisApp(ctk.CTk):
         self.create_calculator_page()
         self.create_tasks_page()
         self.create_notes_page()
+        self.create_reminders_page()
         self.create_voice_page()
 
         self.create_placeholder_page(
@@ -926,6 +933,245 @@ class JervisApp(ctk.CTk):
             text=f'Search results for "{search_text}".',
         )
 
+    def create_reminders_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Reminders"] = page
+
+        page.grid_columnconfigure(0, weight=1)
+        page.grid_rowconfigure(3, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS REMINDER MANAGER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Create, view and complete persistent reminders.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        add_frame = ctk.CTkFrame(page)
+        add_frame.grid(
+            row=2,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="ew",
+        )
+        add_frame.grid_columnconfigure(0, weight=1)
+
+        self.reminder_task_entry = ctk.CTkEntry(
+            add_frame,
+            placeholder_text="Reminder task...",
+            height=44,
+        )
+        self.reminder_task_entry.grid(
+            row=0,
+            column=0,
+            padx=(15, 10),
+            pady=15,
+            sticky="ew",
+        )
+
+        self.reminder_time_entry = ctk.CTkEntry(
+            add_frame,
+            placeholder_text="8 PM or 8:30 PM",
+            width=180,
+            height=44,
+        )
+        self.reminder_time_entry.grid(
+            row=0,
+            column=1,
+            padx=(0, 10),
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            add_frame,
+            text="➕ Add Reminder",
+            width=150,
+            height=44,
+            command=self.gui_add_reminder,
+        ).grid(
+            row=0,
+            column=2,
+            padx=(0, 15),
+            pady=15,
+        )
+
+        list_frame = ctk.CTkFrame(page)
+        list_frame.grid(
+            row=3,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        list_frame.grid_columnconfigure(0, weight=1)
+        list_frame.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            list_frame,
+            text="ACTIVE REMINDERS",
+            font=("Arial", 18, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.reminders_box = ctk.CTkTextbox(
+            list_frame,
+            font=("Arial", 14),
+        )
+        self.reminders_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.reminders_box.configure(state="disabled")
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=4,
+            column=0,
+            padx=30,
+            pady=(0, 30),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(3, weight=1)
+
+        self.reminder_number_entry = ctk.CTkEntry(
+            controls,
+            placeholder_text="Reminder #",
+            width=140,
+            height=42,
+        )
+        self.reminder_number_entry.grid(
+            row=0,
+            column=0,
+            padx=(15, 10),
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="✓ Complete",
+            width=120,
+            height=42,
+            command=self.gui_complete_reminder,
+        ).grid(
+            row=0,
+            column=1,
+            padx=5,
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="↻ Refresh",
+            width=110,
+            height=42,
+            command=self.refresh_reminders_page,
+        ).grid(
+            row=0,
+            column=2,
+            padx=5,
+            pady=15,
+        )
+
+        self.reminder_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.reminder_status_label.grid(
+            row=0,
+            column=3,
+            padx=(10, 15),
+            pady=15,
+            sticky="e",
+        )
+
+        self.refresh_reminders_page()
+
+    def refresh_reminders_page(self):
+        result = show_reminders()
+
+        self.reminders_box.configure(state="normal")
+        self.reminders_box.delete("1.0", "end")
+        self.reminders_box.insert("end", result)
+        self.reminders_box.configure(state="disabled")
+
+        if hasattr(self, "reminder_status_label"):
+            self.reminder_status_label.configure(
+                text="Showing active reminders.",
+            )
+
+    def gui_add_reminder(self):
+        task = self.reminder_task_entry.get().strip()
+        time_text = self.reminder_time_entry.get().strip()
+
+        if not task:
+            self.reminder_status_label.configure(
+                text="Enter a reminder task.",
+            )
+            return
+
+        if not time_text:
+            self.reminder_status_label.configure(
+                text="Enter a reminder time.",
+            )
+            return
+
+        result = add_reminder(task, time_text)
+
+        self.reminder_task_entry.delete(0, "end")
+        self.reminder_time_entry.delete(0, "end")
+        self.reminder_status_label.configure(text=result)
+        self.add_history(
+            f"remind me to {task} at {time_text}",
+            result,
+        )
+        self.refresh_reminders_page()
+
+    def gui_complete_reminder(self):
+        reminder_number = self.reminder_number_entry.get().strip()
+
+        if not reminder_number:
+            self.reminder_status_label.configure(
+                text="Enter a reminder number.",
+            )
+            return
+
+        result = mark_reminder_completed(reminder_number)
+
+        self.reminder_number_entry.delete(0, "end")
+        self.reminder_status_label.configure(text=result)
+        self.add_history(
+            f"complete reminder {reminder_number}",
+            result,
+        )
+        self.refresh_reminders_page()
+
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
         self.pages["Voice"] = page
@@ -1038,6 +1284,9 @@ class JervisApp(ctk.CTk):
 
         if page_name == "Notes" and hasattr(self, "notes_box"):
             self.refresh_notes_page()
+
+        if page_name == "Reminders" and hasattr(self, "reminders_box"):
+            self.refresh_reminders_page()
 
     def add_message(self, sender, message):
         self.chat_box.configure(
