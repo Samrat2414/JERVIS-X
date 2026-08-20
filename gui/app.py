@@ -5,6 +5,8 @@ from datetime import datetime
 import customtkinter as ctk
 import psutil
 from tkinter import messagebox
+import pystray
+from PIL import Image, ImageDraw
 
 from core.router import route_command
 from core.reminders import (
@@ -69,6 +71,9 @@ class JervisApp(ctk.CTk):
         self.wake_word_busy = False
 
         self.app_settings = get_all_settings()
+        self.tray_icon = None
+        self.tray_thread = None
+        self.is_exiting = False
 
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -88,11 +93,144 @@ class JervisApp(ctk.CTk):
         self.check_due_reminders()
         self.apply_voice_settings()
 
+        self.protocol("WM_DELETE_WINDOW", self.hide_to_tray)
+        self.start_system_tray()
+
         if (
             self.app_settings.get("wake_word_enabled", False)
             and self.app_settings.get("voice_enabled", True)
         ):
             self.after(1200, self.toggle_wake_word_mode)
+
+    def create_tray_image(self):
+        size = 64
+        image = Image.new(
+            "RGB",
+            (size, size),
+            "black",
+        )
+        draw = ImageDraw.Draw(image)
+
+        draw.ellipse(
+            (7, 7, 57, 57),
+            outline="white",
+            width=4,
+        )
+        draw.ellipse(
+            (20, 20, 44, 44),
+            fill="white",
+        )
+
+        return image
+
+    def start_system_tray(self):
+        if self.tray_icon is not None:
+            return
+
+        menu = pystray.Menu(
+            pystray.MenuItem(
+                "Open JERVIS",
+                self.tray_open_callback,
+                default=True,
+            ),
+            pystray.MenuItem(
+                "Hide JERVIS",
+                self.tray_hide_callback,
+            ),
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem(
+                "Exit JERVIS",
+                self.tray_exit_callback,
+            ),
+        )
+
+        self.tray_icon = pystray.Icon(
+            "JERVIS-X",
+            self.create_tray_image(),
+            "JERVIS X",
+            menu,
+        )
+
+        self.tray_thread = threading.Thread(
+            target=self.tray_icon.run,
+            daemon=True,
+        )
+        self.tray_thread.start()
+
+    def tray_open_callback(self, icon=None, item=None):
+        try:
+            self.after(
+                0,
+                self.show_from_tray,
+            )
+        except Exception:
+            pass
+
+    def tray_hide_callback(self, icon=None, item=None):
+        try:
+            self.after(
+                0,
+                self.hide_to_tray,
+            )
+        except Exception:
+            pass
+
+    def tray_exit_callback(self, icon=None, item=None):
+        try:
+            self.after(
+                0,
+                self.exit_jervis,
+            )
+        except Exception:
+            pass
+
+    def show_from_tray(self):
+        if self.is_exiting:
+            return
+
+        self.deiconify()
+        self.state("normal")
+        self.lift()
+        self.focus_force()
+
+    def hide_to_tray(self):
+        if self.is_exiting:
+            return
+
+        self.withdraw()
+
+        if self.tray_icon is not None:
+            try:
+                self.tray_icon.notify(
+                    "JERVIS X is still running in the background.",
+                    "JERVIS X",
+                )
+            except Exception:
+                pass
+
+    def exit_jervis(self):
+        if self.is_exiting:
+            return
+
+        self.is_exiting = True
+
+        self.continuous_voice_enabled = False
+        self.wake_word_enabled = False
+        self.voice_busy = False
+        self.wake_word_busy = False
+
+        if self.tray_icon is not None:
+            try:
+                self.tray_icon.stop()
+            except Exception:
+                pass
+
+            self.tray_icon = None
+
+        try:
+            self.destroy()
+        except Exception:
+            pass
 
     def create_sidebar(self):
         self.sidebar = ctk.CTkFrame(
@@ -145,7 +283,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 23 • Persistent Settings",
+            text="JERVIS X\nStep 24 • System Tray Mode",
             font=("Arial", 11),
         ).pack(
             side="bottom",
