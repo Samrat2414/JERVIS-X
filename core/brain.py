@@ -12,6 +12,7 @@ from core.file_manager import (
     list_files_by_extension,
     find_files_by_extension,
 )
+from core.weather import get_weather
 from core.notes import (
     add_note,
     show_notes,
@@ -329,6 +330,45 @@ def process_command(command):
             return create_folder(folder_name, "desktop")
 
         return create_folder(folder_name, "documents")
+
+    # Step 27: Live Weather
+    if command.startswith("weather in "):
+        city = original_command[len("weather in "):].strip()
+
+        if not city:
+            return "Please tell me the city name."
+
+        return get_weather(city)
+
+    if command.startswith("weather "):
+        city = original_command[len("weather "):].strip()
+
+        if not city:
+            return "Please tell me the city name."
+
+        return get_weather(city)
+
+    if command.startswith("what is the weather in "):
+        city = original_command[len("what is the weather in "):].strip()
+
+        if city.endswith("?"):
+            city = city[:-1].strip()
+
+        if not city:
+            return "Please tell me the city name."
+
+        return get_weather(city)
+
+    if command.startswith("what's the weather in "):
+        city = original_command[len("what's the weather in "):].strip()
+
+        if city.endswith("?"):
+            city = city[:-1].strip()
+
+        if not city:
+            return "Please tell me the city name."
+
+        return get_weather(city)
 
     # Basic commands
     if "hello" in command or command == "hi":
