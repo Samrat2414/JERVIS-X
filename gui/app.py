@@ -48,10 +48,18 @@ from core.automation import (
     volume_down,
     mute_volume,
     unmute_volume,
+    brightness_up,
+    brightness_down,
     battery_status,
     wifi_status,
     system_info,
     lock_pc,
+    open_windows_settings,
+    open_display_settings,
+    open_sound_settings,
+    open_wifi_settings,
+    open_bluetooth_settings,
+    open_task_manager,
 )
 from core.file_manager import (
     list_files,
@@ -287,6 +295,7 @@ class JervisApp(ctk.CTk):
             "Weather",
             "News",
             "Web Search",
+            "System Control",
             "Voice",
             "Automation",
             "Files",
@@ -305,7 +314,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 32 • Web Search Dashboard",
+            text="JERVIS X\nStep 34 • System Control Center",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -337,6 +346,7 @@ class JervisApp(ctk.CTk):
         self.create_weather_page()
         self.create_news_page()
         self.create_web_search_page()
+        self.create_system_control_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -2859,6 +2869,138 @@ class JervisApp(ctk.CTk):
             result,
             source="GUI",
         )
+
+    def create_system_control_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["System Control"] = page
+        page.grid_columnconfigure((0, 1), weight=1)
+        page.grid_rowconfigure(5, weight=1)
+
+        ctk.CTkLabel(
+            page, text="JERVIS SYSTEM CONTROL",
+            font=("Arial", 28, "bold"),
+        ).grid(row=0, column=0, columnspan=2, padx=30, pady=(30, 8), sticky="w")
+
+        ctk.CTkLabel(
+            page,
+            text="Control Windows, audio, display and system utilities.",
+            font=("Arial", 14),
+        ).grid(row=1, column=0, columnspan=2, padx=30, pady=(0, 15), sticky="w")
+
+        audio = ctk.CTkFrame(page)
+        audio.grid(row=2, column=0, padx=(30, 10), pady=8, sticky="nsew")
+        ctk.CTkLabel(audio, text="AUDIO", font=("Arial", 17, "bold")).grid(
+            row=0, column=0, columnspan=2, padx=15, pady=(15, 8), sticky="w"
+        )
+        for i, (label, func) in enumerate([
+            ("🔊 Volume Up", volume_up),
+            ("🔉 Volume Down", volume_down),
+            ("🔇 Mute", mute_volume),
+            ("🔈 Unmute", unmute_volume),
+        ]):
+            ctk.CTkButton(
+                audio, text=label, height=40,
+                command=lambda f=func: self.run_system_action(f),
+            ).grid(row=1 + i // 2, column=i % 2, padx=8, pady=8, sticky="ew")
+        audio.grid_columnconfigure((0, 1), weight=1)
+
+        display = ctk.CTkFrame(page)
+        display.grid(row=2, column=1, padx=(10, 30), pady=8, sticky="nsew")
+        ctk.CTkLabel(display, text="DISPLAY", font=("Arial", 17, "bold")).grid(
+            row=0, column=0, columnspan=2, padx=15, pady=(15, 8), sticky="w"
+        )
+        for i, (label, func) in enumerate([
+            ("☀ Brightness Up", brightness_up),
+            ("🌙 Brightness Down", brightness_down),
+            ("🖥 Display Settings", open_display_settings),
+            ("🔊 Sound Settings", open_sound_settings),
+        ]):
+            ctk.CTkButton(
+                display, text=label, height=40,
+                command=lambda f=func: self.run_system_action(f),
+            ).grid(row=1 + i // 2, column=i % 2, padx=8, pady=8, sticky="ew")
+        display.grid_columnconfigure((0, 1), weight=1)
+
+        utilities = ctk.CTkFrame(page)
+        utilities.grid(row=3, column=0, columnspan=2, padx=30, pady=8, sticky="ew")
+        ctk.CTkLabel(
+            utilities, text="SYSTEM UTILITIES", font=("Arial", 17, "bold")
+        ).grid(row=0, column=0, columnspan=4, padx=15, pady=(15, 8), sticky="w")
+
+        for i, (label, func) in enumerate([
+            ("📸 Screenshot", take_screenshot),
+            ("🔋 Battery", battery_status),
+            ("📶 Wi-Fi Status", wifi_status),
+            ("💻 System Info", system_info),
+            ("⚙ Windows Settings", open_windows_settings),
+            ("📶 Wi-Fi Settings", open_wifi_settings),
+            ("Bluetooth Settings", open_bluetooth_settings),
+            ("📊 Task Manager", open_task_manager),
+        ]):
+            ctk.CTkButton(
+                utilities, text=label, height=40,
+                command=lambda f=func: self.run_system_action(f),
+            ).grid(row=1 + i // 4, column=i % 4, padx=7, pady=8, sticky="ew")
+        for col in range(4):
+            utilities.grid_columnconfigure(col, weight=1)
+
+        security = ctk.CTkFrame(page)
+        security.grid(row=4, column=0, columnspan=2, padx=30, pady=8, sticky="ew")
+        security.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(security, text="SECURITY", font=("Arial", 17, "bold")).grid(
+            row=0, column=0, padx=15, pady=15, sticky="w"
+        )
+        ctk.CTkButton(
+            security, text="🔒 Lock PC", width=160, height=40,
+            command=self.gui_lock_pc,
+        ).grid(row=0, column=1, padx=15, pady=15)
+
+        result_frame = ctk.CTkFrame(page)
+        result_frame.grid(
+            row=5, column=0, columnspan=2, padx=30, pady=(8, 15), sticky="nsew"
+        )
+        result_frame.grid_columnconfigure(0, weight=1)
+        result_frame.grid_rowconfigure(1, weight=1)
+        ctk.CTkLabel(
+            result_frame, text="SYSTEM RESPONSE", font=("Arial", 17, "bold")
+        ).grid(row=0, column=0, padx=15, pady=(15, 8), sticky="w")
+
+        self.system_control_output = ctk.CTkTextbox(
+            result_frame, height=110, font=("Arial", 13)
+        )
+        self.system_control_output.grid(
+            row=1, column=0, padx=15, pady=(0, 15), sticky="nsew"
+        )
+        self.system_control_output.configure(state="disabled")
+
+    def set_system_control_output(self, result):
+        result = str(result)
+        self.system_control_output.configure(state="normal")
+        self.system_control_output.delete("1.0", "end")
+        self.system_control_output.insert("end", result)
+        self.system_control_output.configure(state="disabled")
+
+    def run_system_action(self, action):
+        try:
+            result = action()
+        except Exception as error:
+            result = f"System control error: {error}"
+
+        self.set_system_control_output(result)
+        self.add_history("System Control", result, source="GUI")
+
+    def gui_lock_pc(self):
+        confirmed = messagebox.askyesno(
+            "Lock PC",
+            "Do you want to lock this PC now?",
+            parent=self,
+        )
+        if not confirmed:
+            return
+
+        result = lock_pc()
+        self.set_system_control_output(result)
+        self.add_history("Lock PC", result, source="GUI")
 
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
