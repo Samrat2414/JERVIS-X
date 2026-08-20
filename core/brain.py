@@ -21,6 +21,12 @@ from core.reminders import (
     add_reminder,
     show_reminders,
 )
+from core.tasks import (
+    add_task,
+    show_tasks,
+    complete_task,
+    delete_completed_tasks,
+)
 from core.automation import (
     open_website,
     open_application,
@@ -177,6 +183,30 @@ def process_command(command):
     if command.startswith("search notes "):
         search_text = original_command[len("search notes "):].strip()
         return search_notes(search_text)
+
+    # Step 17: Persistent Task / To-Do Manager
+    if command.startswith("add task "):
+        task_text = original_command[len("add task "):].strip()
+        return add_task(task_text)
+
+    if command in [
+        "show my tasks",
+        "show tasks",
+        "list my tasks",
+        "list tasks",
+    ]:
+        return show_tasks()
+
+    if command.startswith("complete task "):
+        task_number = original_command[len("complete task "):].strip()
+        return complete_task(task_number)
+
+    if command in [
+        "delete completed tasks",
+        "clear completed tasks",
+        "remove completed tasks",
+    ]:
+        return delete_completed_tasks()
 
     # Step 16: Persistent Reminder System
     if command.startswith("remind me to "):
