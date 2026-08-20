@@ -17,6 +17,12 @@ from core.reminders import (
 )
 from core.tasks import add_task, show_tasks, complete_task, delete_completed_tasks
 from core.notes import add_note, show_notes, search_notes
+from core.history import (
+    add_history as save_activity_history,
+    show_history,
+    search_history,
+    clear_history,
+)
 from core.startup import (
     enable_startup,
     disable_startup,
@@ -270,6 +276,7 @@ class JervisApp(ctk.CTk):
             "Tasks",
             "Notes",
             "Reminders",
+            "History",
             "Voice",
             "Automation",
             "Files",
@@ -288,7 +295,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 25 • Windows Auto-Launch",
+            text="JERVIS X\nStep 26 • Persistent Activity History",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -316,6 +323,7 @@ class JervisApp(ctk.CTk):
         self.create_tasks_page()
         self.create_notes_page()
         self.create_reminders_page()
+        self.create_history_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -1937,6 +1945,212 @@ class JervisApp(ctk.CTk):
         self.new_file_entry.delete(0, "end")
         self.refresh_files_page()
 
+    def create_history_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["History"] = page
+
+        page.grid_columnconfigure(0, weight=1)
+        page.grid_rowconfigure(3, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS ACTIVITY HISTORY",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Search and review persistent commands, responses and activity.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        search_frame = ctk.CTkFrame(page)
+        search_frame.grid(
+            row=2,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="ew",
+        )
+        search_frame.grid_columnconfigure(0, weight=1)
+
+        self.history_search_entry = ctk.CTkEntry(
+            search_frame,
+            placeholder_text="Search history...",
+            height=42,
+        )
+        self.history_search_entry.grid(
+            row=0,
+            column=0,
+            padx=(15, 8),
+            pady=15,
+            sticky="ew",
+        )
+        self.history_search_entry.bind(
+            "<Return>",
+            lambda event: self.gui_search_history(),
+        )
+
+        ctk.CTkButton(
+            search_frame,
+            text="🔎 Search",
+            width=110,
+            height=42,
+            command=self.gui_search_history,
+        ).grid(
+            row=0,
+            column=1,
+            padx=5,
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            search_frame,
+            text="↻ Refresh",
+            width=110,
+            height=42,
+            command=self.refresh_history_page,
+        ).grid(
+            row=0,
+            column=2,
+            padx=5,
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            search_frame,
+            text="🗑 Clear History",
+            width=140,
+            height=42,
+            command=self.gui_clear_history,
+        ).grid(
+            row=0,
+            column=3,
+            padx=(5, 15),
+            pady=15,
+        )
+
+        history_frame = ctk.CTkFrame(page)
+        history_frame.grid(
+            row=3,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        history_frame.grid_columnconfigure(0, weight=1)
+        history_frame.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            history_frame,
+            text="RECENT ACTIVITY",
+            font=("Arial", 18, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.persistent_history_box = ctk.CTkTextbox(
+            history_frame,
+            font=("Arial", 13),
+        )
+        self.persistent_history_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.persistent_history_box.configure(
+            state="disabled",
+        )
+
+        self.history_status_label = ctk.CTkLabel(
+            page,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.history_status_label.grid(
+            row=4,
+            column=0,
+            padx=30,
+            pady=(0, 20),
+            sticky="w",
+        )
+
+        self.refresh_history_page()
+
+    def _set_history_output(self, text):
+        self.persistent_history_box.configure(
+            state="normal",
+        )
+        self.persistent_history_box.delete(
+            "1.0",
+            "end",
+        )
+        self.persistent_history_box.insert(
+            "end",
+            text,
+        )
+        self.persistent_history_box.configure(
+            state="disabled",
+        )
+
+    def refresh_history_page(self):
+        result = show_history(100)
+        self._set_history_output(result)
+
+        if hasattr(self, "history_status_label"):
+            self.history_status_label.configure(
+                text="Showing recent activity.",
+            )
+
+    def gui_search_history(self):
+        query = self.history_search_entry.get().strip()
+
+        if not query:
+            self.history_status_label.configure(
+                text="Enter something to search.",
+            )
+            return
+
+        result = search_history(query)
+        self._set_history_output(result)
+        self.history_status_label.configure(
+            text=f'Search results for "{query}".',
+        )
+
+    def gui_clear_history(self):
+        confirmed = messagebox.askyesno(
+            "Clear Activity History",
+            "Delete all saved JERVIS activity history?",
+            parent=self,
+        )
+
+        if not confirmed:
+            return
+
+        result = clear_history()
+        self.history_status_label.configure(
+            text=result,
+        )
+        self.refresh_history_page()
+
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
         self.pages["Voice"] = page
@@ -2427,6 +2641,9 @@ class JervisApp(ctk.CTk):
         if page_name == "Reminders" and hasattr(self, "reminders_box"):
             self.refresh_reminders_page()
 
+        if page_name == "History" and hasattr(self, "persistent_history_box"):
+            self.refresh_history_page()
+
         if page_name == "Files" and hasattr(self, "files_box"):
             self.refresh_files_page()
 
@@ -2445,7 +2662,7 @@ class JervisApp(ctk.CTk):
             state="disabled",
         )
 
-    def add_history(self, command, response):
+    def add_history(self, command, response, source="GUI"):
         timestamp = datetime.now().strftime(
             "%H:%M:%S",
         )
@@ -2457,6 +2674,15 @@ class JervisApp(ctk.CTk):
 
         self.command_history = self.command_history[:10]
         self.refresh_history_box()
+
+        save_activity_history(
+            command,
+            response,
+            source=source,
+        )
+
+        if hasattr(self, "persistent_history_box"):
+            self.refresh_history_page()
 
     def refresh_history_box(self):
         self.history_box.configure(
@@ -2655,6 +2881,7 @@ class JervisApp(ctk.CTk):
         self.add_history(
             command,
             response,
+            source="Chat" if not speak_response else "Voice",
         )
 
         if speak_response and self.should_speak_responses():
@@ -3075,7 +3302,7 @@ class JervisApp(ctk.CTk):
 
     def finish_wake_response(self, command, response):
         self.add_message("JERVIS", response)
-        self.add_history(command, response)
+        self.add_history(command, response, source="Wake")
 
         if self.should_speak_responses():
             self.set_orb_state("SPEAKING")
