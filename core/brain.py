@@ -3,6 +3,11 @@ from datetime import datetime
 from core.ai_brain import ask_ai, clear_conversation
 from core.intent import detect_intent
 from core.memory import remember, recall, remember_fact, recall_fact
+from core.file_manager import (
+    list_files,
+    find_files,
+    create_folder,
+)
 from core.automation import (
     open_website,
     open_application,
@@ -138,6 +143,57 @@ def process_command(command):
             return f"Your {key} is {value}."
 
         return f"I don't remember your {key} yet."
+
+    # Step 12: Smart File Manager
+    if command.startswith("find "):
+        search_text = original_command[len("find "):].strip()
+
+        if search_text.lower().startswith("my "):
+            search_text = search_text[3:].strip()
+
+        return find_files(search_text)
+
+    if command.startswith("find files "):
+        search_text = original_command[len("find files "):].strip()
+        return find_files(search_text)
+
+    if command in [
+        "list files in documents",
+        "show files in documents",
+        "list documents",
+    ]:
+        return list_files("documents")
+
+    if command in [
+        "list files in downloads",
+        "show files in downloads",
+        "list downloads",
+    ]:
+        return list_files("downloads")
+
+    if command in [
+        "list files in desktop",
+        "show files in desktop",
+        "list desktop files",
+    ]:
+        return list_files("desktop")
+
+    if command.startswith("create folder "):
+        folder_name = original_command[len("create folder "):].strip()
+
+        if folder_name.lower().endswith(" in documents"):
+            folder_name = folder_name[:-len(" in documents")].strip()
+            return create_folder(folder_name, "documents")
+
+        if folder_name.lower().endswith(" in downloads"):
+            folder_name = folder_name[:-len(" in downloads")].strip()
+            return create_folder(folder_name, "downloads")
+
+        if folder_name.lower().endswith(" in desktop"):
+            folder_name = folder_name[:-len(" in desktop")].strip()
+            return create_folder(folder_name, "desktop")
+
+        return create_folder(folder_name, "documents")
 
     # Basic commands
     if "hello" in command or command == "hi":
