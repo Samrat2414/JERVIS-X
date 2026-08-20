@@ -8,6 +8,7 @@ from tkinter import messagebox
 
 from core.router import route_command
 from core.reminders import get_due_reminders
+from core.tasks import add_task, show_tasks, complete_task, delete_completed_tasks
 from voice.speech import listen_once
 from voice.tts import speak
 from voice.wake_word import wait_for_wake_word
@@ -75,6 +76,7 @@ class JervisApp(ctk.CTk):
             "Dashboard",
             "Chat",
             "Calculator",
+            "Tasks",
             "Voice",
             "Automation",
             "Files",
@@ -93,7 +95,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 11 • Wake Word Mode",
+            text="JERVIS X\nStep 18 • GUI Task Manager",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -118,6 +120,7 @@ class JervisApp(ctk.CTk):
         self.create_dashboard_page()
         self.create_chat_page()
         self.create_calculator_page()
+        self.create_tasks_page()
         self.create_voice_page()
 
         self.create_placeholder_page(
@@ -466,6 +469,234 @@ class JervisApp(ctk.CTk):
             pady=20,
         )
 
+    def create_tasks_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Tasks"] = page
+
+        page.grid_columnconfigure(0, weight=1)
+        page.grid_rowconfigure(3, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS TASK MANAGER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Add, review, complete and clean up your persistent tasks.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        add_frame = ctk.CTkFrame(page)
+        add_frame.grid(
+            row=2,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="ew",
+        )
+        add_frame.grid_columnconfigure(0, weight=1)
+
+        self.task_entry = ctk.CTkEntry(
+            add_frame,
+            placeholder_text="Example: Complete Python project",
+            height=44,
+        )
+        self.task_entry.grid(
+            row=0,
+            column=0,
+            padx=(15, 10),
+            pady=15,
+            sticky="ew",
+        )
+        self.task_entry.bind(
+            "<Return>",
+            lambda event: self.gui_add_task(),
+        )
+
+        ctk.CTkButton(
+            add_frame,
+            text="➕ Add Task",
+            width=130,
+            height=44,
+            command=self.gui_add_task,
+        ).grid(
+            row=0,
+            column=1,
+            padx=(0, 15),
+            pady=15,
+        )
+
+        list_frame = ctk.CTkFrame(page)
+        list_frame.grid(
+            row=3,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        list_frame.grid_columnconfigure(0, weight=1)
+        list_frame.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            list_frame,
+            text="ACTIVE TASKS",
+            font=("Arial", 18, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.tasks_box = ctk.CTkTextbox(
+            list_frame,
+            font=("Arial", 14),
+        )
+        self.tasks_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.tasks_box.configure(state="disabled")
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=4,
+            column=0,
+            padx=30,
+            pady=(0, 30),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(4, weight=1)
+
+        self.task_number_entry = ctk.CTkEntry(
+            controls,
+            width=120,
+            placeholder_text="Task #",
+            height=42,
+        )
+        self.task_number_entry.grid(
+            row=0,
+            column=0,
+            padx=(15, 10),
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="✓ Complete",
+            width=120,
+            height=42,
+            command=self.gui_complete_task,
+        ).grid(
+            row=0,
+            column=1,
+            padx=5,
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="↻ Refresh",
+            width=110,
+            height=42,
+            command=self.refresh_tasks_page,
+        ).grid(
+            row=0,
+            column=2,
+            padx=5,
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="🗑 Clear Completed",
+            width=160,
+            height=42,
+            command=self.gui_clear_completed_tasks,
+        ).grid(
+            row=0,
+            column=3,
+            padx=(5, 15),
+            pady=15,
+        )
+
+        self.task_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.task_status_label.grid(
+            row=0,
+            column=4,
+            padx=(10, 15),
+            pady=15,
+            sticky="e",
+        )
+
+        self.refresh_tasks_page()
+
+    def refresh_tasks_page(self):
+        result = show_tasks()
+
+        self.tasks_box.configure(state="normal")
+        self.tasks_box.delete("1.0", "end")
+        self.tasks_box.insert("end", result)
+        self.tasks_box.configure(state="disabled")
+
+    def gui_add_task(self):
+        task_text = self.task_entry.get().strip()
+
+        if not task_text:
+            self.task_status_label.configure(
+                text="Enter a task first.",
+            )
+            return
+
+        result = add_task(task_text)
+        self.task_entry.delete(0, "end")
+        self.task_status_label.configure(text=result)
+        self.add_history(f"add task {task_text}", result)
+        self.refresh_tasks_page()
+
+    def gui_complete_task(self):
+        task_number = self.task_number_entry.get().strip()
+
+        if not task_number:
+            self.task_status_label.configure(
+                text="Enter a task number.",
+            )
+            return
+
+        result = complete_task(task_number)
+        self.task_number_entry.delete(0, "end")
+        self.task_status_label.configure(text=result)
+        self.add_history(f"complete task {task_number}", result)
+        self.refresh_tasks_page()
+
+    def gui_clear_completed_tasks(self):
+        result = delete_completed_tasks()
+        self.task_status_label.configure(text=result)
+        self.add_history("delete completed tasks", result)
+        self.refresh_tasks_page()
+
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
         self.pages["Voice"] = page
@@ -572,6 +803,9 @@ class JervisApp(ctk.CTk):
             column=0,
             sticky="nsew",
         )
+
+        if page_name == "Tasks" and hasattr(self, "tasks_box"):
+            self.refresh_tasks_page()
 
     def add_message(self, sender, message):
         self.chat_box.configure(
