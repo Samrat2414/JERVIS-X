@@ -17,6 +17,11 @@ from core.reminders import (
 )
 from core.tasks import add_task, show_tasks, complete_task, delete_completed_tasks
 from core.notes import add_note, show_notes, search_notes
+from core.startup import (
+    enable_startup,
+    disable_startup,
+    is_startup_enabled,
+)
 from core.settings import (
     get_all_settings,
     set_setting,
@@ -283,7 +288,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 24 • System Tray Mode",
+            text="JERVIS X\nStep 25 • Windows Auto-Launch",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -2092,6 +2097,9 @@ class JervisApp(ctk.CTk):
         self.speak_ai_var = ctk.BooleanVar(
             value=self.app_settings.get("speak_ai_responses", True)
         )
+        self.windows_startup_var = ctk.BooleanVar(
+            value=is_startup_enabled()
+        )
 
         self.voice_enabled_switch = ctk.CTkSwitch(
             settings_frame,
@@ -2144,6 +2152,23 @@ class JervisApp(ctk.CTk):
             sticky="w",
         )
 
+        self.windows_startup_switch = ctk.CTkSwitch(
+            settings_frame,
+            text="Start JERVIS with Windows",
+            variable=self.windows_startup_var,
+            onvalue=True,
+            offvalue=False,
+            font=("Arial", 14),
+        )
+        self.windows_startup_switch.grid(
+            row=4,
+            column=0,
+            columnspan=2,
+            padx=18,
+            pady=10,
+            sticky="w",
+        )
+
         self.start_dashboard_switch = ctk.CTkSwitch(
             settings_frame,
             text="Start JERVIS on Dashboard",
@@ -2153,7 +2178,7 @@ class JervisApp(ctk.CTk):
             font=("Arial", 14),
         )
         self.start_dashboard_switch.grid(
-            row=4,
+            row=5,
             column=0,
             columnspan=2,
             padx=18,
@@ -2258,11 +2283,16 @@ class JervisApp(ctk.CTk):
             )
             return
 
+        if self.windows_startup_var.get():
+            startup_result = enable_startup()
+        else:
+            startup_result = disable_startup()
+
         self.app_settings = get_all_settings()
         self.apply_voice_settings()
 
         self.settings_status_label.configure(
-            text="Settings saved.",
+            text=f"Settings saved. {startup_result}",
         )
 
         self.add_history(
@@ -2292,6 +2322,11 @@ class JervisApp(ctk.CTk):
         )
         self.speak_ai_var.set(
             self.app_settings.get("speak_ai_responses", True)
+        )
+
+        disable_startup()
+        self.windows_startup_var.set(
+            is_startup_enabled()
         )
 
         self.apply_voice_settings()
