@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from core.ai_brain import ask_ai
+from core.ai_brain import ask_ai, clear_conversation
 from core.memory import remember, recall, remember_fact, recall_fact
 from core.automation import (
     open_website,
@@ -37,6 +37,14 @@ def process_command(command):
 
     if not command:
         return "Please enter a command."
+
+    # Clear temporary AI conversation history
+    if command in [
+        "clear conversation",
+        "clear chat",
+        "reset conversation",
+    ]:
+        return clear_conversation()
 
     # Personal memory - remember user's name
     if command.startswith("my name is "):
