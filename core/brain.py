@@ -14,6 +14,11 @@ from core.file_manager import (
 )
 from core.weather import get_weather
 from core.news import get_news
+from core.web_search import (
+    search_web,
+    search_google_direct,
+    search_youtube_direct,
+)
 from core.notes import (
     add_note,
     show_notes,
@@ -331,6 +336,32 @@ def process_command(command):
             return create_folder(folder_name, "desktop")
 
         return create_folder(folder_name, "documents")
+
+    # Step 31: Natural Internet Search
+    if command.startswith("search web for "):
+        query = original_command[len("search web for "):].strip()
+        return search_web(query)
+
+    if command.startswith("search "):
+        query = original_command[len("search "):].strip()
+
+        if query.lower().startswith("youtube for "):
+            query = query[len("youtube for "):].strip()
+            return search_youtube_direct(query)
+
+        if query.lower().startswith("google for "):
+            query = query[len("google for "):].strip()
+            return search_google_direct(query)
+
+        return search_web(query)
+
+    if command.startswith("google "):
+        query = original_command[len("google "):].strip()
+        return search_google_direct(query)
+
+    if command.startswith("youtube "):
+        query = original_command[len("youtube "):].strip()
+        return search_youtube_direct(query)
 
     # Step 29: Live News
     if command.startswith("news "):
