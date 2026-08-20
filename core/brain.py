@@ -8,6 +8,9 @@ from core.file_manager import (
     find_files,
     create_folder,
     open_matching_file,
+    create_text_file,
+    list_files_by_extension,
+    find_files_by_extension,
 )
 from core.automation import (
     open_website,
@@ -144,6 +147,42 @@ def process_command(command):
             return f"Your {key} is {value}."
 
         return f"I don't remember your {key} yet."
+
+    # Step 14: Create text files and filter by file type
+    if command.startswith("create text file "):
+        file_name = original_command[len("create text file "):].strip()
+        location = "documents"
+
+        for folder in ("desktop", "documents", "downloads"):
+            suffix = f" in {folder}"
+            if file_name.lower().endswith(suffix):
+                file_name = file_name[:-len(suffix)].strip()
+                location = folder
+                break
+
+        return create_text_file(file_name, location)
+
+    file_types = {
+        "pdf": "pdf",
+        "python": "py",
+        "text": "txt",
+    }
+
+    for type_name, extension in file_types.items():
+        prefix = f"show {type_name} files in "
+        if command.startswith(prefix):
+            folder_name = command[len(prefix):].strip()
+
+            if folder_name in ("desktop", "documents", "downloads"):
+                return list_files_by_extension(
+                    folder_name,
+                    extension,
+                )
+
+    if command.startswith("find all ") and command.endswith(" files"):
+        type_name = command[len("find all "):-len(" files")].strip()
+        extension = file_types.get(type_name, type_name)
+        return find_files_by_extension(extension)
 
     # Step 13: Open matching files
     if command.startswith("open my "):
