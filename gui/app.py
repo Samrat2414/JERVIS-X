@@ -19,6 +19,13 @@ from core.tasks import add_task, show_tasks, complete_task, delete_completed_tas
 from core.notes import add_note, show_notes, search_notes
 from core.weather import get_weather_data
 from core.news import get_news
+from core.clipboard_manager import (
+    get_clipboard_text,
+    copy_to_clipboard,
+    clear_clipboard,
+    show_clipboard_history,
+    clear_clipboard_history,
+)
 from core.web_search import (
     search_web,
     search_google_direct,
@@ -296,6 +303,7 @@ class JervisApp(ctk.CTk):
             "News",
             "Web Search",
             "System Control",
+            "Clipboard",
             "Voice",
             "Automation",
             "Files",
@@ -314,7 +322,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 34 • System Control Center",
+            text="JERVIS X\nStep 36 • Clipboard Manager",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -347,6 +355,7 @@ class JervisApp(ctk.CTk):
         self.create_news_page()
         self.create_web_search_page()
         self.create_system_control_page()
+        self.create_clipboard_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -3001,6 +3010,243 @@ class JervisApp(ctk.CTk):
         result = lock_pc()
         self.set_system_control_output(result)
         self.add_history("Lock PC", result, source="GUI")
+
+    def create_clipboard_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Clipboard"] = page
+        page.grid_columnconfigure((0, 1), weight=1)
+        page.grid_rowconfigure(4, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS CLIPBOARD MANAGER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0, column=0, columnspan=2,
+            padx=30, pady=(30, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Read, copy, clear and manage clipboard history.",
+            font=("Arial", 14),
+        ).grid(
+            row=1, column=0, columnspan=2,
+            padx=30, pady=(0, 15), sticky="w",
+        )
+
+        current_frame = ctk.CTkFrame(page)
+        current_frame.grid(
+            row=2, column=0,
+            padx=(30, 10), pady=8, sticky="nsew",
+        )
+        current_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            current_frame,
+            text="CURRENT CLIPBOARD",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=0, padx=15, pady=(15, 8), sticky="w")
+
+        self.clipboard_current_box = ctk.CTkTextbox(
+            current_frame,
+            height=120,
+            font=("Arial", 13),
+        )
+        self.clipboard_current_box.grid(
+            row=1, column=0,
+            padx=15, pady=(0, 8), sticky="ew",
+        )
+
+        button_frame = ctk.CTkFrame(
+            current_frame,
+            fg_color="transparent",
+        )
+        button_frame.grid(
+            row=2, column=0,
+            padx=15, pady=(0, 15), sticky="ew",
+        )
+        button_frame.grid_columnconfigure((0, 1), weight=1)
+
+        ctk.CTkButton(
+            button_frame,
+            text="↻ Refresh",
+            height=40,
+            command=self.gui_refresh_clipboard,
+        ).grid(row=0, column=0, padx=(0, 5), sticky="ew")
+
+        ctk.CTkButton(
+            button_frame,
+            text="Clear Clipboard",
+            height=40,
+            command=self.gui_clear_clipboard,
+        ).grid(row=0, column=1, padx=(5, 0), sticky="ew")
+
+        copy_frame = ctk.CTkFrame(page)
+        copy_frame.grid(
+            row=2, column=1,
+            padx=(10, 30), pady=8, sticky="nsew",
+        )
+        copy_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            copy_frame,
+            text="COPY NEW TEXT",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=0, padx=15, pady=(15, 8), sticky="w")
+
+        self.clipboard_copy_box = ctk.CTkTextbox(
+            copy_frame,
+            height=120,
+            font=("Arial", 13),
+        )
+        self.clipboard_copy_box.grid(
+            row=1, column=0,
+            padx=15, pady=(0, 8), sticky="ew",
+        )
+
+        ctk.CTkButton(
+            copy_frame,
+            text="📋 Copy to Clipboard",
+            height=40,
+            command=self.gui_copy_clipboard,
+        ).grid(
+            row=2, column=0,
+            padx=15, pady=(0, 15), sticky="ew",
+        )
+
+        history_frame = ctk.CTkFrame(page)
+        history_frame.grid(
+            row=3, column=0, columnspan=2,
+            padx=30, pady=8, sticky="ew",
+        )
+        history_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            history_frame,
+            text="CLIPBOARD HISTORY",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=0, padx=15, pady=(15, 8), sticky="w")
+
+        history_buttons = ctk.CTkFrame(
+            history_frame,
+            fg_color="transparent",
+        )
+        history_buttons.grid(
+            row=0, column=1,
+            padx=15, pady=(10, 5), sticky="e",
+        )
+
+        ctk.CTkButton(
+            history_buttons,
+            text="↻ Refresh History",
+            width=130,
+            command=self.gui_refresh_clipboard_history,
+        ).grid(row=0, column=0, padx=5)
+
+        ctk.CTkButton(
+            history_buttons,
+            text="Clear History",
+            width=120,
+            command=self.gui_clear_clipboard_history,
+        ).grid(row=0, column=1, padx=5)
+
+        self.clipboard_history_box = ctk.CTkTextbox(
+            page,
+            font=("Arial", 13),
+        )
+        self.clipboard_history_box.grid(
+            row=4, column=0, columnspan=2,
+            padx=30, pady=(0, 10), sticky="nsew",
+        )
+        self.clipboard_history_box.configure(state="disabled")
+
+        self.clipboard_status_label = ctk.CTkLabel(
+            page,
+            text="Ready",
+            font=("Arial", 13),
+            wraplength=780,
+            justify="left",
+        )
+        self.clipboard_status_label.grid(
+            row=5, column=0, columnspan=2,
+            padx=30, pady=(0, 20), sticky="w",
+        )
+
+        self.gui_refresh_clipboard()
+        self.gui_refresh_clipboard_history()
+
+    def _set_clipboard_history_output(self, text):
+        self.clipboard_history_box.configure(state="normal")
+        self.clipboard_history_box.delete("1.0", "end")
+        self.clipboard_history_box.insert("end", str(text))
+        self.clipboard_history_box.configure(state="disabled")
+
+    def gui_refresh_clipboard(self):
+        result = get_clipboard_text()
+
+        self.clipboard_current_box.delete("1.0", "end")
+        self.clipboard_current_box.insert("end", result)
+
+        self.clipboard_status_label.configure(
+            text="Clipboard refreshed.",
+        )
+
+    def gui_copy_clipboard(self):
+        text = self.clipboard_copy_box.get("1.0", "end").strip()
+
+        if not text:
+            self.clipboard_status_label.configure(
+                text="Enter text to copy first.",
+            )
+            return
+
+        result = copy_to_clipboard(text)
+        self.clipboard_status_label.configure(text=result)
+
+        self.gui_refresh_clipboard()
+        self.gui_refresh_clipboard_history()
+
+        self.add_history(
+            "Copy to clipboard",
+            result,
+            source="GUI",
+        )
+
+    def gui_clear_clipboard(self):
+        result = clear_clipboard()
+        self.clipboard_status_label.configure(text=result)
+        self.gui_refresh_clipboard()
+
+        self.add_history(
+            "Clear clipboard",
+            result,
+            source="GUI",
+        )
+
+    def gui_refresh_clipboard_history(self):
+        result = show_clipboard_history(limit=50)
+        self._set_clipboard_history_output(result)
+
+    def gui_clear_clipboard_history(self):
+        confirmed = messagebox.askyesno(
+            "Clear Clipboard History",
+            "Delete all saved clipboard history?",
+            parent=self,
+        )
+
+        if not confirmed:
+            return
+
+        result = clear_clipboard_history()
+        self.clipboard_status_label.configure(text=result)
+        self.gui_refresh_clipboard_history()
+
+        self.add_history(
+            "Clear clipboard history",
+            result,
+            source="GUI",
+        )
 
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
