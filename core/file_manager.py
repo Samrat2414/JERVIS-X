@@ -89,6 +89,37 @@ def find_files(search_text):
         return f"I could not search files: {error}"
 
 
+def open_matching_file(search_text):
+    search_text = search_text.lower().strip()
+
+    if not search_text:
+        return "Please tell me what file you want to open."
+
+    search_locations = [
+        HOME / "Desktop",
+        HOME / "Documents",
+        HOME / "Downloads",
+    ]
+
+    try:
+        for location in search_locations:
+            if not location.exists():
+                continue
+
+            for root, dirs, files in os.walk(location):
+                for filename in files:
+                    if search_text in filename.lower():
+                        filepath = Path(root) / filename
+                        os.startfile(filepath)
+
+                        return f"Opening {filename}."
+
+        return f"No file found matching {search_text}."
+
+    except Exception as error:
+        return f"I could not open the file: {error}"
+
+
 def create_folder(folder_name, location="documents"):
     folder_name = folder_name.strip()
 

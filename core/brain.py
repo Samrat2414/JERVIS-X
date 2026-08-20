@@ -7,6 +7,7 @@ from core.file_manager import (
     list_files,
     find_files,
     create_folder,
+    open_matching_file,
 )
 from core.automation import (
     open_website,
@@ -143,6 +144,15 @@ def process_command(command):
             return f"Your {key} is {value}."
 
         return f"I don't remember your {key} yet."
+
+    # Step 13: Open matching files
+    if command.startswith("open my "):
+        search_text = original_command[len("open my "):].strip()
+        return open_matching_file(search_text)
+
+    if command.startswith("open file "):
+        search_text = original_command[len("open file "):].strip()
+        return open_matching_file(search_text)
 
     # Step 12: Smart File Manager
     if command.startswith("find "):
