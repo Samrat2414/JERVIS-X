@@ -15,6 +15,19 @@ from core.reminders import (
 )
 from core.tasks import add_task, show_tasks, complete_task, delete_completed_tasks
 from core.notes import add_note, show_notes, search_notes
+from core.automation import (
+    open_website,
+    open_application,
+    take_screenshot,
+    volume_up,
+    volume_down,
+    mute_volume,
+    unmute_volume,
+    battery_status,
+    wifi_status,
+    system_info,
+    lock_pc,
+)
 from core.file_manager import (
     list_files,
     find_files,
@@ -112,7 +125,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 21 • GUI Smart File Manager",
+            text="JERVIS X\nStep 22 • GUI Automation Center",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -142,11 +155,7 @@ class JervisApp(ctk.CTk):
         self.create_reminders_page()
         self.create_voice_page()
 
-        self.create_placeholder_page(
-            "Automation",
-            "Automation Center",
-            "PC automation commands are active through JERVIS Chat and Voice.",
-        )
+        self.create_automation_page()
         self.create_files_page()
         self.create_placeholder_page(
             "Settings",
@@ -1176,6 +1185,241 @@ class JervisApp(ctk.CTk):
             result,
         )
         self.refresh_reminders_page()
+
+    def create_automation_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Automation"] = page
+
+        page.grid_columnconfigure((0, 1), weight=1)
+        page.grid_rowconfigure(5, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS AUTOMATION CENTER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Quick controls for websites, apps, audio and system actions.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(0, 18),
+            sticky="w",
+        )
+
+        web_frame = ctk.CTkFrame(page)
+        web_frame.grid(
+            row=2,
+            column=0,
+            padx=(30, 10),
+            pady=8,
+            sticky="nsew",
+        )
+
+        ctk.CTkLabel(
+            web_frame,
+            text="WEB & APPS",
+            font=("Arial", 18, "bold"),
+        ).pack(pady=(15, 10))
+
+        for label, action in [
+            ("Open Google", lambda: self.gui_run_automation(open_website, "google")),
+            ("Open YouTube", lambda: self.gui_run_automation(open_website, "youtube")),
+            ("Open GitHub", lambda: self.gui_run_automation(open_website, "github")),
+            ("Open Notepad", lambda: self.gui_run_automation(open_application, "notepad")),
+            ("Open Calculator", lambda: self.gui_run_automation(open_application, "calculator")),
+        ]:
+            ctk.CTkButton(
+                web_frame,
+                text=label,
+                height=42,
+                command=action,
+            ).pack(
+                padx=18,
+                pady=6,
+                fill="x",
+            )
+
+        audio_frame = ctk.CTkFrame(page)
+        audio_frame.grid(
+            row=2,
+            column=1,
+            padx=(10, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        ctk.CTkLabel(
+            audio_frame,
+            text="AUDIO CONTROL",
+            font=("Arial", 18, "bold"),
+        ).pack(pady=(15, 10))
+
+        for label, func in [
+            ("Volume Up", volume_up),
+            ("Volume Down", volume_down),
+            ("Mute", mute_volume),
+            ("Unmute", unmute_volume),
+        ]:
+            ctk.CTkButton(
+                audio_frame,
+                text=label,
+                height=42,
+                command=lambda f=func: self.gui_run_automation(f),
+            ).pack(
+                padx=18,
+                pady=6,
+                fill="x",
+            )
+
+        tools_frame = ctk.CTkFrame(page)
+        tools_frame.grid(
+            row=3,
+            column=0,
+            padx=(30, 10),
+            pady=8,
+            sticky="nsew",
+        )
+
+        ctk.CTkLabel(
+            tools_frame,
+            text="TOOLS",
+            font=("Arial", 18, "bold"),
+        ).pack(pady=(15, 10))
+
+        ctk.CTkButton(
+            tools_frame,
+            text="Take Screenshot",
+            height=42,
+            command=lambda: self.gui_run_automation(take_screenshot),
+        ).pack(
+            padx=18,
+            pady=6,
+            fill="x",
+        )
+
+        ctk.CTkButton(
+            tools_frame,
+            text="Lock PC",
+            height=42,
+            command=self.gui_lock_pc,
+        ).pack(
+            padx=18,
+            pady=6,
+            fill="x",
+        )
+
+        status_frame = ctk.CTkFrame(page)
+        status_frame.grid(
+            row=3,
+            column=1,
+            padx=(10, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        ctk.CTkLabel(
+            status_frame,
+            text="SYSTEM STATUS",
+            font=("Arial", 18, "bold"),
+        ).pack(pady=(15, 10))
+
+        for label, func in [
+            ("Battery Status", battery_status),
+            ("Wi-Fi Status", wifi_status),
+            ("System Info", system_info),
+        ]:
+            ctk.CTkButton(
+                status_frame,
+                text=label,
+                height=42,
+                command=lambda f=func: self.gui_run_automation(f),
+            ).pack(
+                padx=18,
+                pady=6,
+                fill="x",
+            )
+
+        result_frame = ctk.CTkFrame(page)
+        result_frame.grid(
+            row=4,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(10, 8),
+            sticky="ew",
+        )
+        result_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            result_frame,
+            text="AUTOMATION RESULT",
+            font=("Arial", 16, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(12, 4),
+            sticky="w",
+        )
+
+        self.automation_status_label = ctk.CTkLabel(
+            result_frame,
+            text="Ready",
+            font=("Arial", 14),
+            wraplength=760,
+            justify="left",
+        )
+        self.automation_status_label.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 12),
+            sticky="w",
+        )
+
+    def gui_run_automation(self, func, *args):
+        try:
+            result = func(*args)
+
+            if result is None:
+                result = "Action completed."
+
+            self.automation_status_label.configure(
+                text=str(result),
+            )
+
+            self.add_history(
+                "Automation",
+                str(result),
+            )
+
+        except Exception as error:
+            self.automation_status_label.configure(
+                text=f"Automation error: {error}",
+            )
+
+    def gui_lock_pc(self):
+        confirmed = messagebox.askyesno(
+            "Lock PC",
+            "Do you want JERVIS to lock this PC now?",
+            parent=self,
+        )
+
+        if confirmed:
+            self.gui_run_automation(lock_pc)
 
     def create_files_page(self):
         page = ctk.CTkFrame(self.page_container)
