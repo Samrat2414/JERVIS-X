@@ -15,6 +15,11 @@ from core.reminders import (
 )
 from core.tasks import add_task, show_tasks, complete_task, delete_completed_tasks
 from core.notes import add_note, show_notes, search_notes
+from core.settings import (
+    get_all_settings,
+    set_setting,
+    reset_settings,
+)
 from core.automation import (
     open_website,
     open_application,
@@ -63,16 +68,31 @@ class JervisApp(ctk.CTk):
         self.wake_word_enabled = False
         self.wake_word_busy = False
 
+        self.app_settings = get_all_settings()
+
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
         self.create_sidebar()
         self.create_pages()
-        self.show_page("Dashboard")
+
+        start_page = (
+            "Dashboard"
+            if self.app_settings.get("start_on_dashboard", True)
+            else "Chat"
+        )
+        self.show_page(start_page)
 
         self.update_dashboard()
         self.animate_orb()
         self.check_due_reminders()
+        self.apply_voice_settings()
+
+        if (
+            self.app_settings.get("wake_word_enabled", False)
+            and self.app_settings.get("voice_enabled", True)
+        ):
+            self.after(1200, self.toggle_wake_word_mode)
 
     def create_sidebar(self):
         self.sidebar = ctk.CTkFrame(
@@ -125,7 +145,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 22 • GUI Automation Center",
+            text="JERVIS X\nStep 23 • Persistent Settings",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -157,11 +177,7 @@ class JervisApp(ctk.CTk):
 
         self.create_automation_page()
         self.create_files_page()
-        self.create_placeholder_page(
-            "Settings",
-            "JERVIS Settings",
-            "Themes, voice, memory and preferences will appear here.",
-        )
+        self.create_settings_page()
 
     def create_dashboard_page(self):
         page = ctk.CTkFrame(self.page_container)
@@ -1857,6 +1873,350 @@ class JervisApp(ctk.CTk):
             pady=15,
         )
 
+    def create_settings_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Settings"] = page
+
+        page.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SETTINGS",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Your preferences are saved and restored when JERVIS starts.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            padx=30,
+            pady=(0, 18),
+            sticky="w",
+        )
+
+        settings_frame = ctk.CTkFrame(page)
+        settings_frame.grid(
+            row=2,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="ew",
+        )
+        settings_frame.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            settings_frame,
+            text="User Name",
+            font=("Arial", 15, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=18,
+            pady=(18, 10),
+            sticky="w",
+        )
+
+        self.settings_user_name_entry = ctk.CTkEntry(
+            settings_frame,
+            placeholder_text="Your name",
+            height=42,
+        )
+        self.settings_user_name_entry.grid(
+            row=0,
+            column=1,
+            padx=18,
+            pady=(18, 10),
+            sticky="ew",
+        )
+
+        saved_name = self.app_settings.get("user_name", "")
+        if saved_name:
+            self.settings_user_name_entry.insert(0, saved_name)
+
+        self.voice_enabled_var = ctk.BooleanVar(
+            value=self.app_settings.get("voice_enabled", True)
+        )
+        self.wake_word_pref_var = ctk.BooleanVar(
+            value=self.app_settings.get("wake_word_enabled", False)
+        )
+        self.start_dashboard_var = ctk.BooleanVar(
+            value=self.app_settings.get("start_on_dashboard", True)
+        )
+        self.speak_ai_var = ctk.BooleanVar(
+            value=self.app_settings.get("speak_ai_responses", True)
+        )
+
+        self.voice_enabled_switch = ctk.CTkSwitch(
+            settings_frame,
+            text="Voice features enabled",
+            variable=self.voice_enabled_var,
+            onvalue=True,
+            offvalue=False,
+            font=("Arial", 14),
+        )
+        self.voice_enabled_switch.grid(
+            row=1,
+            column=0,
+            columnspan=2,
+            padx=18,
+            pady=10,
+            sticky="w",
+        )
+
+        self.wake_word_pref_switch = ctk.CTkSwitch(
+            settings_frame,
+            text='Start Wake Word Mode automatically ("Hey Jervis")',
+            variable=self.wake_word_pref_var,
+            onvalue=True,
+            offvalue=False,
+            font=("Arial", 14),
+        )
+        self.wake_word_pref_switch.grid(
+            row=2,
+            column=0,
+            columnspan=2,
+            padx=18,
+            pady=10,
+            sticky="w",
+        )
+
+        self.speak_ai_switch = ctk.CTkSwitch(
+            settings_frame,
+            text="Speak voice/AI responses aloud",
+            variable=self.speak_ai_var,
+            onvalue=True,
+            offvalue=False,
+            font=("Arial", 14),
+        )
+        self.speak_ai_switch.grid(
+            row=3,
+            column=0,
+            columnspan=2,
+            padx=18,
+            pady=10,
+            sticky="w",
+        )
+
+        self.start_dashboard_switch = ctk.CTkSwitch(
+            settings_frame,
+            text="Start JERVIS on Dashboard",
+            variable=self.start_dashboard_var,
+            onvalue=True,
+            offvalue=False,
+            font=("Arial", 14),
+        )
+        self.start_dashboard_switch.grid(
+            row=4,
+            column=0,
+            columnspan=2,
+            padx=18,
+            pady=(10, 18),
+            sticky="w",
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(2, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="💾 Save Settings",
+            width=150,
+            height=44,
+            command=self.gui_save_settings,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 8),
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="↺ Reset Defaults",
+            width=150,
+            height=44,
+            command=self.gui_reset_settings,
+        ).grid(
+            row=0,
+            column=1,
+            padx=8,
+            pady=15,
+        )
+
+        self.settings_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.settings_status_label.grid(
+            row=0,
+            column=2,
+            padx=(10, 15),
+            pady=15,
+            sticky="e",
+        )
+
+        info_frame = ctk.CTkFrame(page)
+        info_frame.grid(
+            row=4,
+            column=0,
+            padx=30,
+            pady=(0, 30),
+            sticky="ew",
+        )
+
+        ctk.CTkLabel(
+            info_frame,
+            text=(
+                "Settings are stored locally in data/settings.json. "
+                "That data folder is ignored by Git, so your personal preferences "
+                "stay on your PC."
+            ),
+            font=("Arial", 13),
+            wraplength=780,
+            justify="left",
+        ).pack(
+            padx=18,
+            pady=18,
+            anchor="w",
+        )
+
+    def gui_save_settings(self):
+        user_name = self.settings_user_name_entry.get().strip()
+
+        values = {
+            "voice_enabled": bool(self.voice_enabled_var.get()),
+            "wake_word_enabled": bool(self.wake_word_pref_var.get()),
+            "start_on_dashboard": bool(self.start_dashboard_var.get()),
+            "speak_ai_responses": bool(self.speak_ai_var.get()),
+            "user_name": user_name,
+        }
+
+        failed = []
+
+        for key, value in values.items():
+            if not set_setting(key, value):
+                failed.append(key)
+
+        if failed:
+            self.settings_status_label.configure(
+                text="Could not save some settings.",
+            )
+            return
+
+        self.app_settings = get_all_settings()
+        self.apply_voice_settings()
+
+        self.settings_status_label.configure(
+            text="Settings saved.",
+        )
+
+        self.add_history(
+            "Settings",
+            "Persistent settings updated.",
+        )
+
+    def gui_reset_settings(self):
+        result = reset_settings()
+        self.app_settings = get_all_settings()
+
+        self.settings_user_name_entry.delete(0, "end")
+        if self.app_settings.get("user_name"):
+            self.settings_user_name_entry.insert(
+                0,
+                self.app_settings["user_name"],
+            )
+
+        self.voice_enabled_var.set(
+            self.app_settings.get("voice_enabled", True)
+        )
+        self.wake_word_pref_var.set(
+            self.app_settings.get("wake_word_enabled", False)
+        )
+        self.start_dashboard_var.set(
+            self.app_settings.get("start_on_dashboard", True)
+        )
+        self.speak_ai_var.set(
+            self.app_settings.get("speak_ai_responses", True)
+        )
+
+        self.apply_voice_settings()
+
+        self.settings_status_label.configure(
+            text=result,
+        )
+
+    def apply_voice_settings(self):
+        voice_enabled = self.app_settings.get(
+            "voice_enabled",
+            True,
+        )
+
+        if not voice_enabled:
+            if self.continuous_voice_enabled:
+                self.stop_continuous_voice(
+                    "Continuous voice mode stopped by Settings.",
+                )
+
+            if self.wake_word_enabled:
+                self.stop_wake_word_mode()
+
+            if hasattr(self, "voice_button"):
+                self.voice_button.configure(state="disabled")
+
+            if hasattr(self, "continuous_button"):
+                self.continuous_button.configure(state="disabled")
+
+            if hasattr(self, "wake_word_button"):
+                self.wake_word_button.configure(state="disabled")
+
+            if hasattr(self, "voice_status_label"):
+                self.voice_status_label.configure(
+                    text="Status: Voice disabled in Settings",
+                )
+
+        else:
+            if hasattr(self, "voice_button"):
+                self.voice_button.configure(state="normal")
+
+            if hasattr(self, "continuous_button"):
+                self.continuous_button.configure(state="normal")
+
+            if hasattr(self, "wake_word_button"):
+                self.wake_word_button.configure(state="normal")
+
+            if (
+                hasattr(self, "voice_status_label")
+                and not self.voice_busy
+                and not self.wake_word_enabled
+                and not self.continuous_voice_enabled
+            ):
+                self.voice_status_label.configure(
+                    text="Status: Ready",
+                )
+
+    def should_speak_responses(self):
+        return (
+            self.app_settings.get("voice_enabled", True)
+            and self.app_settings.get("speak_ai_responses", True)
+        )
+
     def create_placeholder_page(self, name, title_text, message):
         page = ctk.CTkFrame(self.page_container)
         self.pages[name] = page
@@ -2124,7 +2484,7 @@ class JervisApp(ctk.CTk):
             response,
         )
 
-        if speak_response:
+        if speak_response and self.should_speak_responses():
             self.set_orb_state(
                 "SPEAKING",
             )
@@ -2144,12 +2504,18 @@ class JervisApp(ctk.CTk):
                 "RESPONDING",
             )
 
-            self.after(
-                800,
-                lambda: self.set_orb_state(
-                    "IDLE",
-                ),
-            )
+            if speak_response:
+                self.after(
+                    250,
+                    self.voice_cycle_complete,
+                )
+            else:
+                self.after(
+                    800,
+                    lambda: self.set_orb_state(
+                        "IDLE",
+                    ),
+                )
 
     def speak_worker(self, response):
         try:
@@ -2192,6 +2558,13 @@ class JervisApp(ctk.CTk):
             )
 
     def start_voice_command(self):
+        if not self.app_settings.get("voice_enabled", True):
+            if hasattr(self, "voice_status_label"):
+                self.voice_status_label.configure(
+                    text="Status: Voice disabled in Settings",
+                )
+            return
+
         if self.voice_busy:
             return
 
@@ -2217,6 +2590,13 @@ class JervisApp(ctk.CTk):
         ).start()
 
     def toggle_continuous_voice(self):
+        if not self.app_settings.get("voice_enabled", True):
+            if hasattr(self, "voice_status_label"):
+                self.voice_status_label.configure(
+                    text="Status: Voice disabled in Settings",
+                )
+            return
+
         if self.continuous_voice_enabled:
             self.stop_continuous_voice(
                 "Continuous voice mode stopped.",
@@ -2374,6 +2754,13 @@ class JervisApp(ctk.CTk):
         )
 
     def toggle_wake_word_mode(self):
+        if not self.app_settings.get("voice_enabled", True):
+            if hasattr(self, "voice_status_label"):
+                self.voice_status_label.configure(
+                    text="Status: Voice disabled in Settings",
+                )
+            return
+
         if self.wake_word_enabled:
             self.stop_wake_word_mode()
             return
@@ -2516,14 +2903,18 @@ class JervisApp(ctk.CTk):
     def finish_wake_response(self, command, response):
         self.add_message("JERVIS", response)
         self.add_history(command, response)
-        self.set_orb_state("SPEAKING")
-        self.voice_status_label.configure(text="Status: Speaking")
 
-        threading.Thread(
-            target=self.wake_speak_worker,
-            args=(response,),
-            daemon=True,
-        ).start()
+        if self.should_speak_responses():
+            self.set_orb_state("SPEAKING")
+            self.voice_status_label.configure(text="Status: Speaking")
+
+            threading.Thread(
+                target=self.wake_speak_worker,
+                args=(response,),
+                daemon=True,
+            ).start()
+        else:
+            self.after(250, self.wake_response_complete)
 
     def wake_speak_worker(self, response):
         try:
