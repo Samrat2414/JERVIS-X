@@ -23,6 +23,12 @@ from core.news import get_news
 from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
+from core.network_monitor import (
+    is_internet_connected,
+    get_local_ip,
+    get_network_io,
+    get_active_interfaces,
+)
 from core.system_monitor import (
     get_cpu_usage,
     get_ram_usage,
@@ -343,6 +349,7 @@ class JervisApp(ctk.CTk):
             "Smart File Finder",
             "Screen Tools",
             "System Monitor",
+            "Network Monitor",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -358,7 +365,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 43 • Live System Monitor",
+            text="JERVIS X\nStep 44 • Live Network Monitor",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -399,6 +406,7 @@ class JervisApp(ctk.CTk):
         self.create_smart_file_finder_page()
         self.create_screen_tools_page()
         self.create_system_monitor_page()
+        self.create_network_monitor_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -5427,6 +5435,278 @@ class JervisApp(ctk.CTk):
                 self.gui_refresh_system_monitor()
         finally:
             self.after(3000, self.system_monitor_auto_refresh)
+
+    def create_network_monitor_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Network Monitor"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(4, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS LIVE NETWORK MONITOR",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Monitor internet connection, local IP, network traffic and active interfaces.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.network_status_card = self.create_info_card(
+            page,
+            "INTERNET",
+            "--",
+        )
+        self.network_status_card["frame"].grid(
+            row=2,
+            column=0,
+            padx=(30, 6),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.network_ip_card = self.create_info_card(
+            page,
+            "LOCAL IP",
+            "--",
+        )
+        self.network_ip_card["frame"].grid(
+            row=2,
+            column=1,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.network_sent_card = self.create_info_card(
+            page,
+            "DATA SENT",
+            "-- MB",
+        )
+        self.network_sent_card["frame"].grid(
+            row=2,
+            column=2,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.network_received_card = self.create_info_card(
+            page,
+            "DATA RECEIVED",
+            "-- MB",
+        )
+        self.network_received_card["frame"].grid(
+            row=2,
+            column=3,
+            padx=(6, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        detail_frame = ctk.CTkFrame(page)
+        detail_frame.grid(
+            row=3,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(8, 12),
+            sticky="ew",
+        )
+        detail_frame.grid_columnconfigure(0, weight=1)
+
+        self.network_detail_label = ctk.CTkLabel(
+            detail_frame,
+            text="Loading network information...",
+            font=("Arial", 13),
+            justify="left",
+            wraplength=900,
+        )
+        self.network_detail_label.grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=12,
+            sticky="w",
+        )
+
+        interface_frame = ctk.CTkFrame(page)
+        interface_frame.grid(
+            row=4,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(0, 12),
+            sticky="nsew",
+        )
+        interface_frame.grid_columnconfigure(0, weight=1)
+        interface_frame.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            interface_frame,
+            text="ACTIVE NETWORK INTERFACES",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.network_interfaces_box = ctk.CTkTextbox(
+            interface_frame,
+            font=("Arial", 13),
+        )
+        self.network_interfaces_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.network_interfaces_box.configure(state="disabled")
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=5,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(0, 20),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(2, weight=1)
+
+        self.network_auto_var = ctk.BooleanVar(value=True)
+
+        ctk.CTkSwitch(
+            controls,
+            text="Auto Refresh",
+            variable=self.network_auto_var,
+            onvalue=True,
+            offvalue=False,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 10),
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Now",
+            width=120,
+            command=self.gui_refresh_network_monitor,
+        ).grid(
+            row=0,
+            column=1,
+            padx=5,
+            pady=12,
+        )
+
+        self.network_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.network_status_label.grid(
+            row=0,
+            column=2,
+            padx=(10, 15),
+            pady=12,
+            sticky="e",
+        )
+
+        self.gui_refresh_network_monitor()
+        self.after(5000, self.network_monitor_auto_refresh)
+
+    def _set_network_interfaces(self, text):
+        self.network_interfaces_box.configure(state="normal")
+        self.network_interfaces_box.delete("1.0", "end")
+        self.network_interfaces_box.insert("end", str(text))
+        self.network_interfaces_box.configure(state="disabled")
+
+    def gui_refresh_network_monitor(self):
+        try:
+            connected = is_internet_connected()
+            local_ip = get_local_ip()
+            io = get_network_io()
+            interfaces = get_active_interfaces()
+
+            self.network_status_card["value"].configure(
+                text="Connected" if connected else "Disconnected"
+            )
+            self.network_ip_card["value"].configure(
+                text=str(local_ip)
+            )
+            self.network_sent_card["value"].configure(
+                text=f"{io['mb_sent']} MB"
+            )
+            self.network_received_card["value"].configure(
+                text=f"{io['mb_received']} MB"
+            )
+
+            if interfaces:
+                lines = []
+                for number, interface in enumerate(
+                    interfaces,
+                    start=1,
+                ):
+                    lines.append(
+                        f"{number}. {interface['name']}\n"
+                        f"   IP: {interface['ip']}\n"
+                        f"   Speed: {interface['speed']} Mbps"
+                    )
+                interface_text = "\n\n".join(lines)
+            else:
+                interface_text = "No active network interfaces found."
+
+            self._set_network_interfaces(interface_text)
+
+            self.network_detail_label.configure(
+                text=(
+                    f"Connection: {'Online' if connected else 'Offline'}\n"
+                    f"Local IP: {local_ip}\n"
+                    f"Total Sent: {io['mb_sent']} MB\n"
+                    f"Total Received: {io['mb_received']} MB"
+                )
+            )
+
+            self.network_status_label.configure(
+                text="Network data refreshed."
+            )
+
+        except Exception as error:
+            self.network_status_label.configure(
+                text=f"Network monitor error: {error}"
+            )
+
+    def network_monitor_auto_refresh(self):
+        try:
+            if (
+                hasattr(self, "network_auto_var")
+                and self.network_auto_var.get()
+            ):
+                self.gui_refresh_network_monitor()
+        finally:
+            self.after(5000, self.network_monitor_auto_refresh)
 
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
