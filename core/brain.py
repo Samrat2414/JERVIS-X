@@ -1,5 +1,10 @@
 from datetime import datetime
 
+from core.storage_analyzer import (
+    get_storage_summary,
+    get_largest_files_summary,
+    get_file_types_summary,
+)
 from core.network_monitor import (
     is_internet_connected,
     get_local_ip,
@@ -717,6 +722,44 @@ def process_command(command):
     if command.startswith("search youtube "):
         query = original_command[len("search youtube "):].strip()
         return search_youtube(query)
+
+    # Step 45: PC Storage Analyzer
+    if command in [
+        "storage status",
+        "storage report",
+        "disk storage",
+        "storage usage",
+    ]:
+        return get_storage_summary()
+
+    if command in [
+        "largest files",
+        "show largest files",
+        "biggest files",
+        "large files",
+    ]:
+        return get_largest_files_summary()
+
+    if command in [
+        "file type statistics",
+        "file types",
+        "storage file types",
+        "file type report",
+    ]:
+        return get_file_types_summary()
+
+    if command in [
+        "full storage report",
+        "storage analysis",
+        "analyze storage",
+    ]:
+        return (
+            get_storage_summary()
+            + "\n\nLargest Files:\n"
+            + get_largest_files_summary()
+            + "\n\nFile Types:\n"
+            + get_file_types_summary()
+        )
 
     # Step 44: Network Monitor
     if command in [
