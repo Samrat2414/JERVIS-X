@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from core.security_tools import generate_password_text
 from core.ai_brain import ask_ai, clear_conversation
 from core.intent import detect_intent
 from core.memory import remember, recall, remember_fact, recall_fact
@@ -590,6 +591,20 @@ def process_command(command):
 
     if command in ["system info", "system information", "pc status"]:
         return system_info()
+
+    # Step 37: Password Generator
+    if command == "generate password":
+        return generate_password_text(16)
+
+    if command.startswith("generate password "):
+        length_text = original_command[len("generate password "):].strip()
+
+        try:
+            length = int(length_text)
+        except ValueError:
+            return "Use: generate password 20"
+
+        return generate_password_text(length)
 
     # Step 35: Clipboard Manager
     if command in [
