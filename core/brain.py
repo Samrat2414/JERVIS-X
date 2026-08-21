@@ -1,6 +1,14 @@
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
+from core.command_analytics import (
+    record_command,
+    get_analytics_report,
+    get_most_used_commands,
+    get_recent_commands,
+    get_session_statistics,
+    reset_session,
+)
 from core.logger import (
     log_command,
     log_action,
@@ -140,7 +148,44 @@ def process_command(command):
     command = original_command.lower()
 
     log_command(original_command)
+    record_command(original_command)
 
+
+    # Step 49: Command History & Analytics
+    if command in [
+        "command analytics",
+        "analytics report",
+        "command statistics",
+        "show command analytics",
+    ]:
+        return get_analytics_report()
+
+    if command in [
+        "most used commands",
+        "top commands",
+        "popular commands",
+    ]:
+        return get_most_used_commands(10)
+
+    if command in [
+        "recent commands",
+        "show recent commands",
+        "command history",
+    ]:
+        return get_recent_commands(10)
+
+    if command in [
+        "session statistics",
+        "session stats",
+        "show session statistics",
+    ]:
+        return get_session_statistics()
+
+    if command in [
+        "reset session statistics",
+        "reset session stats",
+    ]:
+        return reset_session()
 
     # Step 47: JERVIS Self-Diagnostics
     if command in [
