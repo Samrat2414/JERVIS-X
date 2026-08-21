@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from core.diagnostics import get_diagnostics_report
 from core.process_manager import (
     show_processes,
     search_processes,
@@ -123,6 +124,19 @@ from core.engineering import (
 def process_command(command):
     original_command = command.strip()
     command = original_command.lower()
+
+    # Step 47: JERVIS Self-Diagnostics
+    if command in [
+        "run diagnostics",
+        "system diagnostics",
+        "self diagnostics",
+        "diagnostics",
+        "health check",
+        "system health",
+        "jervis health",
+        "jervis status",
+    ]:
+        return get_diagnostics_report()
 
     # Step 46: Process Manager
     if command in [
