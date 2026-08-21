@@ -24,6 +24,12 @@ from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
 from core.diagnostics import run_diagnostics
+from core.performance_monitor import (
+    get_latest_startup_time,
+    get_average_startup_time,
+    get_session_uptime,
+    get_slow_operations_summary,
+)
 from core.security_lock import (
     is_security_enabled,
     enable_security,
@@ -394,6 +400,7 @@ class JervisApp(ctk.CTk):
             "Analytics",
             "Backup & Restore",
             "Security",
+            "Performance",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -409,7 +416,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 51 • Security & App Lock",
+            text="JERVIS X\nStep 52 • Performance Monitor",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -458,6 +465,7 @@ class JervisApp(ctk.CTk):
         self.create_analytics_page()
         self.create_backup_restore_page()
         self.create_security_page()
+        self.create_performance_page()
         self.after(300, self.show_startup_lock_if_needed)
         self.create_voice_page()
 
@@ -8031,6 +8039,146 @@ class JervisApp(ctk.CTk):
             "<Return>",
             lambda event: unlock(),
         )
+
+    def create_performance_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Performance"] = page
+        page.grid_columnconfigure((0, 1, 2), weight=1)
+        page.grid_rowconfigure(4, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS PERFORMANCE MONITOR",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Track startup speed, average startup time, session uptime and slow operations.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.performance_latest_card = self.create_info_card(
+            page, "LATEST STARTUP", "--"
+        )
+        self.performance_latest_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.performance_average_card = self.create_info_card(
+            page, "AVERAGE STARTUP", "--"
+        )
+        self.performance_average_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.performance_uptime_card = self.create_info_card(
+            page, "SESSION UPTIME", "--"
+        )
+        self.performance_uptime_card["frame"].grid(
+            row=2, column=2, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3, column=0, columnspan=3,
+            padx=30, pady=(8, 12), sticky="ew"
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Performance",
+            width=160,
+            height=42,
+            command=self.gui_refresh_performance,
+        ).grid(
+            row=0, column=0, padx=(15, 6), pady=12
+        )
+
+        self.performance_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.performance_status_label.grid(
+            row=0, column=1, padx=(10, 15), pady=12, sticky="e"
+        )
+
+        slow_frame = ctk.CTkFrame(page)
+        slow_frame.grid(
+            row=4, column=0, columnspan=3,
+            padx=30, pady=(0, 20), sticky="nsew"
+        )
+        slow_frame.grid_columnconfigure(0, weight=1)
+        slow_frame.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            slow_frame,
+            text="SLOW OPERATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=0, padx=15, pady=(15, 8), sticky="w"
+        )
+
+        self.performance_slow_box = ctk.CTkTextbox(
+            slow_frame,
+            font=("Consolas", 12),
+        )
+        self.performance_slow_box.grid(
+            row=1, column=0, padx=15, pady=(0, 15), sticky="nsew"
+        )
+        self.performance_slow_box.configure(state="disabled")
+
+        self.gui_refresh_performance()
+
+    def _set_performance_output(self, text):
+        self.performance_slow_box.configure(state="normal")
+        self.performance_slow_box.delete("1.0", "end")
+        self.performance_slow_box.insert("end", str(text))
+        self.performance_slow_box.configure(state="disabled")
+
+    def gui_refresh_performance(self):
+        try:
+            latest = get_latest_startup_time()
+            average = get_average_startup_time()
+            uptime = get_session_uptime()
+            slow_operations = get_slow_operations_summary(10)
+
+            self.performance_latest_card["value"].configure(
+                text=f"{latest} s" if latest is not None else "Not recorded"
+            )
+            self.performance_average_card["value"].configure(
+                text=f"{average} s" if average is not None else "Not available"
+            )
+            self.performance_uptime_card["value"].configure(
+                text=f"{uptime} s"
+            )
+
+            self._set_performance_output(slow_operations)
+
+            self.performance_status_label.configure(
+                text="Performance data refreshed."
+            )
+
+        except Exception as error:
+            self.performance_status_label.configure(
+                text=f"Performance monitor error: {error}"
+            )
 
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
