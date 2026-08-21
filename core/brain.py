@@ -3,6 +3,12 @@ from datetime import datetime
 from core.security_tools import generate_password_text
 from core.qr_generator import generate_qr_text
 from core.translator import translate_text_response
+from core.smart_file_finder import (
+    search_files,
+    search_extension,
+    open_file_by_name,
+    open_folder_of_file,
+)
 from core.tts_studio import (
     speak_text,
     stop_speaking,
@@ -87,6 +93,53 @@ from core.engineering import (
 def process_command(command):
     original_command = command.strip()
     command = original_command.lower()
+
+    # Step 41: Smart File Finder
+    if command.startswith("find file "):
+        search_text = original_command[len("find file "):].strip()
+
+        if not search_text:
+            return "Use: find file resume"
+
+        return search_files(search_text)
+
+    extension_commands = {
+        "find python files": "py",
+        "find pdf files": "pdf",
+        "find text files": "txt",
+        "find word files": "docx",
+        "find excel files": "xlsx",
+        "find image files": "png",
+    }
+
+    if command in extension_commands:
+        return search_extension(
+            extension_commands[command]
+        )
+
+    if command.startswith("find files "):
+        extension = original_command[len("find files "):].strip()
+
+        if not extension:
+            return "Use: find files pdf"
+
+        return search_extension(extension)
+
+    if command.startswith("open folder of "):
+        search_text = original_command[len("open folder of "):].strip()
+
+        if not search_text:
+            return "Use: open folder of resume"
+
+        return open_folder_of_file(search_text)
+
+    if command.startswith("open file "):
+        search_text = original_command[len("open file "):].strip()
+
+        if not search_text:
+            return "Use: open file resume"
+
+        return open_file_by_name(search_text)
 
     # Step 40: Translation System
     # Step 40: Arrow-style translation
