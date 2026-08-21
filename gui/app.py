@@ -19,6 +19,7 @@ from core.tasks import add_task, show_tasks, complete_task, delete_completed_tas
 from core.notes import add_note, show_notes, search_notes
 from core.weather import get_weather_data
 from core.news import get_news
+from core.security_tools import generate_password
 from core.clipboard_manager import (
     get_clipboard_text,
     copy_to_clipboard,
@@ -304,6 +305,7 @@ class JervisApp(ctk.CTk):
             "Web Search",
             "System Control",
             "Clipboard",
+            "Password Generator",
             "Voice",
             "Automation",
             "Files",
@@ -322,7 +324,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 36 • Clipboard Manager",
+            text="JERVIS X\nStep 37 • Password Generator",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -356,6 +358,7 @@ class JervisApp(ctk.CTk):
         self.create_web_search_page()
         self.create_system_control_page()
         self.create_clipboard_page()
+        self.create_password_generator_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -3245,6 +3248,282 @@ class JervisApp(ctk.CTk):
         self.add_history(
             "Clear clipboard history",
             result,
+            source="GUI",
+        )
+
+    def create_password_generator_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Password Generator"] = page
+        page.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS PASSWORD GENERATOR",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Generate secure passwords with custom options.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        options = ctk.CTkFrame(page)
+        options.grid(
+            row=2,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="ew",
+        )
+        options.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            options,
+            text="Password Length",
+            font=("Arial", 15, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=18,
+            pady=(18, 10),
+            sticky="w",
+        )
+
+        self.password_length_entry = ctk.CTkEntry(
+            options,
+            width=120,
+            height=42,
+        )
+        self.password_length_entry.grid(
+            row=0,
+            column=1,
+            padx=18,
+            pady=(18, 10),
+            sticky="w",
+        )
+        self.password_length_entry.insert(0, "16")
+
+        self.password_upper_var = ctk.BooleanVar(value=True)
+        self.password_lower_var = ctk.BooleanVar(value=True)
+        self.password_number_var = ctk.BooleanVar(value=True)
+        self.password_symbol_var = ctk.BooleanVar(value=True)
+
+        ctk.CTkSwitch(
+            options,
+            text="Uppercase letters",
+            variable=self.password_upper_var,
+            onvalue=True,
+            offvalue=False,
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=2,
+            padx=18,
+            pady=8,
+            sticky="w",
+        )
+
+        ctk.CTkSwitch(
+            options,
+            text="Lowercase letters",
+            variable=self.password_lower_var,
+            onvalue=True,
+            offvalue=False,
+        ).grid(
+            row=2,
+            column=0,
+            columnspan=2,
+            padx=18,
+            pady=8,
+            sticky="w",
+        )
+
+        ctk.CTkSwitch(
+            options,
+            text="Numbers",
+            variable=self.password_number_var,
+            onvalue=True,
+            offvalue=False,
+        ).grid(
+            row=3,
+            column=0,
+            columnspan=2,
+            padx=18,
+            pady=8,
+            sticky="w",
+        )
+
+        ctk.CTkSwitch(
+            options,
+            text="Symbols",
+            variable=self.password_symbol_var,
+            onvalue=True,
+            offvalue=False,
+        ).grid(
+            row=4,
+            column=0,
+            columnspan=2,
+            padx=18,
+            pady=(8, 18),
+            sticky="w",
+        )
+
+        ctk.CTkButton(
+            page,
+            text="🔐 Generate Password",
+            height=46,
+            command=self.gui_generate_password,
+        ).grid(
+            row=3,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="ew",
+        )
+
+        result_frame = ctk.CTkFrame(page)
+        result_frame.grid(
+            row=4,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="ew",
+        )
+        result_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            result_frame,
+            text="GENERATED PASSWORD",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.password_result_entry = ctk.CTkEntry(
+            result_frame,
+            height=46,
+            font=("Arial", 16),
+        )
+        self.password_result_entry.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 10),
+            sticky="ew",
+        )
+
+        self.password_strength_label = ctk.CTkLabel(
+            result_frame,
+            text="Strength: --",
+            font=("Arial", 15, "bold"),
+        )
+        self.password_strength_label.grid(
+            row=2,
+            column=0,
+            padx=15,
+            pady=(0, 10),
+            sticky="w",
+        )
+
+        ctk.CTkButton(
+            result_frame,
+            text="📋 Copy Password",
+            height=42,
+            command=self.gui_copy_generated_password,
+        ).grid(
+            row=3,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="ew",
+        )
+
+        self.password_status_label = ctk.CTkLabel(
+            page,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.password_status_label.grid(
+            row=5,
+            column=0,
+            padx=30,
+            pady=(0, 20),
+            sticky="w",
+        )
+
+    def gui_generate_password(self):
+        result = generate_password(
+            length=self.password_length_entry.get().strip(),
+            use_uppercase=bool(self.password_upper_var.get()),
+            use_lowercase=bool(self.password_lower_var.get()),
+            use_numbers=bool(self.password_number_var.get()),
+            use_symbols=bool(self.password_symbol_var.get()),
+        )
+
+        if not result.get("success"):
+            self.password_status_label.configure(
+                text=result.get(
+                    "error",
+                    "Password generation failed.",
+                ),
+            )
+            return
+
+        password = result["password"]
+        strength = result["strength"]
+
+        self.password_result_entry.delete(0, "end")
+        self.password_result_entry.insert(0, password)
+
+        self.password_strength_label.configure(
+            text=f"Strength: {strength}",
+        )
+
+        self.password_status_label.configure(
+            text="Password generated successfully.",
+        )
+
+        self.add_history(
+            "Generate password",
+            f"Generated {len(password)} character password.",
+            source="GUI",
+        )
+
+    def gui_copy_generated_password(self):
+        password = self.password_result_entry.get().strip()
+
+        if not password:
+            self.password_status_label.configure(
+                text="Generate a password first.",
+            )
+            return
+
+        result = copy_to_clipboard(password)
+
+        self.password_status_label.configure(
+            text=result,
+        )
+
+        self.add_history(
+            "Copy generated password",
+            "Password copied to clipboard.",
             source="GUI",
         )
 
