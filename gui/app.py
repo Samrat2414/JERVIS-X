@@ -24,6 +24,9 @@ from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
 from core.diagnostics import run_diagnostics
+from core.system_info import (
+    get_system_info,
+)
 from plugins.plugin_manager import (
     discover_plugins,
     get_plugin_status,
@@ -410,6 +413,7 @@ class JervisApp(ctk.CTk):
             "Security",
             "Performance",
             "Plugin Manager",
+            "System Information",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -425,7 +429,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 53 • Plugin Manager",
+            text="JERVIS X\nStep 54 • System Information",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -476,6 +480,7 @@ class JervisApp(ctk.CTk):
         self.create_security_page()
         self.create_performance_page()
         self.create_plugin_manager_page()
+        self.create_system_information_page()
         self.after(300, self.show_startup_lock_if_needed)
         self.create_voice_page()
 
@@ -8577,6 +8582,254 @@ class JervisApp(ctk.CTk):
         )
 
         self.gui_refresh_plugins()
+
+    def create_system_information_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["System Information"] = page
+        page.grid_columnconfigure((0, 1, 2), weight=1)
+        page.grid_rowconfigure(5, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SYSTEM INFORMATION CENTER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="View operating system, hardware, memory, Python environment and boot information.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.sysinfo_os_card = self.create_info_card(
+            page,
+            "OPERATING SYSTEM",
+            "--",
+        )
+        self.sysinfo_os_card["frame"].grid(
+            row=2,
+            column=0,
+            padx=(30, 6),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.sysinfo_host_card = self.create_info_card(
+            page,
+            "HOSTNAME",
+            "--",
+        )
+        self.sysinfo_host_card["frame"].grid(
+            row=2,
+            column=1,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.sysinfo_arch_card = self.create_info_card(
+            page,
+            "ARCHITECTURE",
+            "--",
+        )
+        self.sysinfo_arch_card["frame"].grid(
+            row=2,
+            column=2,
+            padx=(6, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.sysinfo_cpu_card = self.create_info_card(
+            page,
+            "CPU CORES",
+            "--",
+        )
+        self.sysinfo_cpu_card["frame"].grid(
+            row=3,
+            column=0,
+            padx=(30, 6),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.sysinfo_ram_card = self.create_info_card(
+            page,
+            "TOTAL RAM",
+            "--",
+        )
+        self.sysinfo_ram_card["frame"].grid(
+            row=3,
+            column=1,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.sysinfo_python_card = self.create_info_card(
+            page,
+            "PYTHON",
+            "--",
+        )
+        self.sysinfo_python_card["frame"].grid(
+            row=3,
+            column=2,
+            padx=(6, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=4,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(8, 12),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh System Info",
+            width=160,
+            height=42,
+            command=self.gui_refresh_system_information,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 6),
+            pady=12,
+        )
+
+        self.sysinfo_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.sysinfo_status_label.grid(
+            row=0,
+            column=1,
+            padx=(10, 15),
+            pady=12,
+            sticky="e",
+        )
+
+        details = ctk.CTkFrame(page)
+        details.grid(
+            row=5,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 20),
+            sticky="nsew",
+        )
+        details.grid_columnconfigure(0, weight=1)
+        details.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            details,
+            text="SYSTEM DETAILS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.sysinfo_details_box = ctk.CTkTextbox(
+            details,
+            font=("Consolas", 12),
+        )
+        self.sysinfo_details_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.sysinfo_details_box.configure(state="disabled")
+
+        self.gui_refresh_system_information()
+
+    def _set_system_information_output(self, text):
+        self.sysinfo_details_box.configure(state="normal")
+        self.sysinfo_details_box.delete("1.0", "end")
+        self.sysinfo_details_box.insert("end", str(text))
+        self.sysinfo_details_box.configure(state="disabled")
+
+    def gui_refresh_system_information(self):
+        try:
+            info = get_system_info()
+
+            self.sysinfo_os_card["value"].configure(
+                text=f"{info['os']} {info['os_release']}",
+            )
+            self.sysinfo_host_card["value"].configure(
+                text=info["hostname"],
+            )
+            self.sysinfo_arch_card["value"].configure(
+                text=info["architecture"],
+            )
+            self.sysinfo_cpu_card["value"].configure(
+                text=(
+                    f"{info['physical_cores']} physical / "
+                    f"{info['logical_cores']} logical"
+                ),
+            )
+            self.sysinfo_ram_card["value"].configure(
+                text=f"{info['total_ram_gb']} GB",
+            )
+            self.sysinfo_python_card["value"].configure(
+                text=info["python_version"],
+            )
+
+            details_text = (
+                "JERVIS SYSTEM INFORMATION\n\n"
+                f"Hostname: {info['hostname']}\n"
+                f"Operating System: {info['os']} {info['os_release']}\n"
+                f"OS Version: {info['os_version']}\n"
+                f"Architecture: {info['architecture']}\n\n"
+                f"Processor: {info['processor']}\n"
+                f"Physical CPU Cores: {info['physical_cores']}\n"
+                f"Logical CPU Cores: {info['logical_cores']}\n\n"
+                f"Total RAM: {info['total_ram_gb']} GB\n"
+                f"Available RAM: {info['available_ram_gb']} GB\n"
+                f"RAM Usage: {info['ram_usage_percent']}%\n\n"
+                f"Python Version: {info['python_version']}\n"
+                f"Python Executable: {info['python_executable']}\n\n"
+                f"System Boot Time: {info['boot_time']}"
+            )
+
+            self._set_system_information_output(
+                details_text,
+            )
+
+            self.sysinfo_status_label.configure(
+                text="System information refreshed.",
+            )
+
+        except Exception as error:
+            self.sysinfo_status_label.configure(
+                text=f"System information error: {error}",
+            )
 
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
