@@ -2,6 +2,11 @@ from datetime import datetime
 
 from core.security_tools import generate_password_text
 from core.qr_generator import generate_qr_text
+from core.tts_studio import (
+    speak_text,
+    stop_speaking,
+    save_speech_to_file,
+)
 from core.ai_brain import ask_ai, clear_conversation
 from core.intent import detect_intent
 from core.memory import remember, recall, remember_fact, recall_fact
@@ -81,6 +86,36 @@ from core.engineering import (
 def process_command(command):
     original_command = command.strip()
     command = original_command.lower()
+
+    # Step 39: Text-to-Speech Studio
+    if command.startswith("speak "):
+        text_to_speak = original_command[len("speak "):].strip()
+
+        if not text_to_speak:
+            return "Please provide some text to speak."
+
+        return speak_text(text_to_speak)
+
+    if command in [
+        "stop speaking",
+        "stop speech",
+        "stop talking",
+    ]:
+        return stop_speaking()
+
+    if command.startswith("save speech "):
+        speech_text = original_command[len("save speech "):].strip()
+
+        if not speech_text:
+            return "Please provide text to save as audio."
+
+        result = save_speech_to_file(speech_text)
+
+        if result.get("success"):
+            return result.get("message", "Audio saved.")
+
+        return result.get("error", "I could not save the audio.")
+
 
     if not command:
         return "Please enter a command."
