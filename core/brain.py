@@ -1,6 +1,11 @@
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
+from core.logger import (
+    log_command,
+    log_action,
+    log_error,
+)
 from core.process_manager import (
     show_processes,
     search_processes,
@@ -121,9 +126,21 @@ from core.engineering import (
 )
 
 
+def _log_and_return(action, response):
+    try:
+        log_action(action)
+    except Exception:
+        pass
+
+    return response
+
+
 def process_command(command):
     original_command = command.strip()
     command = original_command.lower()
+
+    log_command(original_command)
+
 
     # Step 47: JERVIS Self-Diagnostics
     if command in [
@@ -175,7 +192,7 @@ def process_command(command):
                 "Example: terminate process 1234"
             )
 
-        return terminate_process_by_pid(target)
+        return _log_and_return(f"Terminate process {target}", terminate_process_by_pid(target))
 
     if command.startswith("close process "):
         process_name = original_command[len("close process "):].strip()
@@ -183,7 +200,7 @@ def process_command(command):
         if not process_name:
             return "Please provide a process name."
 
-        return terminate_process_by_name(process_name)
+        return _log_and_return(f"Close process {process_name}", terminate_process_by_name(process_name))
 
     # Step 41: Smart File Finder
     if command.startswith("find file "):
@@ -222,7 +239,7 @@ def process_command(command):
         if not search_text:
             return "Use: open folder of resume"
 
-        return open_folder_of_file(search_text)
+        return _log_and_return(f"Open folder of {search_text}", open_folder_of_file(search_text))
 
     if command.startswith("open file "):
         search_text = original_command[len("open file "):].strip()
@@ -230,7 +247,7 @@ def process_command(command):
         if not search_text:
             return "Use: open file resume"
 
-        return open_file_by_name(search_text)
+        return _log_and_return(f"Open file {search_text}", open_file_by_name(search_text))
 
     # Step 40: Translation System
     # Step 40: Arrow-style translation
@@ -970,13 +987,13 @@ def process_command(command):
         "take a screenshot",
         "screenshot",
     ]:
-        return take_screenshot_text()
+        return _log_and_return("Take screenshot", take_screenshot_text())
 
     if command.startswith("take screenshot "):
         file_name = original_command[len("take screenshot "):].strip()
 
         if not file_name:
-            return take_screenshot_text()
+            return _log_and_return("Take screenshot", take_screenshot_text())
 
         return take_screenshot_text(file_name)
 
@@ -984,7 +1001,7 @@ def process_command(command):
         file_name = original_command[len("capture screen "):].strip()
 
         if not file_name:
-            return take_screenshot_text()
+            return _log_and_return("Take screenshot", take_screenshot_text())
 
         return take_screenshot_text(file_name)
 
@@ -993,7 +1010,7 @@ def process_command(command):
         "open screenshot folder",
         "show screenshots folder",
     ]:
-        return open_screenshot_folder()
+        return _log_and_return("Open screenshots folder", open_screenshot_folder())
 
     # Screenshot
     if command in ["take screenshot", "screenshot", "take a screenshot"]:
