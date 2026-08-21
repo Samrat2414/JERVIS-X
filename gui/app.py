@@ -24,6 +24,14 @@ from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
 from core.diagnostics import run_diagnostics
+from plugins.plugin_manager import (
+    discover_plugins,
+    get_plugin_status,
+    load_plugin,
+    enable_plugin,
+    disable_plugin,
+    is_plugin_enabled,
+)
 from core.performance_monitor import (
     get_latest_startup_time,
     get_average_startup_time,
@@ -401,6 +409,7 @@ class JervisApp(ctk.CTk):
             "Backup & Restore",
             "Security",
             "Performance",
+            "Plugin Manager",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -416,7 +425,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 52 • Performance Monitor",
+            text="JERVIS X\nStep 53 • Plugin Manager",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -466,6 +475,7 @@ class JervisApp(ctk.CTk):
         self.create_backup_restore_page()
         self.create_security_page()
         self.create_performance_page()
+        self.create_plugin_manager_page()
         self.after(300, self.show_startup_lock_if_needed)
         self.create_voice_page()
 
@@ -8179,6 +8189,394 @@ class JervisApp(ctk.CTk):
             self.performance_status_label.configure(
                 text=f"Performance monitor error: {error}"
             )
+
+    def create_plugin_manager_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Plugin Manager"] = page
+        page.grid_columnconfigure((0, 1), weight=1)
+        page.grid_rowconfigure(4, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS PLUGIN MANAGER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Discover, run, enable and disable JERVIS plugins dynamically.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.plugin_count_card = self.create_info_card(
+            page,
+            "INSTALLED PLUGINS",
+            "--",
+        )
+        self.plugin_count_card["frame"].grid(
+            row=2,
+            column=0,
+            padx=(30, 6),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.plugin_selected_card = self.create_info_card(
+            page,
+            "SELECTED PLUGIN",
+            "--",
+        )
+        self.plugin_selected_card["frame"].grid(
+            row=2,
+            column=1,
+            padx=(6, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(8, 12),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(0, weight=1)
+
+        self.plugin_name_entry = ctk.CTkEntry(
+            controls,
+            placeholder_text="Plugin name, e.g. hello_plugin",
+            height=42,
+        )
+        self.plugin_name_entry.grid(
+            row=0,
+            column=0,
+            padx=(15, 6),
+            pady=12,
+            sticky="ew",
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Run Plugin",
+            width=110,
+            height=42,
+            command=self.gui_run_plugin,
+        ).grid(
+            row=0,
+            column=1,
+            padx=6,
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Enable",
+            width=95,
+            height=42,
+            command=self.gui_enable_plugin,
+        ).grid(
+            row=0,
+            column=2,
+            padx=6,
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Disable",
+            width=95,
+            height=42,
+            command=self.gui_disable_plugin,
+        ).grid(
+            row=0,
+            column=3,
+            padx=6,
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh",
+            width=95,
+            height=42,
+            command=self.gui_refresh_plugins,
+        ).grid(
+            row=0,
+            column=4,
+            padx=(6, 15),
+            pady=12,
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=4,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(0, 12),
+            sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            content,
+            text="INSTALLED PLUGINS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="PLUGIN OUTPUT",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=1,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.plugin_list_box = ctk.CTkTextbox(
+            content,
+            font=("Consolas", 12),
+        )
+        self.plugin_list_box.grid(
+            row=1,
+            column=0,
+            padx=(15, 7),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.plugin_list_box.configure(state="disabled")
+
+        self.plugin_output_box = ctk.CTkTextbox(
+            content,
+            font=("Consolas", 12),
+        )
+        self.plugin_output_box.grid(
+            row=1,
+            column=1,
+            padx=(7, 15),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.plugin_output_box.configure(state="disabled")
+
+        self.plugin_status_label = ctk.CTkLabel(
+            page,
+            text="Ready",
+            font=("Arial", 13),
+            wraplength=800,
+            justify="left",
+        )
+        self.plugin_status_label.grid(
+            row=5,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(0, 20),
+            sticky="w",
+        )
+
+        self.gui_refresh_plugins()
+
+    def _set_plugin_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_plugins(self):
+        try:
+            plugins = discover_plugins()
+            status_text = get_plugin_status()
+
+            self.plugin_count_card["value"].configure(
+                text=str(len(plugins)),
+            )
+
+            self._set_plugin_box(
+                self.plugin_list_box,
+                status_text,
+            )
+
+            selected = self.plugin_name_entry.get().strip()
+
+            self.plugin_selected_card["value"].configure(
+                text=selected if selected else "--",
+            )
+
+            self.plugin_status_label.configure(
+                text="Plugin list refreshed.",
+            )
+
+        except Exception as error:
+            self.plugin_status_label.configure(
+                text=f"Plugin refresh error: {error}",
+            )
+
+    def gui_run_plugin(self):
+        plugin_name = self.plugin_name_entry.get().strip()
+
+        if not plugin_name:
+            self.plugin_status_label.configure(
+                text="Enter a plugin name first.",
+            )
+            return
+
+        self.plugin_selected_card["value"].configure(
+            text=plugin_name,
+        )
+
+        result = load_plugin(plugin_name)
+
+        if not result.get("success"):
+            message = result.get(
+                "error",
+                "Plugin could not be loaded.",
+            )
+            self.plugin_status_label.configure(text=message)
+            self._set_plugin_box(
+                self.plugin_output_box,
+                message,
+            )
+            return
+
+        module = result.get("module")
+
+        if module is None or not hasattr(module, "run"):
+            message = (
+                f"Plugin '{plugin_name}' loaded, "
+                "but it has no run() function."
+            )
+            self.plugin_status_label.configure(text=message)
+            self._set_plugin_box(
+                self.plugin_output_box,
+                message,
+            )
+            return
+
+        try:
+            response = module.run(
+                f"run plugin {plugin_name}"
+            )
+
+            self._set_plugin_box(
+                self.plugin_output_box,
+                str(response),
+            )
+            self.plugin_status_label.configure(
+                text=f"Plugin '{plugin_name}' executed.",
+            )
+
+            self.add_history(
+                f"Run plugin {plugin_name}",
+                str(response),
+                source="GUI",
+            )
+
+        except Exception as error:
+            message = f"Plugin execution error: {error}"
+            self.plugin_status_label.configure(text=message)
+            self._set_plugin_box(
+                self.plugin_output_box,
+                message,
+            )
+
+    def gui_enable_plugin(self):
+        plugin_name = self.plugin_name_entry.get().strip()
+
+        if not plugin_name:
+            self.plugin_status_label.configure(
+                text="Enter a plugin name first.",
+            )
+            return
+
+        result = enable_plugin(plugin_name)
+
+        self.plugin_selected_card["value"].configure(
+            text=plugin_name,
+        )
+        self.plugin_status_label.configure(text=result)
+        self._set_plugin_box(
+            self.plugin_output_box,
+            result,
+        )
+
+        self.add_history(
+            f"Enable plugin {plugin_name}",
+            result,
+            source="GUI",
+        )
+
+        self.gui_refresh_plugins()
+
+    def gui_disable_plugin(self):
+        plugin_name = self.plugin_name_entry.get().strip()
+
+        if not plugin_name:
+            self.plugin_status_label.configure(
+                text="Enter a plugin name first.",
+            )
+            return
+
+        if plugin_name == "plugin_manager":
+            self.plugin_status_label.configure(
+                text="The plugin manager itself cannot be disabled.",
+            )
+            return
+
+        confirmed = messagebox.askyesno(
+            "Disable Plugin",
+            f"Disable plugin '{plugin_name}'?",
+            parent=self,
+        )
+
+        if not confirmed:
+            return
+
+        result = disable_plugin(plugin_name)
+
+        self.plugin_selected_card["value"].configure(
+            text=plugin_name,
+        )
+        self.plugin_status_label.configure(text=result)
+        self._set_plugin_box(
+            self.plugin_output_box,
+            result,
+        )
+
+        self.add_history(
+            f"Disable plugin {plugin_name}",
+            result,
+            source="GUI",
+        )
+
+        self.gui_refresh_plugins()
 
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
