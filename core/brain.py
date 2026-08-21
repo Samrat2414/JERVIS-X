@@ -3,6 +3,10 @@ from datetime import datetime
 from core.security_tools import generate_password_text
 from core.qr_generator import generate_qr_text
 from core.translator import translate_text_response
+from core.screen_tools import (
+    take_screenshot_text,
+    open_screenshot_folder,
+)
 from core.smart_file_finder import (
     search_files,
     search_extension,
@@ -698,6 +702,38 @@ def process_command(command):
     if command.startswith("search youtube "):
         query = original_command[len("search youtube "):].strip()
         return search_youtube(query)
+
+    # Step 42: Screenshot & Screen Tools
+    if command in [
+        "take screenshot",
+        "capture screen",
+        "take a screenshot",
+        "screenshot",
+    ]:
+        return take_screenshot_text()
+
+    if command.startswith("take screenshot "):
+        file_name = original_command[len("take screenshot "):].strip()
+
+        if not file_name:
+            return take_screenshot_text()
+
+        return take_screenshot_text(file_name)
+
+    if command.startswith("capture screen "):
+        file_name = original_command[len("capture screen "):].strip()
+
+        if not file_name:
+            return take_screenshot_text()
+
+        return take_screenshot_text(file_name)
+
+    if command in [
+        "open screenshots folder",
+        "open screenshot folder",
+        "show screenshots folder",
+    ]:
+        return open_screenshot_folder()
 
     # Screenshot
     if command in ["take screenshot", "screenshot", "take a screenshot"]:
