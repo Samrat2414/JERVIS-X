@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from core.security_tools import generate_password_text
+from core.qr_generator import generate_qr_text
 from core.ai_brain import ask_ai, clear_conversation
 from core.intent import detect_intent
 from core.memory import remember, recall, remember_fact, recall_fact
@@ -591,6 +592,22 @@ def process_command(command):
 
     if command in ["system info", "system information", "pc status"]:
         return system_info()
+
+    # Step 38: QR Code Generator
+    if command.startswith("generate qr "):
+        qr_data = original_command[len("generate qr "):].strip()
+
+        if not qr_data:
+            return "Please provide text or a URL for the QR code."
+
+        return generate_qr_text(qr_data)
+
+    if command in [
+        "generate qr",
+        "create qr",
+        "make qr",
+    ]:
+        return "Please provide text or a URL for the QR code."
 
     # Step 37: Password Generator
     if command == "generate password":
