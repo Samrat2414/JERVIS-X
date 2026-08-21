@@ -2,6 +2,7 @@ from datetime import datetime
 
 from core.security_tools import generate_password_text
 from core.qr_generator import generate_qr_text
+from core.translator import translate_text_response
 from core.tts_studio import (
     speak_text,
     stop_speaking,
@@ -86,6 +87,31 @@ from core.engineering import (
 def process_command(command):
     original_command = command.strip()
     command = original_command.lower()
+
+    # Step 40: Translation System
+    if command.startswith("translate "):
+        translation_request = original_command[len("translate "):].strip()
+
+        lower_request = translation_request.lower()
+        split_index = lower_request.rfind(" to ")
+
+        if split_index == -1:
+            return (
+                "Use: translate Hello Guru to Bengali"
+            )
+
+        text_to_translate = translation_request[:split_index].strip()
+        target_language = translation_request[split_index + 4:].strip()
+
+        if not text_to_translate or not target_language:
+            return (
+                "Use: translate Hello Guru to Bengali"
+            )
+
+        return translate_text_response(
+            text_to_translate,
+            target_language,
+        )
 
     # Step 39: Text-to-Speech Studio
     if command.startswith("speak "):
