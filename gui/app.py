@@ -23,6 +23,11 @@ from core.news import get_news
 from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
+from core.screen_tools import (
+    take_screenshot,
+    get_latest_screenshot,
+    open_screenshot_folder,
+)
 from core.smart_file_finder import (
     search_files,
     search_extension,
@@ -329,6 +334,7 @@ class JervisApp(ctk.CTk):
             "Automation",
             "Files",
             "Smart File Finder",
+            "Screen Tools",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -344,7 +350,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 41 • Smart File Finder",
+            text="JERVIS X\nStep 42 • Screen Tools",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -383,6 +389,7 @@ class JervisApp(ctk.CTk):
         self.create_tts_studio_page()
         self.create_translator_page()
         self.create_smart_file_finder_page()
+        self.create_screen_tools_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -4882,6 +4889,264 @@ class JervisApp(ctk.CTk):
             text="Results cleared.",
         )
 
+    def create_screen_tools_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Screen Tools"] = page
+        page.grid_columnconfigure((0, 1), weight=1)
+        page.grid_rowconfigure(3, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SCREEN TOOLS",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Capture screenshots, preview the latest image and open the screenshot folder.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=2,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(0, 15),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(0, weight=1)
+
+        self.screen_file_name_entry = ctk.CTkEntry(
+            controls,
+            placeholder_text="Optional filename, e.g. project",
+            height=44,
+        )
+        self.screen_file_name_entry.grid(
+            row=0,
+            column=0,
+            padx=(15, 8),
+            pady=15,
+            sticky="ew",
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Take Screenshot",
+            width=140,
+            height=44,
+            command=self.gui_take_screenshot,
+        ).grid(
+            row=0,
+            column=1,
+            padx=5,
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Preview",
+            width=130,
+            height=44,
+            command=self.gui_refresh_screenshot_preview,
+        ).grid(
+            row=0,
+            column=2,
+            padx=5,
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Open Folder",
+            width=120,
+            height=44,
+            command=self.gui_open_screenshot_folder,
+        ).grid(
+            row=0,
+            column=3,
+            padx=(5, 15),
+            pady=15,
+        )
+
+        preview_frame = ctk.CTkFrame(page)
+        preview_frame.grid(
+            row=3,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        preview_frame.grid_columnconfigure(0, weight=1)
+        preview_frame.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            preview_frame,
+            text="LATEST SCREENSHOT",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.screen_preview_label = ctk.CTkLabel(
+            preview_frame,
+            text="No screenshot preview available.",
+            width=700,
+            height=380,
+        )
+        self.screen_preview_label.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 10),
+            sticky="nsew",
+        )
+
+        self.screen_path_entry = ctk.CTkEntry(
+            preview_frame,
+            height=40,
+        )
+        self.screen_path_entry.grid(
+            row=2,
+            column=0,
+            padx=15,
+            pady=(0, 10),
+            sticky="ew",
+        )
+
+        self.screen_status_label = ctk.CTkLabel(
+            preview_frame,
+            text="Ready",
+            font=("Arial", 13),
+            wraplength=760,
+            justify="left",
+        )
+        self.screen_status_label.grid(
+            row=3,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.screen_preview_image = None
+        self.gui_refresh_screenshot_preview()
+
+    def gui_take_screenshot(self):
+        file_name = self.screen_file_name_entry.get().strip()
+
+        if not file_name:
+            file_name = None
+
+        result = take_screenshot(file_name)
+
+        if not result.get("success"):
+            self.screen_status_label.configure(
+                text=result.get(
+                    "error",
+                    "Screenshot failed.",
+                ),
+            )
+            return
+
+        self.screen_status_label.configure(
+            text=result.get(
+                "message",
+                "Screenshot saved.",
+            ),
+        )
+
+        self.screen_file_name_entry.delete(0, "end")
+        self.gui_refresh_screenshot_preview()
+
+        self.add_history(
+            "Take screenshot",
+            result.get("message", "Screenshot saved."),
+            source="GUI",
+        )
+
+    def gui_refresh_screenshot_preview(self):
+        latest = get_latest_screenshot()
+
+        if latest is None:
+            self.screen_preview_label.configure(
+                image=None,
+                text="No screenshot found yet.",
+            )
+            self.screen_path_entry.delete(0, "end")
+            self.screen_status_label.configure(
+                text="No screenshots available.",
+            )
+            return
+
+        self.screen_path_entry.delete(0, "end")
+        self.screen_path_entry.insert(
+            0,
+            str(latest),
+        )
+
+        try:
+            from PIL import Image
+
+            image = Image.open(latest)
+            image.thumbnail((700, 380))
+
+            self.screen_preview_image = ctk.CTkImage(
+                light_image=image,
+                dark_image=image,
+                size=image.size,
+            )
+
+            self.screen_preview_label.configure(
+                image=self.screen_preview_image,
+                text="",
+            )
+
+            self.screen_status_label.configure(
+                text=f"Previewing latest screenshot: {latest.name}",
+            )
+
+        except Exception as error:
+            self.screen_preview_label.configure(
+                image=None,
+                text=f"Preview unavailable:\n{error}",
+            )
+            self.screen_status_label.configure(
+                text=f"Could not preview screenshot: {error}",
+            )
+
+    def gui_open_screenshot_folder(self):
+        result = open_screenshot_folder()
+        self.screen_status_label.configure(
+            text=result,
+        )
+
+        self.add_history(
+            "Open screenshots folder",
+            result,
+            source="GUI",
+        )
+
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
         self.pages["Voice"] = page
@@ -6209,4 +6474,4 @@ class JervisApp(ctk.CTk):
 
 def run_gui():
     app = JervisApp()
-    app.mainloop()
+    app.mainloop() 
