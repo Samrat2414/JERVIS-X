@@ -24,6 +24,12 @@ from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
 from core.diagnostics import run_diagnostics
+from core.backup_manager import (
+    create_backup,
+    list_backups,
+    get_latest_backup,
+    restore_backup,
+)
 from core.command_analytics import (
     get_total_commands,
     get_most_used_commands,
@@ -378,6 +384,7 @@ class JervisApp(ctk.CTk):
             "Diagnostics",
             "Logs",
             "Analytics",
+            "Backup & Restore",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -393,7 +400,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 49 • Command Analytics",
+            text="JERVIS X\nStep 50 • Backup & Restore",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -440,6 +447,7 @@ class JervisApp(ctk.CTk):
         self.create_diagnostics_page()
         self.create_logs_page()
         self.create_analytics_page()
+        self.create_backup_restore_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -7122,6 +7130,407 @@ class JervisApp(ctk.CTk):
         )
 
         self.gui_refresh_analytics()
+
+    def create_backup_restore_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Backup & Restore"] = page
+        page.grid_columnconfigure((0, 1, 2), weight=1)
+        page.grid_rowconfigure(5, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS BACKUP & RESTORE",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Create backups of JERVIS data and safely restore the latest backup.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.backup_count_card = self.create_info_card(
+            page,
+            "BACKUPS",
+            "--",
+        )
+        self.backup_count_card["frame"].grid(
+            row=2,
+            column=0,
+            padx=(30, 6),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.backup_latest_card = self.create_info_card(
+            page,
+            "LATEST BACKUP",
+            "--",
+        )
+        self.backup_latest_card["frame"].grid(
+            row=2,
+            column=1,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.backup_status_card = self.create_info_card(
+            page,
+            "STATUS",
+            "Ready",
+        )
+        self.backup_status_card["frame"].grid(
+            row=2,
+            column=2,
+            padx=(6, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(8, 12),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(3, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Create Backup",
+            width=140,
+            height=42,
+            command=self.gui_create_backup,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 6),
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh",
+            width=110,
+            height=42,
+            command=self.gui_refresh_backups,
+        ).grid(
+            row=0,
+            column=1,
+            padx=6,
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Restore Latest",
+            width=140,
+            height=42,
+            command=self.gui_restore_latest_backup,
+        ).grid(
+            row=0,
+            column=2,
+            padx=6,
+            pady=12,
+        )
+
+        self.backup_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.backup_status_label.grid(
+            row=0,
+            column=3,
+            padx=(10, 15),
+            pady=12,
+            sticky="e",
+        )
+
+        latest_frame = ctk.CTkFrame(page)
+        latest_frame.grid(
+            row=4,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 12),
+            sticky="ew",
+        )
+        latest_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            latest_frame,
+            text="LATEST BACKUP PATH",
+            font=("Arial", 15, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(12, 6),
+            sticky="w",
+        )
+
+        self.backup_latest_path_entry = ctk.CTkEntry(
+            latest_frame,
+            height=40,
+        )
+        self.backup_latest_path_entry.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 12),
+            sticky="ew",
+        )
+
+        list_frame = ctk.CTkFrame(page)
+        list_frame.grid(
+            row=5,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 20),
+            sticky="nsew",
+        )
+        list_frame.grid_columnconfigure(0, weight=1)
+        list_frame.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            list_frame,
+            text="BACKUP LIST",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.backup_list_box = ctk.CTkTextbox(
+            list_frame,
+            font=("Consolas", 12),
+        )
+        self.backup_list_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.backup_list_box.configure(state="disabled")
+
+        self.gui_refresh_backups()
+
+    def _set_backup_list_output(self, text):
+        self.backup_list_box.configure(state="normal")
+        self.backup_list_box.delete("1.0", "end")
+        self.backup_list_box.insert("end", str(text))
+        self.backup_list_box.configure(state="disabled")
+
+    def gui_refresh_backups(self):
+        try:
+            result = list_backups()
+            latest = get_latest_backup()
+
+            if latest is None:
+                backup_count = 0
+                latest_name = "None"
+                latest_path = ""
+            else:
+                backup_count = len([
+                    line
+                    for line in str(result).splitlines()
+                    if line.strip() and line.lstrip()[0:1].isdigit()
+                ])
+                latest_name = latest.name
+                latest_path = str(latest)
+
+            self.backup_count_card["value"].configure(
+                text=str(backup_count),
+            )
+            self.backup_latest_card["value"].configure(
+                text=latest_name,
+            )
+            self.backup_status_card["value"].configure(
+                text="Ready",
+            )
+
+            self.backup_latest_path_entry.delete(0, "end")
+            self.backup_latest_path_entry.insert(
+                0,
+                latest_path,
+            )
+
+            self._set_backup_list_output(result)
+
+            self.backup_status_label.configure(
+                text="Backup list refreshed.",
+            )
+
+        except Exception as error:
+            self.backup_status_label.configure(
+                text=f"Backup refresh error: {error}",
+            )
+
+    def gui_create_backup(self):
+        self.backup_status_label.configure(
+            text="Creating backup...",
+        )
+        self.backup_status_card["value"].configure(
+            text="Working",
+        )
+
+        threading.Thread(
+            target=self.backup_create_worker,
+            daemon=True,
+        ).start()
+
+    def backup_create_worker(self):
+        result = create_backup()
+
+        self.after(
+            0,
+            lambda: self.finish_backup_create(result),
+        )
+
+    def finish_backup_create(self, result):
+        if not result.get("success"):
+            message = result.get(
+                "error",
+                "Backup creation failed.",
+            )
+            self.backup_status_label.configure(text=message)
+            self.backup_status_card["value"].configure(
+                text="Failed",
+            )
+            return
+
+        message = result.get(
+            "message",
+            "Backup created successfully.",
+        )
+
+        self.backup_status_label.configure(text=message)
+        self.backup_status_card["value"].configure(
+            text="Created",
+        )
+
+        self.add_history(
+            "Create backup",
+            message,
+            source="GUI",
+        )
+
+        self.gui_refresh_backups()
+
+    def gui_restore_latest_backup(self):
+        latest = get_latest_backup()
+
+        if latest is None:
+            self.backup_status_label.configure(
+                text="No backup is available to restore.",
+            )
+            return
+
+        confirmed = messagebox.askyesno(
+            "Restore Latest Backup",
+            (
+                f"Restore this backup?\n\n"
+                f"{latest.name}\n\n"
+                "Current JERVIS data will be replaced. "
+                "A pre-restore safety copy will be created first."
+            ),
+            parent=self,
+        )
+
+        if not confirmed:
+            return
+
+        second_confirm = messagebox.askyesno(
+            "Confirm Restore",
+            "Are you sure you want to continue with the restore?",
+            parent=self,
+        )
+
+        if not second_confirm:
+            return
+
+        self.backup_status_label.configure(
+            text="Restoring backup...",
+        )
+        self.backup_status_card["value"].configure(
+            text="Restoring",
+        )
+
+        threading.Thread(
+            target=self.backup_restore_worker,
+            args=(str(latest),),
+            daemon=True,
+        ).start()
+
+    def backup_restore_worker(self, backup_path):
+        result = restore_backup(backup_path)
+
+        self.after(
+            0,
+            lambda: self.finish_backup_restore(result),
+        )
+
+    def finish_backup_restore(self, result):
+        if not result.get("success"):
+            message = result.get(
+                "error",
+                "Backup restore failed.",
+            )
+            self.backup_status_label.configure(text=message)
+            self.backup_status_card["value"].configure(
+                text="Failed",
+            )
+            return
+
+        message = result.get(
+            "message",
+            "Backup restored successfully.",
+        )
+
+        safety_backup = result.get("safety_backup")
+
+        if safety_backup:
+            message += (
+                f" Safety copy created at: "
+                f"{safety_backup}"
+            )
+
+        self.backup_status_label.configure(text=message)
+        self.backup_status_card["value"].configure(
+            text="Restored",
+        )
+
+        self.add_history(
+            "Restore backup",
+            message,
+            source="GUI",
+        )
+
+        self.gui_refresh_backups()
 
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
