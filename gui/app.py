@@ -23,6 +23,11 @@ from core.news import get_news
 from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
+from core.storage_analyzer import (
+    get_disk_report,
+    get_largest_files_summary,
+    get_file_types_summary,
+)
 from core.network_monitor import (
     is_internet_connected,
     get_local_ip,
@@ -350,6 +355,7 @@ class JervisApp(ctk.CTk):
             "Screen Tools",
             "System Monitor",
             "Network Monitor",
+            "Storage Analyzer",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -365,7 +371,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 44 • Live Network Monitor",
+            text="JERVIS X\nStep 45 • Storage Analyzer",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -407,6 +413,7 @@ class JervisApp(ctk.CTk):
         self.create_screen_tools_page()
         self.create_system_monitor_page()
         self.create_network_monitor_page()
+        self.create_storage_analyzer_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -5707,6 +5714,284 @@ class JervisApp(ctk.CTk):
                 self.gui_refresh_network_monitor()
         finally:
             self.after(5000, self.network_monitor_auto_refresh)
+
+    def create_storage_analyzer_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Storage Analyzer"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(4, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS STORAGE ANALYZER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Analyze disk usage, free space, largest files and file-type statistics.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.storage_total_card = self.create_info_card(
+            page,
+            "TOTAL STORAGE",
+            "--",
+        )
+        self.storage_total_card["frame"].grid(
+            row=2,
+            column=0,
+            padx=(30, 6),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.storage_used_card = self.create_info_card(
+            page,
+            "USED STORAGE",
+            "--",
+        )
+        self.storage_used_card["frame"].grid(
+            row=2,
+            column=1,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.storage_free_card = self.create_info_card(
+            page,
+            "FREE STORAGE",
+            "--",
+        )
+        self.storage_free_card["frame"].grid(
+            row=2,
+            column=2,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.storage_percent_card = self.create_info_card(
+            page,
+            "DISK USAGE",
+            "-- %",
+        )
+        self.storage_percent_card["frame"].grid(
+            row=2,
+            column=3,
+            padx=(6, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(8, 12),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(2, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Analyze Storage",
+            width=140,
+            height=42,
+            command=self.gui_refresh_storage_analyzer,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 6),
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh",
+            width=110,
+            height=42,
+            command=self.gui_refresh_storage_analyzer,
+        ).grid(
+            row=0,
+            column=1,
+            padx=6,
+            pady=12,
+        )
+
+        self.storage_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.storage_status_label.grid(
+            row=0,
+            column=2,
+            padx=(10, 15),
+            pady=12,
+            sticky="e",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=4,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(0, 20),
+            sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            content,
+            text="LARGEST FILES",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="FILE-TYPE STATISTICS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=1,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.storage_largest_box = ctk.CTkTextbox(
+            content,
+            font=("Arial", 13),
+        )
+        self.storage_largest_box.grid(
+            row=1,
+            column=0,
+            padx=(15, 7),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.storage_largest_box.configure(state="disabled")
+
+        self.storage_types_box = ctk.CTkTextbox(
+            content,
+            font=("Arial", 13),
+        )
+        self.storage_types_box.grid(
+            row=1,
+            column=1,
+            padx=(7, 15),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.storage_types_box.configure(state="disabled")
+
+        self.gui_refresh_storage_analyzer()
+
+    def _set_storage_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_storage_analyzer(self):
+        self.storage_status_label.configure(
+            text="Analyzing storage...",
+        )
+
+        threading.Thread(
+            target=self.storage_analyzer_worker,
+            daemon=True,
+        ).start()
+
+    def storage_analyzer_worker(self):
+        try:
+            disk = get_disk_report()
+            largest = get_largest_files_summary(10)
+            file_types = get_file_types_summary(15)
+
+            self.after(
+                0,
+                lambda: self.finish_storage_analyzer(
+                    disk,
+                    largest,
+                    file_types,
+                ),
+            )
+
+        except Exception as error:
+            self.after(
+                0,
+                lambda err=error: self.storage_status_label.configure(
+                    text=f"Storage analyzer error: {err}",
+                ),
+            )
+
+    def finish_storage_analyzer(
+        self,
+        disk,
+        largest,
+        file_types,
+    ):
+        self.storage_total_card["value"].configure(
+            text=str(disk["total"]),
+        )
+        self.storage_used_card["value"].configure(
+            text=str(disk["used"]),
+        )
+        self.storage_free_card["value"].configure(
+            text=str(disk["free"]),
+        )
+        self.storage_percent_card["value"].configure(
+            text=f"{disk['percent']}%",
+        )
+
+        self._set_storage_box(
+            self.storage_largest_box,
+            largest,
+        )
+        self._set_storage_box(
+            self.storage_types_box,
+            file_types,
+        )
+
+        self.storage_status_label.configure(
+            text="Storage analysis completed.",
+        )
+
+        self.add_history(
+            "Storage Analyzer",
+            (
+                f"Disk usage {disk['percent']}%, "
+                f"free space {disk['free']}."
+            ),
+            source="GUI",
+        )
 
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
