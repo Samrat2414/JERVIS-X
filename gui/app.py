@@ -24,6 +24,14 @@ from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
 from core.diagnostics import run_diagnostics
+from core.security_lock import (
+    is_security_enabled,
+    enable_security,
+    disable_security,
+    verify_pin,
+    change_pin,
+    get_security_status,
+)
 from core.backup_manager import (
     create_backup,
     list_backups,
@@ -385,6 +393,7 @@ class JervisApp(ctk.CTk):
             "Logs",
             "Analytics",
             "Backup & Restore",
+            "Security",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -400,7 +409,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 50 • Backup & Restore",
+            text="JERVIS X\nStep 51 • Security & App Lock",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -448,6 +457,8 @@ class JervisApp(ctk.CTk):
         self.create_logs_page()
         self.create_analytics_page()
         self.create_backup_restore_page()
+        self.create_security_page()
+        self.after(300, self.show_startup_lock_if_needed)
         self.create_voice_page()
 
         self.create_automation_page()
@@ -7531,6 +7542,495 @@ class JervisApp(ctk.CTk):
         )
 
         self.gui_refresh_backups()
+
+    def create_security_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Security"] = page
+        page.grid_columnconfigure((0, 1, 2), weight=1)
+        page.grid_rowconfigure(5, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SECURITY CENTER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Manage app lock, verify PIN, change PIN and review failed attempts.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.security_lock_card = self.create_info_card(
+            page,
+            "APP LOCK",
+            "--",
+        )
+        self.security_lock_card["frame"].grid(
+            row=2,
+            column=0,
+            padx=(30, 6),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.security_attempts_card = self.create_info_card(
+            page,
+            "FAILED ATTEMPTS",
+            "--",
+        )
+        self.security_attempts_card["frame"].grid(
+            row=2,
+            column=1,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.security_status_card = self.create_info_card(
+            page,
+            "STATUS",
+            "Ready",
+        )
+        self.security_status_card["frame"].grid(
+            row=2,
+            column=2,
+            padx=(6, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(8, 12),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(2, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Enable App Lock",
+            width=140,
+            height=42,
+            command=self.gui_enable_app_lock,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 6),
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Disable App Lock",
+            width=140,
+            height=42,
+            command=self.gui_disable_app_lock,
+        ).grid(
+            row=0,
+            column=1,
+            padx=6,
+            pady=12,
+        )
+
+        self.security_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.security_status_label.grid(
+            row=0,
+            column=2,
+            padx=(10, 15),
+            pady=12,
+            sticky="e",
+        )
+
+        pin_frame = ctk.CTkFrame(page)
+        pin_frame.grid(
+            row=4,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 12),
+            sticky="ew",
+        )
+        pin_frame.grid_columnconfigure((0, 1, 2), weight=1)
+
+        self.security_verify_pin_entry = ctk.CTkEntry(
+            pin_frame,
+            placeholder_text="Enter PIN to verify",
+            show="*",
+            height=42,
+        )
+        self.security_verify_pin_entry.grid(
+            row=0,
+            column=0,
+            padx=(15, 6),
+            pady=12,
+            sticky="ew",
+        )
+
+        ctk.CTkButton(
+            pin_frame,
+            text="Verify PIN",
+            height=42,
+            command=self.gui_verify_security_pin,
+        ).grid(
+            row=0,
+            column=1,
+            padx=6,
+            pady=12,
+            sticky="ew",
+        )
+
+        ctk.CTkButton(
+            pin_frame,
+            text="Refresh Status",
+            height=42,
+            command=self.gui_refresh_security_status,
+        ).grid(
+            row=0,
+            column=2,
+            padx=(6, 15),
+            pady=12,
+            sticky="ew",
+        )
+
+        change_frame = ctk.CTkFrame(page)
+        change_frame.grid(
+            row=5,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 20),
+            sticky="nsew",
+        )
+        change_frame.grid_columnconfigure((0, 1), weight=1)
+
+        ctk.CTkLabel(
+            change_frame,
+            text="CHANGE PIN",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=2,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.security_current_pin_entry = ctk.CTkEntry(
+            change_frame,
+            placeholder_text="Current PIN",
+            show="*",
+            height=42,
+        )
+        self.security_current_pin_entry.grid(
+            row=1,
+            column=0,
+            padx=(15, 7),
+            pady=8,
+            sticky="ew",
+        )
+
+        self.security_new_pin_entry = ctk.CTkEntry(
+            change_frame,
+            placeholder_text="New PIN (4–8 digits)",
+            show="*",
+            height=42,
+        )
+        self.security_new_pin_entry.grid(
+            row=1,
+            column=1,
+            padx=(7, 15),
+            pady=8,
+            sticky="ew",
+        )
+
+        ctk.CTkButton(
+            change_frame,
+            text="Change PIN",
+            height=42,
+            command=self.gui_change_security_pin,
+        ).grid(
+            row=2,
+            column=0,
+            columnspan=2,
+            padx=15,
+            pady=(8, 15),
+            sticky="ew",
+        )
+
+        self.gui_refresh_security_status()
+
+    def gui_refresh_security_status(self):
+        try:
+            status_text = get_security_status()
+            enabled = is_security_enabled()
+
+            failed_attempts = "0"
+
+            for line in status_text.splitlines():
+                if line.startswith("Failed Attempts:"):
+                    failed_attempts = line.split(":", 1)[1].strip()
+
+            self.security_lock_card["value"].configure(
+                text="Enabled" if enabled else "Disabled",
+            )
+            self.security_attempts_card["value"].configure(
+                text=failed_attempts,
+            )
+            self.security_status_card["value"].configure(
+                text="Protected" if enabled else "Unlocked",
+            )
+
+            self.security_status_label.configure(
+                text="Security status refreshed.",
+            )
+
+        except Exception as error:
+            self.security_status_label.configure(
+                text=f"Security status error: {error}",
+            )
+
+    def gui_enable_app_lock(self):
+        result = enable_security()
+
+        self.security_status_label.configure(
+            text=result,
+        )
+
+        self.add_history(
+            "Enable app lock",
+            result,
+            source="GUI",
+        )
+
+        self.gui_refresh_security_status()
+
+    def gui_disable_app_lock(self):
+        pin = self.security_verify_pin_entry.get().strip()
+
+        if not pin:
+            self.security_status_label.configure(
+                text="Enter and verify your PIN before disabling app lock.",
+            )
+            return
+
+        verification = verify_pin(pin)
+
+        if not verification.get("success"):
+            self.security_status_label.configure(
+                text=verification.get(
+                    "message",
+                    "Incorrect PIN.",
+                ),
+            )
+            self.gui_refresh_security_status()
+            return
+
+        confirmed = messagebox.askyesno(
+            "Disable App Lock",
+            "Disable the JERVIS startup app lock?",
+            parent=self,
+        )
+
+        if not confirmed:
+            return
+
+        result = disable_security()
+
+        self.security_status_label.configure(
+            text=result,
+        )
+
+        self.security_verify_pin_entry.delete(0, "end")
+
+        self.add_history(
+            "Disable app lock",
+            result,
+            source="GUI",
+        )
+
+        self.gui_refresh_security_status()
+
+    def gui_verify_security_pin(self):
+        pin = self.security_verify_pin_entry.get().strip()
+
+        if not pin:
+            self.security_status_label.configure(
+                text="Enter a PIN first.",
+            )
+            return
+
+        result = verify_pin(pin)
+
+        self.security_status_label.configure(
+            text=result.get(
+                "message",
+                "PIN verification failed.",
+            ),
+        )
+
+        self.gui_refresh_security_status()
+
+    def gui_change_security_pin(self):
+        current_pin = self.security_current_pin_entry.get().strip()
+        new_pin = self.security_new_pin_entry.get().strip()
+
+        if not current_pin or not new_pin:
+            self.security_status_label.configure(
+                text="Enter both current and new PIN.",
+            )
+            return
+
+        result = change_pin(
+            current_pin,
+            new_pin,
+        )
+
+        self.security_status_label.configure(
+            text=result,
+        )
+
+        if "successfully" in result.lower():
+            self.security_current_pin_entry.delete(0, "end")
+            self.security_new_pin_entry.delete(0, "end")
+
+        self.add_history(
+            "Change app PIN",
+            result,
+            source="GUI",
+        )
+
+        self.gui_refresh_security_status()
+
+    def show_startup_lock_if_needed(self):
+        if not is_security_enabled():
+            return
+
+        self.withdraw()
+
+        lock_window = ctk.CTkToplevel(self)
+        lock_window.title("JERVIS Security")
+        lock_window.geometry("420x300")
+        lock_window.resizable(False, False)
+        lock_window.protocol(
+            "WM_DELETE_WINDOW",
+            self.destroy,
+        )
+        lock_window.grab_set()
+
+        ctk.CTkLabel(
+            lock_window,
+            text="JERVIS LOCKED",
+            font=("Arial", 26, "bold"),
+        ).pack(
+            padx=25,
+            pady=(35, 10),
+        )
+
+        ctk.CTkLabel(
+            lock_window,
+            text="Enter your PIN to continue.",
+            font=("Arial", 14),
+        ).pack(
+            padx=25,
+            pady=(0, 15),
+        )
+
+        pin_entry = ctk.CTkEntry(
+            lock_window,
+            placeholder_text="PIN",
+            show="*",
+            width=240,
+            height=44,
+        )
+        pin_entry.pack(
+            padx=25,
+            pady=10,
+        )
+        pin_entry.focus_set()
+
+        status_label = ctk.CTkLabel(
+            lock_window,
+            text="",
+            font=("Arial", 13),
+        )
+        status_label.pack(
+            padx=25,
+            pady=8,
+        )
+
+        def unlock():
+            pin = pin_entry.get().strip()
+
+            if not pin:
+                status_label.configure(
+                    text="Enter your PIN.",
+                )
+                return
+
+            result = verify_pin(pin)
+
+            if result.get("success"):
+                lock_window.grab_release()
+                lock_window.destroy()
+                self.deiconify()
+                self.lift()
+                self.focus_force()
+                return
+
+            failed = result.get(
+                "failed_attempts",
+                0,
+            )
+
+            status_label.configure(
+                text=(
+                    f"Incorrect PIN. "
+                    f"Failed attempts: {failed}"
+                ),
+            )
+
+            pin_entry.delete(0, "end")
+            pin_entry.focus_set()
+
+        ctk.CTkButton(
+            lock_window,
+            text="Unlock JERVIS",
+            width=240,
+            height=44,
+            command=unlock,
+        ).pack(
+            padx=25,
+            pady=10,
+        )
+
+        pin_entry.bind(
+            "<Return>",
+            lambda event: unlock(),
+        )
 
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
