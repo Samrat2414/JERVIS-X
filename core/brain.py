@@ -1,6 +1,11 @@
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
+from core.backup_manager import (
+    create_backup_text,
+    list_backups,
+    get_latest_backup,
+)
 from core.command_analytics import (
     record_command,
     get_analytics_report,
@@ -150,6 +155,25 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 50: Backup Manager
+    if command in ["create backup", "backup data", "backup jervis", "create jervis backup"]:
+        return _log_and_return("Create JERVIS backup", create_backup_text())
+
+    if command in ["list backups", "show backups", "backup list"]:
+        return list_backups()
+
+    if command in ["latest backup", "show latest backup"]:
+        latest = get_latest_backup()
+        if latest is None:
+            return "No backups found."
+        return f"Latest backup: {latest.name}\n{latest}"
+
+    if command in ["restore latest backup", "restore backup"]:
+        return (
+            "Restore is blocked in Chat for safety. "
+            "Use the Backup & Restore GUI confirmation when the restore interface is added."
+        )
 
     # Step 49: Command History & Analytics
     if command in [
