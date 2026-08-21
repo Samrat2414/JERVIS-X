@@ -1,6 +1,14 @@
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
+from core.security_lock import (
+    is_security_enabled,
+    enable_security,
+    disable_security,
+    verify_pin,
+    change_pin,
+    get_security_status,
+)
 from core.backup_manager import (
     create_backup_text,
     list_backups,
@@ -155,6 +163,64 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 51: JERVIS Security & App Lock
+    if command in [
+        "security status",
+        "app lock status",
+        "show security status",
+    ]:
+        return get_security_status()
+
+    if command in [
+        "enable app lock",
+        "enable security",
+        "lock jervis",
+    ]:
+        return _log_and_return(
+            "Enable JERVIS app lock",
+            enable_security(),
+        )
+
+    if command in [
+        "disable app lock",
+        "disable security",
+        "unlock jervis security",
+    ]:
+        return _log_and_return(
+            "Disable JERVIS app lock",
+            disable_security(),
+        )
+
+    if command.startswith("verify pin "):
+        pin = original_command[len("verify pin "):].strip()
+
+        if not pin:
+            return "Use: verify pin 1234"
+
+        result = verify_pin(pin)
+
+        return result.get(
+            "message",
+            "PIN verification failed.",
+        )
+
+    if command.startswith("change pin "):
+        pin_data = original_command[len("change pin "):].strip()
+        parts = pin_data.split()
+
+        if len(parts) != 2:
+            return "Use: change pin CURRENT_PIN NEW_PIN"
+
+        current_pin, new_pin = parts
+
+        return _log_and_return(
+            "Change JERVIS PIN",
+            change_pin(
+                current_pin,
+                new_pin,
+            ),
+        )
 
     # Step 50: Backup Manager
     if command in ["create backup", "backup data", "backup jervis", "create jervis backup"]:
