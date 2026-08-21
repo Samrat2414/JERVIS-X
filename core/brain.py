@@ -1,6 +1,10 @@
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
+from core.disk_intelligence import (
+    get_disk_summary,
+    get_storage_health,
+)
 from core.network_info import (
     get_network_report,
 )
@@ -182,6 +186,42 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 56: Storage & Disk Intelligence
+    if command in [
+        "disk intelligence",
+        "disk status",
+        "drive information",
+        "drive info",
+        "storage intelligence",
+        "show disk status",
+        "show drive information",
+    ]:
+        return get_disk_summary()
+
+    if command in [
+        "storage health",
+        "disk health",
+        "drive health",
+        "check storage health",
+    ]:
+        health = get_storage_health()
+
+        if health.get("healthy"):
+            return "Storage Health: All detected drives are healthy."
+
+        warnings = health.get("warnings", [])
+
+        if not warnings:
+            return "Storage Health: No detailed warning information is available."
+
+        return (
+            "Storage Health Warnings:\n"
+            + "\n".join(
+                f"- {warning}"
+                for warning in warnings
+            )
+        )
 
     # Step 55: Network Information Center
     if command in [
