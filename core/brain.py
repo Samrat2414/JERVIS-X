@@ -1,6 +1,12 @@
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
+from plugins.plugin_manager import (
+    get_plugin_status,
+    load_plugin,
+    enable_plugin,
+    disable_plugin,
+)
 from core.performance_monitor import (
     get_performance_report,
     get_latest_startup_time,
@@ -170,6 +176,70 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 53: Plugin System
+    if command in [
+        "plugin status",
+        "show plugins",
+        "list plugins",
+        "plugin list",
+    ]:
+        return get_plugin_status()
+
+    if command.startswith("run plugin "):
+        plugin_name = original_command[len("run plugin "):].strip()
+
+        if not plugin_name:
+            return "Use: run plugin hello_plugin"
+
+        result = load_plugin(plugin_name)
+
+        if not result.get("success"):
+            return result.get(
+                "error",
+                f"Could not load plugin '{plugin_name}'.",
+            )
+
+        module = result.get("module")
+
+        if module is None or not hasattr(module, "run"):
+            return (
+                f"Plugin '{plugin_name}' loaded, "
+                "but it does not provide a run() function."
+            )
+
+        try:
+            response = module.run(original_command)
+
+            return _log_and_return(
+                f"Run plugin {plugin_name}",
+                str(response),
+            )
+
+        except Exception as error:
+            return f"Plugin execution error: {error}"
+
+    if command.startswith("enable plugin "):
+        plugin_name = original_command[len("enable plugin "):].strip()
+
+        if not plugin_name:
+            return "Use: enable plugin hello_plugin"
+
+        return _log_and_return(
+            f"Enable plugin {plugin_name}",
+            enable_plugin(plugin_name),
+        )
+
+    if command.startswith("disable plugin "):
+        plugin_name = original_command[len("disable plugin "):].strip()
+
+        if not plugin_name:
+            return "Use: disable plugin hello_plugin"
+
+        return _log_and_return(
+            f"Disable plugin {plugin_name}",
+            disable_plugin(plugin_name),
+        )
 
     # Step 52: Performance & Startup Monitor
     if command in [
