@@ -1,3 +1,4 @@
+import os
 import math
 import threading
 from datetime import datetime
@@ -20,6 +21,7 @@ from core.notes import add_note, show_notes, search_notes
 from core.weather import get_weather_data
 from core.news import get_news
 from core.security_tools import generate_password
+from core.qr_generator import generate_qr
 from core.clipboard_manager import (
     get_clipboard_text,
     copy_to_clipboard,
@@ -306,6 +308,7 @@ class JervisApp(ctk.CTk):
             "System Control",
             "Clipboard",
             "Password Generator",
+            "QR Generator",
             "Voice",
             "Automation",
             "Files",
@@ -324,7 +327,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 37 • Password Generator",
+            text="JERVIS X\nStep 38 • QR Generator",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -359,6 +362,7 @@ class JervisApp(ctk.CTk):
         self.create_system_control_page()
         self.create_clipboard_page()
         self.create_password_generator_page()
+        self.create_qr_generator_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -3526,6 +3530,205 @@ class JervisApp(ctk.CTk):
             "Password copied to clipboard.",
             source="GUI",
         )
+
+    def create_qr_generator_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["QR Generator"] = page
+        page.grid_columnconfigure((0, 1), weight=1)
+        page.grid_rowconfigure(3, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS QR CODE GENERATOR",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0, column=0, columnspan=2,
+            padx=30, pady=(30, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Create a QR code from text, URLs, email addresses or other data.",
+            font=("Arial", 14),
+        ).grid(
+            row=1, column=0, columnspan=2,
+            padx=30, pady=(0, 15), sticky="w",
+        )
+
+        input_frame = ctk.CTkFrame(page)
+        input_frame.grid(
+            row=2, column=0,
+            padx=(30, 10), pady=8, sticky="nsew",
+        )
+        input_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            input_frame,
+            text="QR DATA",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=0, padx=15, pady=(15, 8), sticky="w")
+
+        self.qr_data_box = ctk.CTkTextbox(
+            input_frame,
+            height=150,
+            font=("Arial", 14),
+        )
+        self.qr_data_box.grid(
+            row=1, column=0,
+            padx=15, pady=(0, 10), sticky="ew",
+        )
+
+        ctk.CTkButton(
+            input_frame,
+            text="Generate QR Code",
+            height=44,
+            command=self.gui_generate_qr,
+        ).grid(
+            row=2, column=0,
+            padx=15, pady=(0, 10), sticky="ew",
+        )
+
+        ctk.CTkButton(
+            input_frame,
+            text="Open QR Folder",
+            height=40,
+            command=self.gui_open_qr_folder,
+        ).grid(
+            row=3, column=0,
+            padx=15, pady=(0, 15), sticky="ew",
+        )
+
+        preview_frame = ctk.CTkFrame(page)
+        preview_frame.grid(
+            row=2, column=1,
+            padx=(10, 30), pady=8, sticky="nsew",
+        )
+        preview_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            preview_frame,
+            text="QR PREVIEW",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=0, padx=15, pady=(15, 8))
+
+        self.qr_preview_label = ctk.CTkLabel(
+            preview_frame,
+            text="Generate a QR code to preview it here.",
+            width=300,
+            height=300,
+        )
+        self.qr_preview_label.grid(
+            row=1, column=0,
+            padx=15, pady=(0, 15),
+        )
+
+        result_frame = ctk.CTkFrame(page)
+        result_frame.grid(
+            row=3, column=0, columnspan=2,
+            padx=30, pady=(8, 15), sticky="nsew",
+        )
+        result_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            result_frame,
+            text="GENERATED FILE",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=0, padx=15, pady=(15, 8), sticky="w")
+
+        self.qr_path_entry = ctk.CTkEntry(
+            result_frame,
+            height=42,
+        )
+        self.qr_path_entry.grid(
+            row=1, column=0,
+            padx=15, pady=(0, 10), sticky="ew",
+        )
+
+        self.qr_status_label = ctk.CTkLabel(
+            result_frame,
+            text="Ready",
+            font=("Arial", 13),
+            wraplength=760,
+            justify="left",
+        )
+        self.qr_status_label.grid(
+            row=2, column=0,
+            padx=15, pady=(0, 15), sticky="w",
+        )
+
+        self.qr_preview_image = None
+
+    def gui_generate_qr(self):
+        data = self.qr_data_box.get("1.0", "end").strip()
+
+        if not data:
+            self.qr_status_label.configure(
+                text="Enter text or a URL first.",
+            )
+            return
+
+        result = generate_qr(data)
+
+        if not result.get("success"):
+            self.qr_status_label.configure(
+                text=result.get(
+                    "error",
+                    "QR generation failed.",
+                ),
+            )
+            return
+
+        path = result["path"]
+
+        self.qr_path_entry.delete(0, "end")
+        self.qr_path_entry.insert(0, path)
+
+        try:
+            from PIL import Image
+
+            image = Image.open(path)
+            image.thumbnail((280, 280))
+
+            self.qr_preview_image = ctk.CTkImage(
+                light_image=image,
+                dark_image=image,
+                size=(280, 280),
+            )
+
+            self.qr_preview_label.configure(
+                image=self.qr_preview_image,
+                text="",
+            )
+
+        except Exception as error:
+            self.qr_preview_label.configure(
+                image=None,
+                text=f"Preview unavailable:\n{error}",
+            )
+
+        self.qr_status_label.configure(
+            text=result["message"],
+        )
+
+        self.add_history(
+            "Generate QR",
+            result["message"],
+            source="GUI",
+        )
+
+    def gui_open_qr_folder(self):
+        folder = os.path.abspath("generated_qr")
+        os.makedirs(folder, exist_ok=True)
+
+        try:
+            os.startfile(folder)
+            self.qr_status_label.configure(
+                text=f"Opening: {folder}",
+            )
+        except Exception as error:
+            self.qr_status_label.configure(
+                text=f"Could not open QR folder: {error}",
+            )
 
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
