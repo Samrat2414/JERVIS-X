@@ -22,6 +22,13 @@ from core.weather import get_weather_data
 from core.news import get_news
 from core.security_tools import generate_password
 from core.qr_generator import generate_qr
+from core.tts_studio import (
+    speak_text,
+    stop_speaking,
+    get_voices,
+    set_voice,
+    save_speech_to_file,
+)
 from core.clipboard_manager import (
     get_clipboard_text,
     copy_to_clipboard,
@@ -309,6 +316,7 @@ class JervisApp(ctk.CTk):
             "Clipboard",
             "Password Generator",
             "QR Generator",
+            "TTS Studio",
             "Voice",
             "Automation",
             "Files",
@@ -327,7 +335,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 38 • QR Generator",
+            text="JERVIS X\nStep 39 • TTS Studio",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -363,6 +371,7 @@ class JervisApp(ctk.CTk):
         self.create_clipboard_page()
         self.create_password_generator_page()
         self.create_qr_generator_page()
+        self.create_tts_studio_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -3728,6 +3737,427 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.qr_status_label.configure(
                 text=f"Could not open QR folder: {error}",
+            )
+
+    def create_tts_studio_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["TTS Studio"] = page
+        page.grid_columnconfigure((0, 1), weight=1)
+        page.grid_rowconfigure(3, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS TEXT-TO-SPEECH STUDIO",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Speak text, choose a voice, adjust speed and save speech as audio.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        input_frame = ctk.CTkFrame(page)
+        input_frame.grid(
+            row=2,
+            column=0,
+            padx=(30, 10),
+            pady=8,
+            sticky="nsew",
+        )
+        input_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            input_frame,
+            text="TEXT TO SPEAK",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.tts_text_box = ctk.CTkTextbox(
+            input_frame,
+            height=200,
+            font=("Arial", 14),
+        )
+        self.tts_text_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+
+        controls_frame = ctk.CTkFrame(page)
+        controls_frame.grid(
+            row=2,
+            column=1,
+            padx=(10, 30),
+            pady=8,
+            sticky="nsew",
+        )
+        controls_frame.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            controls_frame,
+            text="VOICE SETTINGS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=2,
+            padx=15,
+            pady=(15, 12),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            controls_frame,
+            text="Speaking Rate",
+            font=("Arial", 14, "bold"),
+        ).grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=8,
+            sticky="w",
+        )
+
+        self.tts_rate_entry = ctk.CTkEntry(
+            controls_frame,
+            width=120,
+            height=40,
+        )
+        self.tts_rate_entry.grid(
+            row=1,
+            column=1,
+            padx=15,
+            pady=8,
+            sticky="w",
+        )
+        self.tts_rate_entry.insert(0, "180")
+
+        ctk.CTkLabel(
+            controls_frame,
+            text="Voice",
+            font=("Arial", 14, "bold"),
+        ).grid(
+            row=2,
+            column=0,
+            padx=15,
+            pady=8,
+            sticky="w",
+        )
+
+        voices = get_voices()
+        self.tts_voice_map = {}
+
+        if voices:
+            voice_names = []
+            for voice in voices:
+                label = f"{voice['index']}: {voice['name']}"
+                voice_names.append(label)
+                self.tts_voice_map[label] = voice["index"]
+        else:
+            voice_names = ["Default"]
+
+        self.tts_voice_menu = ctk.CTkOptionMenu(
+            controls_frame,
+            values=voice_names,
+            width=240,
+        )
+        self.tts_voice_menu.set(voice_names[0])
+        self.tts_voice_menu.grid(
+            row=2,
+            column=1,
+            padx=15,
+            pady=8,
+            sticky="w",
+        )
+
+        ctk.CTkButton(
+            controls_frame,
+            text="Apply Voice",
+            height=40,
+            command=self.gui_apply_tts_voice,
+        ).grid(
+            row=3,
+            column=0,
+            columnspan=2,
+            padx=15,
+            pady=(10, 8),
+            sticky="ew",
+        )
+
+        ctk.CTkLabel(
+            controls_frame,
+            text="Audio File Name",
+            font=("Arial", 14, "bold"),
+        ).grid(
+            row=4,
+            column=0,
+            padx=15,
+            pady=8,
+            sticky="w",
+        )
+
+        self.tts_file_entry = ctk.CTkEntry(
+            controls_frame,
+            height=40,
+            placeholder_text="jervis_speech.wav",
+        )
+        self.tts_file_entry.grid(
+            row=4,
+            column=1,
+            padx=15,
+            pady=8,
+            sticky="ew",
+        )
+
+        action_frame = ctk.CTkFrame(page)
+        action_frame.grid(
+            row=3,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(8, 15),
+            sticky="nsew",
+        )
+        action_frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
+
+        ctk.CTkButton(
+            action_frame,
+            text="Speak",
+            height=44,
+            command=self.gui_tts_speak,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 5),
+            pady=15,
+            sticky="ew",
+        )
+
+        ctk.CTkButton(
+            action_frame,
+            text="Stop",
+            height=44,
+            command=self.gui_tts_stop,
+        ).grid(
+            row=0,
+            column=1,
+            padx=5,
+            pady=15,
+            sticky="ew",
+        )
+
+        ctk.CTkButton(
+            action_frame,
+            text="Save Audio",
+            height=44,
+            command=self.gui_tts_save_audio,
+        ).grid(
+            row=0,
+            column=2,
+            padx=5,
+            pady=15,
+            sticky="ew",
+        )
+
+        ctk.CTkButton(
+            action_frame,
+            text="Open Audio Folder",
+            height=44,
+            command=self.gui_open_audio_folder,
+        ).grid(
+            row=0,
+            column=3,
+            padx=(5, 15),
+            pady=15,
+            sticky="ew",
+        )
+
+        self.tts_status_label = ctk.CTkLabel(
+            page,
+            text="Ready",
+            font=("Arial", 13),
+            wraplength=780,
+            justify="left",
+        )
+        self.tts_status_label.grid(
+            row=4,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(0, 20),
+            sticky="w",
+        )
+
+    def _get_tts_rate(self):
+        value = self.tts_rate_entry.get().strip()
+
+        try:
+            rate = int(value)
+        except ValueError:
+            rate = 180
+
+        return max(80, min(rate, 300))
+
+    def gui_apply_tts_voice(self):
+        selection = self.tts_voice_menu.get()
+
+        if selection not in self.tts_voice_map:
+            self.tts_status_label.configure(
+                text="Using default system voice.",
+            )
+            return
+
+        result = set_voice(
+            self.tts_voice_map[selection]
+        )
+        self.tts_status_label.configure(
+            text=result,
+        )
+
+    def gui_tts_speak(self):
+        text = self.tts_text_box.get("1.0", "end").strip()
+
+        if not text:
+            self.tts_status_label.configure(
+                text="Enter text to speak first.",
+            )
+            return
+
+        rate = self._get_tts_rate()
+
+        self.tts_status_label.configure(
+            text="Speaking...",
+        )
+
+        threading.Thread(
+            target=self.tts_speak_worker,
+            args=(text, rate),
+            daemon=True,
+        ).start()
+
+    def tts_speak_worker(self, text, rate):
+        result = speak_text(
+            text,
+            rate=rate,
+        )
+
+        self.after(
+            0,
+            lambda: self.tts_status_label.configure(
+                text=result,
+            ),
+        )
+
+        self.add_history(
+            "TTS Speak",
+            result,
+            source="GUI",
+        )
+
+    def gui_tts_stop(self):
+        result = stop_speaking()
+        self.tts_status_label.configure(
+            text=result,
+        )
+
+        self.add_history(
+            "TTS Stop",
+            result,
+            source="GUI",
+        )
+
+    def gui_tts_save_audio(self):
+        text = self.tts_text_box.get("1.0", "end").strip()
+
+        if not text:
+            self.tts_status_label.configure(
+                text="Enter text to save first.",
+            )
+            return
+
+        file_name = self.tts_file_entry.get().strip()
+
+        if not file_name:
+            file_name = "jervis_speech.wav"
+
+        rate = self._get_tts_rate()
+
+        self.tts_status_label.configure(
+            text="Saving audio...",
+        )
+
+        threading.Thread(
+            target=self.tts_save_worker,
+            args=(text, file_name, rate),
+            daemon=True,
+        ).start()
+
+    def tts_save_worker(self, text, file_name, rate):
+        result = save_speech_to_file(
+            text,
+            file_name=file_name,
+            rate=rate,
+        )
+
+        if result.get("success"):
+            message = result.get(
+                "message",
+                "Audio saved.",
+            )
+        else:
+            message = result.get(
+                "error",
+                "Could not save audio.",
+            )
+
+        self.after(
+            0,
+            lambda: self.tts_status_label.configure(
+                text=message,
+            ),
+        )
+
+        self.add_history(
+            "TTS Save Audio",
+            message,
+            source="GUI",
+        )
+
+    def gui_open_audio_folder(self):
+        folder = os.path.abspath("generated_audio")
+        os.makedirs(folder, exist_ok=True)
+
+        try:
+            os.startfile(folder)
+            self.tts_status_label.configure(
+                text=f"Opening: {folder}",
+            )
+        except Exception as error:
+            self.tts_status_label.configure(
+                text=f"Could not open audio folder: {error}",
             )
 
     def create_voice_page(self):
