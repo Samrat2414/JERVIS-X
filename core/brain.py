@@ -1,6 +1,13 @@
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
+from core.performance_monitor import (
+    get_performance_report,
+    get_latest_startup_time,
+    get_average_startup_time,
+    get_session_uptime,
+    get_slow_operations_summary,
+)
 from core.security_lock import (
     is_security_enabled,
     enable_security,
@@ -163,6 +170,52 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 52: Performance & Startup Monitor
+    if command in [
+        "performance report",
+        "performance status",
+        "system performance report",
+        "jervis performance",
+    ]:
+        return get_performance_report()
+
+    if command in [
+        "startup time",
+        "latest startup time",
+        "jervis startup time",
+    ]:
+        latest = get_latest_startup_time()
+
+        if latest is None:
+            return "No startup time has been recorded yet."
+
+        return f"Latest JERVIS startup time: {latest} seconds."
+
+    if command in [
+        "average startup time",
+        "startup average",
+    ]:
+        average = get_average_startup_time()
+
+        if average is None:
+            return "No average startup time is available yet."
+
+        return f"Average JERVIS startup time: {average} seconds."
+
+    if command in [
+        "session uptime",
+        "jervis uptime",
+        "uptime",
+    ]:
+        return f"JERVIS session uptime: {get_session_uptime()} seconds."
+
+    if command in [
+        "slow operations",
+        "show slow operations",
+        "performance bottlenecks",
+    ]:
+        return get_slow_operations_summary(10)
 
     # Step 51: JERVIS Security & App Lock
     if command in [
