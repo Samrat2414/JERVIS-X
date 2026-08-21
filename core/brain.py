@@ -1,5 +1,11 @@
 from datetime import datetime
 
+from core.process_manager import (
+    show_processes,
+    search_processes,
+    terminate_process_by_pid,
+    terminate_process_by_name,
+)
 from core.storage_analyzer import (
     get_storage_summary,
     get_largest_files_summary,
@@ -117,6 +123,53 @@ from core.engineering import (
 def process_command(command):
     original_command = command.strip()
     command = original_command.lower()
+
+    # Step 46: Process Manager
+    if command in [
+        "show processes",
+        "running processes",
+        "list processes",
+        "process list",
+    ]:
+        return show_processes()
+
+    if command.startswith("find process "):
+        search_text = original_command[len("find process "):].strip()
+
+        if not search_text:
+            return "Please provide a process name."
+
+        return search_processes(search_text)
+
+    if command.startswith("search process "):
+        search_text = original_command[len("search process "):].strip()
+
+        if not search_text:
+            return "Please provide a process name."
+
+        return search_processes(search_text)
+
+    if command.startswith("terminate process "):
+        target = original_command[len("terminate process "):].strip()
+
+        if not target:
+            return "Please provide a PID."
+
+        if not target.isdigit():
+            return (
+                "For safety, terminate process requires a numeric PID. "
+                "Example: terminate process 1234"
+            )
+
+        return terminate_process_by_pid(target)
+
+    if command.startswith("close process "):
+        process_name = original_command[len("close process "):].strip()
+
+        if not process_name:
+            return "Please provide a process name."
+
+        return terminate_process_by_name(process_name)
 
     # Step 41: Smart File Finder
     if command.startswith("find file "):
