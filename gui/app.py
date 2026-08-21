@@ -24,6 +24,13 @@ from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
 from core.diagnostics import run_diagnostics
+from core.command_analytics import (
+    get_total_commands,
+    get_most_used_commands,
+    get_recent_commands,
+    get_session_statistics,
+    reset_session,
+)
 from core.logger import (
     read_logs,
     clear_logs,
@@ -370,6 +377,7 @@ class JervisApp(ctk.CTk):
             "Process Manager",
             "Diagnostics",
             "Logs",
+            "Analytics",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -385,7 +393,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 48 • Activity & Error Logger",
+            text="JERVIS X\nStep 49 • Command Analytics",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -431,6 +439,7 @@ class JervisApp(ctk.CTk):
         self.create_process_manager_page()
         self.create_diagnostics_page()
         self.create_logs_page()
+        self.create_analytics_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -6854,6 +6863,265 @@ class JervisApp(ctk.CTk):
             result,
             source="GUI",
         )
+
+    def create_analytics_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Analytics"] = page
+        page.grid_columnconfigure((0, 1, 2), weight=1)
+        page.grid_rowconfigure(4, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS COMMAND ANALYTICS",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Track total commands, session activity, most-used commands and recent history.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.analytics_total_card = self.create_info_card(
+            page,
+            "TOTAL COMMANDS",
+            "--",
+        )
+        self.analytics_total_card["frame"].grid(
+            row=2,
+            column=0,
+            padx=(30, 6),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.analytics_session_card = self.create_info_card(
+            page,
+            "SESSION COMMANDS",
+            "--",
+        )
+        self.analytics_session_card["frame"].grid(
+            row=2,
+            column=1,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.analytics_started_card = self.create_info_card(
+            page,
+            "SESSION START",
+            "--",
+        )
+        self.analytics_started_card["frame"].grid(
+            row=2,
+            column=2,
+            padx=(6, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(8, 12),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(2, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Analytics",
+            width=150,
+            height=42,
+            command=self.gui_refresh_analytics,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 6),
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Reset Session",
+            width=130,
+            height=42,
+            command=self.gui_reset_analytics_session,
+        ).grid(
+            row=0,
+            column=1,
+            padx=6,
+            pady=12,
+        )
+
+        self.analytics_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.analytics_status_label.grid(
+            row=0,
+            column=2,
+            padx=(10, 15),
+            pady=12,
+            sticky="e",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=4,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 20),
+            sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            content,
+            text="MOST USED COMMANDS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="RECENT COMMANDS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=1,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.analytics_top_box = ctk.CTkTextbox(
+            content,
+            font=("Arial", 13),
+        )
+        self.analytics_top_box.grid(
+            row=1,
+            column=0,
+            padx=(15, 7),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.analytics_top_box.configure(state="disabled")
+
+        self.analytics_recent_box = ctk.CTkTextbox(
+            content,
+            font=("Arial", 13),
+        )
+        self.analytics_recent_box.grid(
+            row=1,
+            column=1,
+            padx=(7, 15),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.analytics_recent_box.configure(state="disabled")
+
+        self.gui_refresh_analytics()
+
+    def _set_analytics_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_analytics(self):
+        try:
+            total = get_total_commands()
+            session_text = get_session_statistics()
+            top = get_most_used_commands(10)
+            recent = get_recent_commands(15)
+
+            session_started = "--"
+            session_commands = "--"
+
+            for line in session_text.splitlines():
+                if line.startswith("Session Started:"):
+                    session_started = line.split(":", 1)[1].strip()
+                elif line.startswith("Session Commands:"):
+                    session_commands = line.split(":", 1)[1].strip()
+
+            self.analytics_total_card["value"].configure(
+                text=str(total),
+            )
+            self.analytics_session_card["value"].configure(
+                text=str(session_commands),
+            )
+            self.analytics_started_card["value"].configure(
+                text=str(session_started),
+            )
+
+            self._set_analytics_box(
+                self.analytics_top_box,
+                top,
+            )
+            self._set_analytics_box(
+                self.analytics_recent_box,
+                recent,
+            )
+
+            self.analytics_status_label.configure(
+                text="Analytics refreshed.",
+            )
+
+        except Exception as error:
+            self.analytics_status_label.configure(
+                text=f"Analytics error: {error}",
+            )
+
+    def gui_reset_analytics_session(self):
+        confirmed = messagebox.askyesno(
+            "Reset Session Statistics",
+            "Reset the current JERVIS session statistics?",
+            parent=self,
+        )
+
+        if not confirmed:
+            return
+
+        result = reset_session()
+
+        self.analytics_status_label.configure(
+            text=result,
+        )
+
+        self.add_history(
+            "Reset analytics session",
+            result,
+            source="GUI",
+        )
+
+        self.gui_refresh_analytics()
 
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
