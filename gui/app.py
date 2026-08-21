@@ -22,6 +22,7 @@ from core.weather import get_weather_data
 from core.news import get_news
 from core.security_tools import generate_password
 from core.qr_generator import generate_qr
+from core.translator import translate_text
 from core.tts_studio import (
     speak_text,
     stop_speaking,
@@ -317,6 +318,7 @@ class JervisApp(ctk.CTk):
             "Password Generator",
             "QR Generator",
             "TTS Studio",
+            "Translator",
             "Voice",
             "Automation",
             "Files",
@@ -335,7 +337,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 39 • TTS Studio",
+            text="JERVIS X\nStep 40 • Translator",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -372,6 +374,7 @@ class JervisApp(ctk.CTk):
         self.create_password_generator_page()
         self.create_qr_generator_page()
         self.create_tts_studio_page()
+        self.create_translator_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -4159,6 +4162,385 @@ class JervisApp(ctk.CTk):
             self.tts_status_label.configure(
                 text=f"Could not open audio folder: {error}",
             )
+
+    def create_translator_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Translator"] = page
+        page.grid_columnconfigure((0, 1), weight=1)
+        page.grid_rowconfigure(3, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS TRANSLATOR",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Translate text between English, Bengali, Hindi, Japanese and more.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=2,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(0, 15),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure((1, 3), weight=1)
+
+        ctk.CTkLabel(
+            controls,
+            text="Source",
+            font=("Arial", 14, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 8),
+            pady=15,
+            sticky="w",
+        )
+
+        self.translator_source_menu = ctk.CTkOptionMenu(
+            controls,
+            values=[
+                "auto",
+                "english",
+                "bengali",
+                "hindi",
+                "japanese",
+                "spanish",
+                "french",
+                "german",
+            ],
+            width=150,
+        )
+        self.translator_source_menu.set("auto")
+        self.translator_source_menu.grid(
+            row=0,
+            column=1,
+            padx=(0, 15),
+            pady=15,
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            controls,
+            text="Target",
+            font=("Arial", 14, "bold"),
+        ).grid(
+            row=0,
+            column=2,
+            padx=(15, 8),
+            pady=15,
+            sticky="w",
+        )
+
+        self.translator_target_menu = ctk.CTkOptionMenu(
+            controls,
+            values=[
+                "bengali",
+                "english",
+                "hindi",
+                "japanese",
+                "spanish",
+                "french",
+                "german",
+            ],
+            width=150,
+        )
+        self.translator_target_menu.set("bengali")
+        self.translator_target_menu.grid(
+            row=0,
+            column=3,
+            padx=(0, 15),
+            pady=15,
+            sticky="w",
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Translate",
+            width=130,
+            height=42,
+            command=self.gui_translate_text,
+        ).grid(
+            row=0,
+            column=4,
+            padx=(5, 15),
+            pady=15,
+        )
+
+        input_frame = ctk.CTkFrame(page)
+        input_frame.grid(
+            row=3,
+            column=0,
+            padx=(30, 10),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        input_frame.grid_columnconfigure(0, weight=1)
+        input_frame.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            input_frame,
+            text="SOURCE TEXT",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.translator_source_box = ctk.CTkTextbox(
+            input_frame,
+            font=("Arial", 14),
+        )
+        self.translator_source_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+
+        output_frame = ctk.CTkFrame(page)
+        output_frame.grid(
+            row=3,
+            column=1,
+            padx=(10, 30),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        output_frame.grid_columnconfigure(0, weight=1)
+        output_frame.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            output_frame,
+            text="TRANSLATION",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.translator_output_box = ctk.CTkTextbox(
+            output_frame,
+            font=("Arial", 14),
+        )
+        self.translator_output_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 10),
+            sticky="nsew",
+        )
+        self.translator_output_box.configure(state="disabled")
+
+        output_buttons = ctk.CTkFrame(
+            output_frame,
+            fg_color="transparent",
+        )
+        output_buttons.grid(
+            row=2,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="ew",
+        )
+        output_buttons.grid_columnconfigure((0, 1), weight=1)
+
+        ctk.CTkButton(
+            output_buttons,
+            text="Copy Translation",
+            height=40,
+            command=self.gui_copy_translation,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(0, 5),
+            sticky="ew",
+        )
+
+        ctk.CTkButton(
+            output_buttons,
+            text="Speak Translation",
+            height=40,
+            command=self.gui_speak_translation,
+        ).grid(
+            row=0,
+            column=1,
+            padx=(5, 0),
+            sticky="ew",
+        )
+
+        self.translator_status_label = ctk.CTkLabel(
+            page,
+            text="Ready",
+            font=("Arial", 13),
+            wraplength=780,
+            justify="left",
+        )
+        self.translator_status_label.grid(
+            row=4,
+            column=0,
+            columnspan=2,
+            padx=30,
+            pady=(0, 20),
+            sticky="w",
+        )
+
+    def _set_translation_output(self, text):
+        self.translator_output_box.configure(state="normal")
+        self.translator_output_box.delete("1.0", "end")
+        self.translator_output_box.insert("end", str(text))
+        self.translator_output_box.configure(state="disabled")
+
+    def gui_translate_text(self):
+        source_text = self.translator_source_box.get("1.0", "end").strip()
+
+        if not source_text:
+            self.translator_status_label.configure(
+                text="Enter text to translate first.",
+            )
+            return
+
+        source_language = self.translator_source_menu.get()
+        target_language = self.translator_target_menu.get()
+
+        self.translator_status_label.configure(
+            text="Translating...",
+        )
+
+        threading.Thread(
+            target=self.translator_worker,
+            args=(
+                source_text,
+                source_language,
+                target_language,
+            ),
+            daemon=True,
+        ).start()
+
+    def translator_worker(
+        self,
+        source_text,
+        source_language,
+        target_language,
+    ):
+        result = translate_text(
+            source_text,
+            target_language,
+            source_language=source_language,
+        )
+
+        self.after(
+            0,
+            lambda: self.finish_translation(
+                source_text,
+                target_language,
+                result,
+            ),
+        )
+
+    def finish_translation(
+        self,
+        source_text,
+        target_language,
+        result,
+    ):
+        if not result.get("success"):
+            self.translator_status_label.configure(
+                text=result.get(
+                    "error",
+                    "Translation failed.",
+                ),
+            )
+            return
+
+        translated_text = result["translated_text"]
+
+        self._set_translation_output(translated_text)
+        self.translator_status_label.configure(
+            text=f"Translated to {target_language}.",
+        )
+
+        self.add_history(
+            f"Translate to {target_language}",
+            translated_text,
+            source="GUI",
+        )
+
+    def gui_copy_translation(self):
+        translated_text = self.translator_output_box.get(
+            "1.0",
+            "end",
+        ).strip()
+
+        if not translated_text:
+            self.translator_status_label.configure(
+                text="Translate something first.",
+            )
+            return
+
+        result = copy_to_clipboard(translated_text)
+        self.translator_status_label.configure(
+            text=result,
+        )
+
+    def gui_speak_translation(self):
+        translated_text = self.translator_output_box.get(
+            "1.0",
+            "end",
+        ).strip()
+
+        if not translated_text:
+            self.translator_status_label.configure(
+                text="Translate something first.",
+            )
+            return
+
+        self.translator_status_label.configure(
+            text="Speaking translation...",
+        )
+
+        threading.Thread(
+            target=self.translator_speak_worker,
+            args=(translated_text,),
+            daemon=True,
+        ).start()
+
+    def translator_speak_worker(self, translated_text):
+        result = speak_text(translated_text)
+
+        self.after(
+            0,
+            lambda: self.translator_status_label.configure(
+                text=result,
+            ),
+        )
 
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)

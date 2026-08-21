@@ -89,6 +89,32 @@ def process_command(command):
     command = original_command.lower()
 
     # Step 40: Translation System
+    # Step 40: Arrow-style translation
+    # Example: Hello Guru → Bengali
+    if "→" in original_command:
+        source_text, target_language = original_command.rsplit("→", 1)
+        source_text = source_text.strip()
+        target_language = target_language.strip()
+
+        if source_text and target_language:
+            return translate_text_response(
+                source_text,
+                target_language,
+            )
+
+    # ASCII arrow support
+    # Example: Hello Guru -> Bengali
+    if "->" in original_command:
+        source_text, target_language = original_command.rsplit("->", 1)
+        source_text = source_text.strip()
+        target_language = target_language.strip()
+
+        if source_text and target_language:
+            return translate_text_response(
+                source_text,
+                target_language,
+            )
+
     if command.startswith("translate "):
         translation_request = original_command[len("translate "):].strip()
 
