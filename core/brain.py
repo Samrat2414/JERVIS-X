@@ -3,6 +3,14 @@ from datetime import datetime
 from core.security_tools import generate_password_text
 from core.qr_generator import generate_qr_text
 from core.translator import translate_text_response
+from core.system_monitor import (
+    get_cpu_usage,
+    get_ram_usage,
+    get_disk_usage,
+    get_battery_info,
+    get_system_summary,
+    get_process_summary,
+)
 from core.screen_tools import (
     take_screenshot_text,
     open_screenshot_folder,
@@ -702,6 +710,80 @@ def process_command(command):
     if command.startswith("search youtube "):
         query = original_command[len("search youtube "):].strip()
         return search_youtube(query)
+
+    # Step 43: System Monitor & Performance Analyzer
+    if command in [
+        "system monitor",
+        "system status",
+        "system performance",
+        "performance monitor",
+    ]:
+        return get_system_summary()
+
+    if command in [
+        "cpu usage",
+        "cpu status",
+        "check cpu",
+    ]:
+        cpu = get_cpu_usage()
+        return f"CPU Usage: {cpu}%"
+
+    if command in [
+        "ram usage",
+        "memory usage",
+        "ram status",
+        "check ram",
+    ]:
+        ram = get_ram_usage()
+        return (
+            f"RAM Usage: {ram['percent']}% "
+            f"({ram['used_gb']} GB / "
+            f"{ram['total_gb']} GB). "
+            f"Available: {ram['available_gb']} GB."
+        )
+
+    if command in [
+        "disk usage",
+        "storage usage",
+        "disk status",
+        "check disk",
+    ]:
+        disk = get_disk_usage()
+        return (
+            f"Disk Usage: {disk['percent']}% "
+            f"({disk['used_gb']} GB / "
+            f"{disk['total_gb']} GB). "
+            f"Free: {disk['free_gb']} GB."
+        )
+
+    if command in [
+        "battery status",
+        "battery level",
+        "check battery",
+    ]:
+        battery = get_battery_info()
+
+        if not battery.get("available"):
+            return "Battery information is unavailable."
+
+        status = (
+            "Charging"
+            if battery["plugged"]
+            else "On battery"
+        )
+
+        return (
+            f"Battery: {battery['percent']}% "
+            f"({status})."
+        )
+
+    if command in [
+        "top processes",
+        "running processes",
+        "show processes",
+        "process monitor",
+    ]:
+        return get_process_summary()
 
     # Step 42: Screenshot & Screen Tools
     if command in [
