@@ -23,6 +23,13 @@ from core.news import get_news
 from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
+from core.system_monitor import (
+    get_cpu_usage,
+    get_ram_usage,
+    get_disk_usage,
+    get_battery_info,
+    get_process_summary,
+)
 from core.screen_tools import (
     take_screenshot,
     get_latest_screenshot,
@@ -335,6 +342,7 @@ class JervisApp(ctk.CTk):
             "Files",
             "Smart File Finder",
             "Screen Tools",
+            "System Monitor",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -350,7 +358,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 42 • Screen Tools",
+            text="JERVIS X\nStep 43 • Live System Monitor",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -390,6 +398,7 @@ class JervisApp(ctk.CTk):
         self.create_translator_page()
         self.create_smart_file_finder_page()
         self.create_screen_tools_page()
+        self.create_system_monitor_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -5147,6 +5156,278 @@ class JervisApp(ctk.CTk):
             source="GUI",
         )
 
+    def create_system_monitor_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["System Monitor"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(4, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS LIVE SYSTEM MONITOR",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Live CPU, RAM, Disk, Battery and top process information.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.system_monitor_cpu_card = self.create_info_card(
+            page,
+            "CPU USAGE",
+            "-- %",
+        )
+        self.system_monitor_cpu_card["frame"].grid(
+            row=2,
+            column=0,
+            padx=(30, 6),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.system_monitor_ram_card = self.create_info_card(
+            page,
+            "RAM USAGE",
+            "-- %",
+        )
+        self.system_monitor_ram_card["frame"].grid(
+            row=2,
+            column=1,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.system_monitor_disk_card = self.create_info_card(
+            page,
+            "DISK USAGE",
+            "-- %",
+        )
+        self.system_monitor_disk_card["frame"].grid(
+            row=2,
+            column=2,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.system_monitor_battery_card = self.create_info_card(
+            page,
+            "BATTERY",
+            "-- %",
+        )
+        self.system_monitor_battery_card["frame"].grid(
+            row=2,
+            column=3,
+            padx=(6, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        detail_frame = ctk.CTkFrame(page)
+        detail_frame.grid(
+            row=3,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(8, 12),
+            sticky="ew",
+        )
+        detail_frame.grid_columnconfigure(0, weight=1)
+
+        self.system_monitor_detail_label = ctk.CTkLabel(
+            detail_frame,
+            text="Loading system information...",
+            font=("Arial", 13),
+            justify="left",
+            wraplength=900,
+        )
+        self.system_monitor_detail_label.grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=12,
+            sticky="w",
+        )
+
+        process_frame = ctk.CTkFrame(page)
+        process_frame.grid(
+            row=4,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(0, 12),
+            sticky="nsew",
+        )
+        process_frame.grid_columnconfigure(0, weight=1)
+        process_frame.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            process_frame,
+            text="TOP RUNNING PROCESSES",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.system_monitor_process_box = ctk.CTkTextbox(
+            process_frame,
+            font=("Arial", 13),
+        )
+        self.system_monitor_process_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.system_monitor_process_box.configure(state="disabled")
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=5,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(0, 20),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(2, weight=1)
+
+        self.system_monitor_auto_var = ctk.BooleanVar(value=True)
+
+        ctk.CTkSwitch(
+            controls,
+            text="Auto Refresh",
+            variable=self.system_monitor_auto_var,
+            onvalue=True,
+            offvalue=False,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 10),
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Now",
+            width=120,
+            command=self.gui_refresh_system_monitor,
+        ).grid(
+            row=0,
+            column=1,
+            padx=5,
+            pady=12,
+        )
+
+        self.system_monitor_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.system_monitor_status_label.grid(
+            row=0,
+            column=2,
+            padx=(10, 15),
+            pady=12,
+            sticky="e",
+        )
+
+        self.system_monitor_page_active = True
+        self.gui_refresh_system_monitor()
+        self.after(3000, self.system_monitor_auto_refresh)
+
+    def _set_system_monitor_processes(self, text):
+        self.system_monitor_process_box.configure(state="normal")
+        self.system_monitor_process_box.delete("1.0", "end")
+        self.system_monitor_process_box.insert("end", str(text))
+        self.system_monitor_process_box.configure(state="disabled")
+
+    def gui_refresh_system_monitor(self):
+        try:
+            cpu = get_cpu_usage()
+            ram = get_ram_usage()
+            disk = get_disk_usage()
+            battery = get_battery_info()
+            processes = get_process_summary(10)
+
+            self.system_monitor_cpu_card["value"].configure(
+                text=f"{cpu}%"
+            )
+            self.system_monitor_ram_card["value"].configure(
+                text=f"{ram['percent']}%"
+            )
+            self.system_monitor_disk_card["value"].configure(
+                text=f"{disk['percent']}%"
+            )
+
+            if battery.get("available"):
+                battery_text = f"{battery['percent']}%"
+                battery_state = (
+                    "Charging"
+                    if battery.get("plugged")
+                    else "On battery"
+                )
+            else:
+                battery_text = "N/A"
+                battery_state = "Unavailable"
+
+            self.system_monitor_battery_card["value"].configure(
+                text=battery_text
+            )
+
+            self.system_monitor_detail_label.configure(
+                text=(
+                    f"RAM: {ram['used_gb']} GB / {ram['total_gb']} GB "
+                    f"(Available {ram['available_gb']} GB)\n"
+                    f"Disk: {disk['used_gb']} GB / {disk['total_gb']} GB "
+                    f"(Free {disk['free_gb']} GB)\n"
+                    f"Battery: {battery_state}"
+                )
+            )
+
+            self._set_system_monitor_processes(processes)
+
+            self.system_monitor_status_label.configure(
+                text="System data refreshed."
+            )
+
+        except Exception as error:
+            self.system_monitor_status_label.configure(
+                text=f"Monitor error: {error}"
+            )
+
+    def system_monitor_auto_refresh(self):
+        try:
+            if (
+                hasattr(self, "system_monitor_auto_var")
+                and self.system_monitor_auto_var.get()
+            ):
+                self.gui_refresh_system_monitor()
+        finally:
+            self.after(3000, self.system_monitor_auto_refresh)
+
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
         self.pages["Voice"] = page
@@ -6474,4 +6755,4 @@ class JervisApp(ctk.CTk):
 
 def run_gui():
     app = JervisApp()
-    app.mainloop() 
+    app.mainloop()
