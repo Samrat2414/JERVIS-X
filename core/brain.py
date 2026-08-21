@@ -1,5 +1,12 @@
 from datetime import datetime
 
+from core.network_monitor import (
+    is_internet_connected,
+    get_local_ip,
+    get_network_io,
+    get_active_interfaces,
+    get_network_summary,
+)
 from core.security_tools import generate_password_text
 from core.qr_generator import generate_qr_text
 from core.translator import translate_text_response
@@ -710,6 +717,67 @@ def process_command(command):
     if command.startswith("search youtube "):
         query = original_command[len("search youtube "):].strip()
         return search_youtube(query)
+
+    # Step 44: Network Monitor
+    if command in [
+        "network status",
+        "internet status",
+        "check network",
+        "check internet",
+    ]:
+        return get_network_summary()
+
+    if command in [
+        "local ip",
+        "my ip",
+        "show local ip",
+        "what is my local ip",
+        "what's my local ip",
+    ]:
+        return f"Local IP: {get_local_ip()}"
+
+    if command in [
+        "network usage",
+        "data usage",
+        "network data",
+    ]:
+        io = get_network_io()
+        return (
+            f"Data Sent: {io['mb_sent']} MB\n"
+            f"Data Received: {io['mb_received']} MB"
+        )
+
+    if command in [
+        "active interfaces",
+        "network interfaces",
+        "show network interfaces",
+    ]:
+        interfaces = get_active_interfaces()
+
+        if not interfaces:
+            return "No active network interfaces found."
+
+        lines = []
+
+        for number, interface in enumerate(interfaces, start=1):
+            lines.append(
+                f"{number}. {interface['name']} "
+                f"| IP: {interface['ip']} "
+                f"| Speed: {interface['speed']} Mbps"
+            )
+
+        return "Active Network Interfaces:\n" + "\n".join(lines)
+
+    if command in [
+        "internet connected",
+        "am i online",
+        "am i connected",
+    ]:
+        return (
+            "Internet is connected."
+            if is_internet_connected()
+            else "Internet is disconnected."
+        )
 
     # Step 43: System Monitor & Performance Analyzer
     if command in [
