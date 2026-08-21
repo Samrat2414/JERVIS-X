@@ -1,6 +1,9 @@
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
+from core.system_info import (
+    get_system_info_report,
+)
 from plugins.plugin_manager import (
     get_plugin_status,
     load_plugin,
@@ -176,6 +179,19 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 54: System Information Center
+    if command in [
+        "system information",
+        "system info",
+        "computer information",
+        "computer info",
+        "pc information",
+        "pc info",
+        "show system information",
+        "show system info",
+    ]:
+        return get_system_info_report()
 
     # Step 53: Plugin System
     if command in [
