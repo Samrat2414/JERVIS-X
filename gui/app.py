@@ -23,6 +23,12 @@ from core.news import get_news
 from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
+from core.smart_file_finder import (
+    search_files,
+    search_extension,
+    open_file_by_name,
+    open_folder_of_file,
+)
 from core.tts_studio import (
     speak_text,
     stop_speaking,
@@ -322,6 +328,7 @@ class JervisApp(ctk.CTk):
             "Voice",
             "Automation",
             "Files",
+            "Smart File Finder",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -337,7 +344,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 40 • Translator",
+            text="JERVIS X\nStep 41 • Smart File Finder",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -375,6 +382,7 @@ class JervisApp(ctk.CTk):
         self.create_qr_generator_page()
         self.create_tts_studio_page()
         self.create_translator_page()
+        self.create_smart_file_finder_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -4540,6 +4548,338 @@ class JervisApp(ctk.CTk):
             lambda: self.translator_status_label.configure(
                 text=result,
             ),
+        )
+
+    def create_smart_file_finder_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Smart File Finder"] = page
+        page.grid_columnconfigure(0, weight=1)
+        page.grid_rowconfigure(4, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART FILE FINDER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Search files by name or extension, then open the file or its folder.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        search_frame = ctk.CTkFrame(page)
+        search_frame.grid(
+            row=2,
+            column=0,
+            padx=30,
+            pady=(0, 12),
+            sticky="ew",
+        )
+        search_frame.grid_columnconfigure(0, weight=1)
+
+        self.smart_file_search_entry = ctk.CTkEntry(
+            search_frame,
+            placeholder_text="Search by file name, e.g. resume",
+            height=44,
+        )
+        self.smart_file_search_entry.grid(
+            row=0,
+            column=0,
+            padx=(15, 8),
+            pady=15,
+            sticky="ew",
+        )
+        self.smart_file_search_entry.bind(
+            "<Return>",
+            lambda event: self.gui_smart_file_search(),
+        )
+
+        ctk.CTkButton(
+            search_frame,
+            text="Search Name",
+            width=120,
+            height=44,
+            command=self.gui_smart_file_search,
+        ).grid(
+            row=0,
+            column=1,
+            padx=5,
+            pady=15,
+        )
+
+        self.smart_file_extension_menu = ctk.CTkOptionMenu(
+            search_frame,
+            values=[
+                "pdf",
+                "py",
+                "txt",
+                "docx",
+                "xlsx",
+                "png",
+                "jpg",
+                "jpeg",
+            ],
+            width=110,
+        )
+        self.smart_file_extension_menu.set("pdf")
+        self.smart_file_extension_menu.grid(
+            row=0,
+            column=2,
+            padx=5,
+            pady=15,
+        )
+
+        ctk.CTkButton(
+            search_frame,
+            text="Find Type",
+            width=100,
+            height=44,
+            command=self.gui_smart_file_extension_search,
+        ).grid(
+            row=0,
+            column=3,
+            padx=(5, 15),
+            pady=15,
+        )
+
+        action_frame = ctk.CTkFrame(page)
+        action_frame.grid(
+            row=3,
+            column=0,
+            padx=30,
+            pady=(0, 12),
+            sticky="ew",
+        )
+        action_frame.grid_columnconfigure((0, 1, 2), weight=1)
+
+        ctk.CTkButton(
+            action_frame,
+            text="Open Matching File",
+            height=42,
+            command=self.gui_smart_file_open,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 5),
+            pady=15,
+            sticky="ew",
+        )
+
+        ctk.CTkButton(
+            action_frame,
+            text="Open File Folder",
+            height=42,
+            command=self.gui_smart_file_open_folder,
+        ).grid(
+            row=0,
+            column=1,
+            padx=5,
+            pady=15,
+            sticky="ew",
+        )
+
+        ctk.CTkButton(
+            action_frame,
+            text="Clear Results",
+            height=42,
+            command=self.gui_smart_file_clear_results,
+        ).grid(
+            row=0,
+            column=2,
+            padx=(5, 15),
+            pady=15,
+            sticky="ew",
+        )
+
+        results_frame = ctk.CTkFrame(page)
+        results_frame.grid(
+            row=4,
+            column=0,
+            padx=30,
+            pady=(0, 12),
+            sticky="nsew",
+        )
+        results_frame.grid_columnconfigure(0, weight=1)
+        results_frame.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            results_frame,
+            text="SEARCH RESULTS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.smart_file_results_box = ctk.CTkTextbox(
+            results_frame,
+            font=("Arial", 13),
+        )
+        self.smart_file_results_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.smart_file_results_box.configure(state="disabled")
+
+        self.smart_file_status_label = ctk.CTkLabel(
+            page,
+            text="Ready",
+            font=("Arial", 13),
+            wraplength=780,
+            justify="left",
+        )
+        self.smart_file_status_label.grid(
+            row=5,
+            column=0,
+            padx=30,
+            pady=(0, 20),
+            sticky="w",
+        )
+
+    def _set_smart_file_results(self, text):
+        self.smart_file_results_box.configure(state="normal")
+        self.smart_file_results_box.delete("1.0", "end")
+        self.smart_file_results_box.insert("end", str(text))
+        self.smart_file_results_box.configure(state="disabled")
+
+    def gui_smart_file_search(self):
+        query = self.smart_file_search_entry.get().strip()
+
+        if not query:
+            self.smart_file_status_label.configure(
+                text="Enter a file name to search.",
+            )
+            return
+
+        self.smart_file_status_label.configure(
+            text="Searching files...",
+        )
+
+        threading.Thread(
+            target=self.smart_file_search_worker,
+            args=(query,),
+            daemon=True,
+        ).start()
+
+    def smart_file_search_worker(self, query):
+        result = search_files(query)
+
+        self.after(
+            0,
+            lambda: self.finish_smart_file_search(
+                query,
+                result,
+            ),
+        )
+
+    def finish_smart_file_search(self, query, result):
+        self._set_smart_file_results(result)
+        self.smart_file_status_label.configure(
+            text=f'Search completed for "{query}".',
+        )
+
+        self.add_history(
+            f"Find file {query}",
+            "Smart file search completed.",
+            source="GUI",
+        )
+
+    def gui_smart_file_extension_search(self):
+        extension = self.smart_file_extension_menu.get().strip()
+
+        self.smart_file_status_label.configure(
+            text=f"Searching .{extension} files...",
+        )
+
+        threading.Thread(
+            target=self.smart_file_extension_worker,
+            args=(extension,),
+            daemon=True,
+        ).start()
+
+    def smart_file_extension_worker(self, extension):
+        result = search_extension(extension)
+
+        self.after(
+            0,
+            lambda: self.finish_smart_file_extension_search(
+                extension,
+                result,
+            ),
+        )
+
+    def finish_smart_file_extension_search(self, extension, result):
+        self._set_smart_file_results(result)
+        self.smart_file_status_label.configure(
+            text=f"Finished searching .{extension} files.",
+        )
+
+        self.add_history(
+            f"Find {extension} files",
+            "Extension search completed.",
+            source="GUI",
+        )
+
+    def gui_smart_file_open(self):
+        query = self.smart_file_search_entry.get().strip()
+
+        if not query:
+            self.smart_file_status_label.configure(
+                text="Enter a file name first.",
+            )
+            return
+
+        result = open_file_by_name(query)
+        self.smart_file_status_label.configure(text=result)
+
+        self.add_history(
+            f"Open file {query}",
+            result,
+            source="GUI",
+        )
+
+    def gui_smart_file_open_folder(self):
+        query = self.smart_file_search_entry.get().strip()
+
+        if not query:
+            self.smart_file_status_label.configure(
+                text="Enter a file name first.",
+            )
+            return
+
+        result = open_folder_of_file(query)
+        self.smart_file_status_label.configure(text=result)
+
+        self.add_history(
+            f"Open folder of {query}",
+            result,
+            source="GUI",
+        )
+
+    def gui_smart_file_clear_results(self):
+        self.smart_file_search_entry.delete(0, "end")
+        self._set_smart_file_results("")
+        self.smart_file_status_label.configure(
+            text="Results cleared.",
         )
 
     def create_voice_page(self):
