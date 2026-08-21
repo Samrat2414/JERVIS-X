@@ -23,6 +23,7 @@ from core.news import get_news
 from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
+from core.diagnostics import run_diagnostics
 from core.process_manager import (
     get_running_processes,
     search_processes,
@@ -362,6 +363,7 @@ class JervisApp(ctk.CTk):
             "Network Monitor",
             "Storage Analyzer",
             "Process Manager",
+            "Diagnostics",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -377,7 +379,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 46 • Process Manager",
+            text="JERVIS X\nStep 47 • Self Diagnostics",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -421,6 +423,7 @@ class JervisApp(ctk.CTk):
         self.create_network_monitor_page()
         self.create_storage_analyzer_page()
         self.create_process_manager_page()
+        self.create_diagnostics_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -6323,6 +6326,276 @@ class JervisApp(ctk.CTk):
         self.after(
             800,
             self.gui_refresh_processes,
+        )
+
+    def create_diagnostics_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Diagnostics"] = page
+        page.grid_columnconfigure((0, 1, 2), weight=1)
+        page.grid_rowconfigure(5, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SELF-DIAGNOSTICS",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Check JERVIS files, folders, dependencies, internet and writable data storage.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.diagnostics_health_card = self.create_info_card(
+            page, "HEALTH SCORE", "-- / 5"
+        )
+        self.diagnostics_health_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.diagnostics_overall_card = self.create_info_card(
+            page, "OVERALL STATUS", "Checking..."
+        )
+        self.diagnostics_overall_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.diagnostics_internet_card = self.create_info_card(
+            page, "INTERNET", "--"
+        )
+        self.diagnostics_internet_card["frame"].grid(
+            row=2, column=2, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3, column=0, columnspan=3,
+            padx=30, pady=(8, 12), sticky="ew"
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Run Diagnostics",
+            width=150,
+            height=42,
+            command=self.gui_run_diagnostics,
+        ).grid(row=0, column=0, padx=15, pady=12)
+
+        self.diagnostics_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.diagnostics_status_label.grid(
+            row=0, column=1, padx=15, pady=12, sticky="e"
+        )
+
+        checks_frame = ctk.CTkFrame(page)
+        checks_frame.grid(
+            row=4, column=0, columnspan=3,
+            padx=30, pady=(0, 12), sticky="ew"
+        )
+        checks_frame.grid_columnconfigure(
+            (0, 1, 2, 3, 4), weight=1
+        )
+
+        self.diagnostics_check_labels = {}
+
+        check_names = [
+            "Required Files",
+            "Required Folders",
+            "Dependencies",
+            "Internet",
+            "Data Folder",
+        ]
+
+        for column, name in enumerate(check_names):
+            item = ctk.CTkFrame(checks_frame)
+            item.grid(
+                row=0,
+                column=column,
+                padx=6,
+                pady=12,
+                sticky="nsew",
+            )
+
+            ctk.CTkLabel(
+                item,
+                text=name,
+                font=("Arial", 12, "bold"),
+            ).pack(padx=8, pady=(12, 4))
+
+            value_label = ctk.CTkLabel(
+                item,
+                text="--",
+                font=("Arial", 16, "bold"),
+            )
+            value_label.pack(padx=8, pady=(4, 12))
+
+            self.diagnostics_check_labels[name] = value_label
+
+        detail_frame = ctk.CTkFrame(page)
+        detail_frame.grid(
+            row=5, column=0, columnspan=3,
+            padx=30, pady=(0, 20), sticky="nsew"
+        )
+        detail_frame.grid_columnconfigure(0, weight=1)
+        detail_frame.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            detail_frame,
+            text="DIAGNOSTIC DETAILS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=0, padx=15, pady=(15, 8), sticky="w"
+        )
+
+        self.diagnostics_details_box = ctk.CTkTextbox(
+            detail_frame,
+            font=("Arial", 13),
+        )
+        self.diagnostics_details_box.grid(
+            row=1, column=0, padx=15, pady=(0, 15), sticky="nsew"
+        )
+        self.diagnostics_details_box.configure(state="disabled")
+
+        self.gui_run_diagnostics()
+
+    def _set_diagnostics_details(self, text):
+        self.diagnostics_details_box.configure(state="normal")
+        self.diagnostics_details_box.delete("1.0", "end")
+        self.diagnostics_details_box.insert("end", str(text))
+        self.diagnostics_details_box.configure(state="disabled")
+
+    def gui_run_diagnostics(self):
+        self.diagnostics_status_label.configure(
+            text="Running diagnostics..."
+        )
+
+        threading.Thread(
+            target=self.diagnostics_worker,
+            daemon=True,
+        ).start()
+
+    def diagnostics_worker(self):
+        try:
+            result = run_diagnostics()
+
+            self.after(
+                0,
+                lambda: self.finish_diagnostics(result),
+            )
+
+        except Exception as error:
+            self.after(
+                0,
+                lambda err=error: self.diagnostics_status_label.configure(
+                    text=f"Diagnostics error: {err}"
+                ),
+            )
+
+    def finish_diagnostics(self, result):
+        self.diagnostics_health_card["value"].configure(
+            text=f"{result['passed']} / {result['total']}"
+        )
+
+        self.diagnostics_overall_card["value"].configure(
+            text="Healthy" if result["healthy"] else "Needs Attention"
+        )
+
+        self.diagnostics_internet_card["value"].configure(
+            text="Connected" if result["internet"] else "Disconnected"
+        )
+
+        for name, status in result["checks"].items():
+            label = self.diagnostics_check_labels.get(name)
+
+            if label:
+                label.configure(
+                    text="PASS" if status else "FAIL"
+                )
+
+        details = [
+            "JERVIS SELF-DIAGNOSTICS",
+            "",
+            f"Health Score: {result['passed']}/{result['total']}",
+            "",
+        ]
+
+        for name, status in result["checks"].items():
+            details.append(
+                f"{name}: {'PASS' if status else 'FAIL'}"
+            )
+
+        if result["missing_files"]:
+            details.extend([
+                "",
+                "Missing Files:",
+                *[
+                    f"- {item}"
+                    for item in result["missing_files"]
+                ],
+            ])
+
+        if result["missing_folders"]:
+            details.extend([
+                "",
+                "Missing Folders:",
+                *[
+                    f"- {item}"
+                    for item in result["missing_folders"]
+                ],
+            ])
+
+        if result["missing_dependencies"]:
+            details.extend([
+                "",
+                "Missing Dependencies:",
+                *[
+                    f"- {item}"
+                    for item in result["missing_dependencies"]
+                ],
+            ])
+
+        details.extend([
+            "",
+            (
+                "Status: JERVIS is healthy."
+                if result["healthy"]
+                else "Status: JERVIS needs attention."
+            ),
+        ])
+
+        self._set_diagnostics_details(
+            "\n".join(details)
+        )
+
+        self.diagnostics_status_label.configure(
+            text="Diagnostics completed."
+        )
+
+        self.add_history(
+            "Run Diagnostics",
+            (
+                f"Health score "
+                f"{result['passed']}/{result['total']}."
+            ),
+            source="GUI",
         )
 
     def create_voice_page(self):
