@@ -24,6 +24,11 @@ from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
 from core.diagnostics import run_diagnostics
+from core.logger import (
+    read_logs,
+    clear_logs,
+    get_log_file,
+)
 from core.process_manager import (
     get_running_processes,
     search_processes,
@@ -364,6 +369,7 @@ class JervisApp(ctk.CTk):
             "Storage Analyzer",
             "Process Manager",
             "Diagnostics",
+            "Logs",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -379,7 +385,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 47 • Self Diagnostics",
+            text="JERVIS X\nStep 48 • Activity & Error Logger",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -424,6 +430,7 @@ class JervisApp(ctk.CTk):
         self.create_storage_analyzer_page()
         self.create_process_manager_page()
         self.create_diagnostics_page()
+        self.create_logs_page()
         self.create_voice_page()
 
         self.create_automation_page()
@@ -6595,6 +6602,256 @@ class JervisApp(ctk.CTk):
                 f"Health score "
                 f"{result['passed']}/{result['total']}."
             ),
+            source="GUI",
+        )
+
+    def create_logs_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Logs"] = page
+        page.grid_columnconfigure(0, weight=1)
+        page.grid_rowconfigure(4, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS LOG VIEWER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Review recent JERVIS commands, actions, warnings and errors.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        summary = ctk.CTkFrame(page)
+        summary.grid(
+            row=2,
+            column=0,
+            padx=30,
+            pady=(0, 12),
+            sticky="ew",
+        )
+        summary.grid_columnconfigure((0, 1, 2), weight=1)
+
+        self.logs_count_card = self.create_info_card(
+            summary,
+            "VISIBLE LOG LINES",
+            "--",
+        )
+        self.logs_count_card["frame"].grid(
+            row=0,
+            column=0,
+            padx=(0, 6),
+            pady=0,
+            sticky="nsew",
+        )
+
+        self.logs_file_card = self.create_info_card(
+            summary,
+            "LOG FILE",
+            "jervis.log",
+        )
+        self.logs_file_card["frame"].grid(
+            row=0,
+            column=1,
+            padx=6,
+            pady=0,
+            sticky="nsew",
+        )
+
+        self.logs_status_card = self.create_info_card(
+            summary,
+            "STATUS",
+            "Ready",
+        )
+        self.logs_status_card["frame"].grid(
+            row=0,
+            column=2,
+            padx=(6, 0),
+            pady=0,
+            sticky="nsew",
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3,
+            column=0,
+            padx=30,
+            pady=(0, 12),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(3, weight=1)
+
+        ctk.CTkLabel(
+            controls,
+            text="Lines",
+            font=("Arial", 13, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 6),
+            pady=12,
+        )
+
+        self.logs_limit_menu = ctk.CTkOptionMenu(
+            controls,
+            values=["50", "100", "200", "500"],
+            width=90,
+        )
+        self.logs_limit_menu.set("100")
+        self.logs_limit_menu.grid(
+            row=0,
+            column=1,
+            padx=6,
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Logs",
+            width=120,
+            height=40,
+            command=self.gui_refresh_logs,
+        ).grid(
+            row=0,
+            column=2,
+            padx=6,
+            pady=12,
+        )
+
+        self.logs_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.logs_status_label.grid(
+            row=0,
+            column=3,
+            padx=10,
+            pady=12,
+            sticky="e",
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Clear Logs",
+            width=110,
+            height=40,
+            command=self.gui_clear_logs,
+        ).grid(
+            row=0,
+            column=4,
+            padx=(6, 15),
+            pady=12,
+        )
+
+        viewer = ctk.CTkFrame(page)
+        viewer.grid(
+            row=4,
+            column=0,
+            padx=30,
+            pady=(0, 20),
+            sticky="nsew",
+        )
+        viewer.grid_columnconfigure(0, weight=1)
+        viewer.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            viewer,
+            text="LATEST LOGS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.logs_viewer_box = ctk.CTkTextbox(
+            viewer,
+            font=("Consolas", 12),
+        )
+        self.logs_viewer_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.logs_viewer_box.configure(state="disabled")
+
+        self.gui_refresh_logs()
+
+    def _set_logs_output(self, text):
+        self.logs_viewer_box.configure(state="normal")
+        self.logs_viewer_box.delete("1.0", "end")
+        self.logs_viewer_box.insert("end", str(text))
+        self.logs_viewer_box.configure(state="disabled")
+
+    def gui_refresh_logs(self):
+        try:
+            limit = int(self.logs_limit_menu.get())
+        except (TypeError, ValueError):
+            limit = 100
+
+        result = read_logs(limit)
+        self._set_logs_output(result)
+
+        if result and result != "No logs available.":
+            visible_lines = len(str(result).splitlines())
+        else:
+            visible_lines = 0
+
+        self.logs_count_card["value"].configure(
+            text=str(visible_lines),
+        )
+        self.logs_file_card["value"].configure(
+            text=get_log_file().name,
+        )
+        self.logs_status_card["value"].configure(
+            text="Loaded",
+        )
+        self.logs_status_label.configure(
+            text=f"Showing latest {visible_lines} log lines.",
+        )
+
+    def gui_clear_logs(self):
+        confirmed = messagebox.askyesno(
+            "Clear JERVIS Logs",
+            "Delete all current JERVIS log entries?",
+            parent=self,
+        )
+
+        if not confirmed:
+            return
+
+        result = clear_logs()
+
+        self.logs_status_label.configure(
+            text=result,
+        )
+        self.logs_status_card["value"].configure(
+            text="Cleared",
+        )
+
+        self.gui_refresh_logs()
+
+        self.add_history(
+            "Clear JERVIS logs",
+            result,
             source="GUI",
         )
 
