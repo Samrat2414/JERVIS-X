@@ -24,6 +24,10 @@ from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
 from core.diagnostics import run_diagnostics
+from core.disk_intelligence import (
+    get_disk_partitions,
+    get_storage_health,
+)
 from core.network_info import (
     get_network_info,
 )
@@ -418,6 +422,7 @@ class JervisApp(ctk.CTk):
             "Plugin Manager",
             "System Information",
             "Network Information",
+            "Disk Intelligence",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -433,7 +438,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 55 • Network Information",
+            text="JERVIS X\nStep 56 • Disk Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -486,6 +491,7 @@ class JervisApp(ctk.CTk):
         self.create_plugin_manager_page()
         self.create_system_information_page()
         self.create_network_information_page()
+        self.create_disk_intelligence_page()
         self.after(300, self.show_startup_lock_if_needed)
         self.create_voice_page()
 
@@ -9169,6 +9175,308 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.netinfo_status_label.configure(
                 text=f"Network information error: {error}",
+            )
+
+    def create_disk_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Disk Intelligence"] = page
+        page.grid_columnconfigure((0, 1, 2), weight=1)
+        page.grid_rowconfigure(5, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS DISK INTELLIGENCE",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Monitor drive usage, free space, file system details and storage health warnings.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.disk_total_drives_card = self.create_info_card(
+            page,
+            "DETECTED DRIVES",
+            "--",
+        )
+        self.disk_total_drives_card["frame"].grid(
+            row=2,
+            column=0,
+            padx=(30, 6),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.disk_warning_card = self.create_info_card(
+            page,
+            "WARNING DRIVES",
+            "--",
+        )
+        self.disk_warning_card["frame"].grid(
+            row=2,
+            column=1,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.disk_health_card = self.create_info_card(
+            page,
+            "STORAGE HEALTH",
+            "--",
+        )
+        self.disk_health_card["frame"].grid(
+            row=2,
+            column=2,
+            padx=(6, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(8, 12),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Storage Info",
+            width=170,
+            height=42,
+            command=self.gui_refresh_disk_intelligence,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 6),
+            pady=12,
+        )
+
+        self.disk_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.disk_status_label.grid(
+            row=0,
+            column=1,
+            padx=(10, 15),
+            pady=12,
+            sticky="e",
+        )
+
+        warnings_frame = ctk.CTkFrame(page)
+        warnings_frame.grid(
+            row=4,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 12),
+            sticky="ew",
+        )
+        warnings_frame.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            warnings_frame,
+            text="STORAGE HEALTH WARNINGS",
+            font=("Arial", 16, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(12, 6),
+            sticky="w",
+        )
+
+        self.disk_warning_label = ctk.CTkLabel(
+            warnings_frame,
+            text="No warnings.",
+            font=("Arial", 13),
+            justify="left",
+            wraplength=900,
+        )
+        self.disk_warning_label.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 12),
+            sticky="w",
+        )
+
+        details = ctk.CTkFrame(page)
+        details.grid(
+            row=5,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 20),
+            sticky="nsew",
+        )
+        details.grid_columnconfigure((0, 1), weight=1)
+        details.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            details,
+            text="DRIVE DETAILS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            details,
+            text="USAGE SUMMARY",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=1,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.disk_details_box = ctk.CTkTextbox(
+            details,
+            font=("Consolas", 12),
+        )
+        self.disk_details_box.grid(
+            row=1,
+            column=0,
+            padx=(15, 7),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.disk_details_box.configure(state="disabled")
+
+        self.disk_summary_box = ctk.CTkTextbox(
+            details,
+            font=("Consolas", 12),
+        )
+        self.disk_summary_box.grid(
+            row=1,
+            column=1,
+            padx=(7, 15),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.disk_summary_box.configure(state="disabled")
+
+        self.gui_refresh_disk_intelligence()
+
+    def _set_disk_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_disk_intelligence(self):
+        try:
+            partitions = get_disk_partitions()
+            health = get_storage_health()
+
+            warning_drives = [
+                disk
+                for disk in partitions
+                if disk.get("warning")
+            ]
+
+            self.disk_total_drives_card["value"].configure(
+                text=str(len(partitions)),
+            )
+            self.disk_warning_card["value"].configure(
+                text=str(len(warning_drives)),
+            )
+            self.disk_health_card["value"].configure(
+                text="Healthy" if health.get("healthy") else "Needs Attention",
+            )
+
+            if health.get("healthy"):
+                warning_text = "All detected drives are below the warning threshold."
+            else:
+                warnings = health.get("warnings", [])
+                warning_text = "\n".join(
+                    f"- {warning}"
+                    for warning in warnings
+                ) if warnings else "Storage warning detected."
+
+            self.disk_warning_label.configure(
+                text=warning_text,
+            )
+
+            detail_lines = []
+            summary_lines = []
+
+            for number, disk in enumerate(
+                partitions,
+                start=1,
+            ):
+                status = (
+                    "WARNING"
+                    if disk["warning"]
+                    else "Healthy"
+                )
+
+                detail_lines.append(
+                    f"{number}. Drive: {disk['device']}\n"
+                    f"   Mount Point: {disk['mountpoint']}\n"
+                    f"   File System: {disk['filesystem']}\n"
+                    f"   Status: {status}"
+                )
+
+                summary_lines.append(
+                    f"{disk['device']}\n"
+                    f"   Total: {disk['total_gb']} GB\n"
+                    f"   Used: {disk['used_gb']} GB\n"
+                    f"   Free: {disk['free_gb']} GB\n"
+                    f"   Usage: {disk['percent']}%\n"
+                    f"   Status: {status}"
+                )
+
+            self._set_disk_box(
+                self.disk_details_box,
+                "\n\n".join(detail_lines)
+                if detail_lines
+                else "No accessible drives found.",
+            )
+
+            self._set_disk_box(
+                self.disk_summary_box,
+                "\n\n".join(summary_lines)
+                if summary_lines
+                else "No storage summary available.",
+            )
+
+            self.disk_status_label.configure(
+                text="Storage information refreshed.",
+            )
+
+        except Exception as error:
+            self.disk_status_label.configure(
+                text=f"Disk intelligence error: {error}",
             )
 
     def create_voice_page(self):
