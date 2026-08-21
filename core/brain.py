@@ -1,6 +1,9 @@
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
+from core.network_info import (
+    get_network_report,
+)
 from core.system_info import (
     get_system_info_report,
 )
@@ -179,6 +182,19 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 55: Network Information Center
+    if command in [
+        "network information",
+        "network info",
+        "wifi information",
+        "wifi info",
+        "show network information",
+        "show network info",
+        "network interfaces",
+        "show network interfaces",
+    ]:
+        return get_network_report()
 
     # Step 54: System Information Center
     if command in [
