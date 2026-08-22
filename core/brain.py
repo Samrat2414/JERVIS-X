@@ -1,6 +1,12 @@
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
+from core.resource_optimizer import (
+    get_resource_optimizer_report,
+    get_resource_status,
+    get_top_processes,
+    get_recommendations,
+)
 from core.performance_monitor import (
     get_live_performance,
     get_live_performance_report,
@@ -211,6 +217,68 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 64: Smart Resource Optimizer
+    if command in [
+        "resource optimizer",
+        "smart resource optimizer",
+        "optimize resources",
+        "resource optimization",
+    ]:
+        return get_resource_optimizer_report()
+
+    if command in [
+        "resource status",
+        "system resource status",
+    ]:
+        result = get_resource_status()
+
+        return (
+            f"CPU Usage: {result['cpu']}%\n"
+            f"RAM Usage: {result['ram']}%\n"
+            f"High CPU: {'Yes' if result['high_cpu'] else 'No'}\n"
+            f"High RAM: {'Yes' if result['high_ram'] else 'No'}"
+        )
+
+    if command in [
+        "top processes",
+        "top resource processes",
+        "heavy processes",
+    ]:
+        processes = get_top_processes(10)
+
+        if not processes:
+            return "No process data available."
+
+        lines = ["TOP RESOURCE PROCESSES", ""]
+
+        for number, process in enumerate(
+            processes,
+            start=1,
+        ):
+            lines.append(
+                f"{number}. {process['name']} "
+                f"(PID {process['pid']}) "
+                f"- CPU {process['cpu']}% "
+                f"| RAM {process['ram']}%"
+            )
+
+        return "\n".join(lines)
+
+    if command in [
+        "optimization recommendations",
+        "resource recommendations",
+        "performance recommendations",
+    ]:
+        recommendations = get_recommendations()
+
+        return (
+            "JERVIS RESOURCE RECOMMENDATIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in recommendations
+            )
+        )
 
     # Step 63: Live System Performance Monitor
     if command in [
