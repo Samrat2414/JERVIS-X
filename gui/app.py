@@ -24,6 +24,9 @@ from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
 from core.diagnostics import run_diagnostics
+from core.system_health import (
+    get_system_health,
+)
 from core.battery_intelligence import (
     get_battery_info,
 )
@@ -427,6 +430,7 @@ class JervisApp(ctk.CTk):
             "Network Information",
             "Disk Intelligence",
             "Battery & Power",
+            "System Health",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -442,7 +446,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 57 • Battery & Power",
+            text="JERVIS X\nStep 58 • Smart System Health",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -497,6 +501,7 @@ class JervisApp(ctk.CTk):
         self.create_network_information_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
+        self.create_system_health_page()
         self.after(300, self.show_startup_lock_if_needed)
         self.create_voice_page()
 
@@ -9688,6 +9693,321 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.battery_status_label.configure(
                 text=f"Battery information error: {error}"
+            )
+
+    def create_system_health_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["System Health"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(5, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART SYSTEM HEALTH",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Analyze CPU, RAM, disk, battery and network status with health scoring and recommendations.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.health_score_card = self.create_info_card(
+            page,
+            "HEALTH SCORE",
+            "-- / 100",
+        )
+        self.health_score_card["frame"].grid(
+            row=2,
+            column=0,
+            padx=(30, 6),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.health_status_card = self.create_info_card(
+            page,
+            "STATUS",
+            "--",
+        )
+        self.health_status_card["frame"].grid(
+            row=2,
+            column=1,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.health_cpu_card = self.create_info_card(
+            page,
+            "CPU",
+            "--",
+        )
+        self.health_cpu_card["frame"].grid(
+            row=2,
+            column=2,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.health_ram_card = self.create_info_card(
+            page,
+            "RAM",
+            "--",
+        )
+        self.health_ram_card["frame"].grid(
+            row=2,
+            column=3,
+            padx=(6, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.health_disk_card = self.create_info_card(
+            page,
+            "DISK",
+            "--",
+        )
+        self.health_disk_card["frame"].grid(
+            row=3,
+            column=0,
+            padx=(30, 6),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.health_battery_card = self.create_info_card(
+            page,
+            "BATTERY",
+            "--",
+        )
+        self.health_battery_card["frame"].grid(
+            row=3,
+            column=1,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.health_internet_card = self.create_info_card(
+            page,
+            "INTERNET",
+            "--",
+        )
+        self.health_internet_card["frame"].grid(
+            row=3,
+            column=2,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.health_problem_card = self.create_info_card(
+            page,
+            "PROBLEMS",
+            "--",
+        )
+        self.health_problem_card["frame"].grid(
+            row=3,
+            column=3,
+            padx=(6, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=4,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(8, 12),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Health",
+            width=150,
+            height=42,
+            command=self.gui_refresh_system_health,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 6),
+            pady=12,
+        )
+
+        self.health_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.health_status_label.grid(
+            row=0,
+            column=1,
+            padx=(10, 15),
+            pady=12,
+            sticky="e",
+        )
+
+        details = ctk.CTkFrame(page)
+        details.grid(
+            row=5,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(0, 20),
+            sticky="nsew",
+        )
+        details.grid_columnconfigure((0, 1), weight=1)
+        details.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            details,
+            text="DETECTED PROBLEMS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            details,
+            text="RECOMMENDATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=1,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.health_problems_box = ctk.CTkTextbox(
+            details,
+            font=("Consolas", 12),
+        )
+        self.health_problems_box.grid(
+            row=1,
+            column=0,
+            padx=(15, 7),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.health_problems_box.configure(state="disabled")
+
+        self.health_recommendations_box = ctk.CTkTextbox(
+            details,
+            font=("Consolas", 12),
+        )
+        self.health_recommendations_box.grid(
+            row=1,
+            column=1,
+            padx=(7, 15),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.health_recommendations_box.configure(state="disabled")
+
+        self.gui_refresh_system_health()
+
+    def _set_health_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_system_health(self):
+        try:
+            result = get_system_health()
+
+            self.health_score_card["value"].configure(
+                text=f"{result['score']} / 100",
+            )
+            self.health_status_card["value"].configure(
+                text=result["status"],
+            )
+            self.health_cpu_card["value"].configure(
+                text=f"{result['cpu']}%",
+            )
+            self.health_ram_card["value"].configure(
+                text=f"{result['ram']['percent']}%",
+            )
+            self.health_disk_card["value"].configure(
+                text=f"{result['disk']['percent']}%",
+            )
+
+            battery = result["battery"]
+
+            if battery.get("available"):
+                battery_text = f"{battery['percent']}%"
+            else:
+                battery_text = "N/A"
+
+            self.health_battery_card["value"].configure(
+                text=battery_text,
+            )
+            self.health_internet_card["value"].configure(
+                text="Connected" if result["internet"] else "Disconnected",
+            )
+            self.health_problem_card["value"].configure(
+                text=str(len(result["problems"])),
+            )
+
+            if result["problems"]:
+                problems_text = "\n".join(
+                    f"- {problem}"
+                    for problem in result["problems"]
+                )
+            else:
+                problems_text = "- No major problems detected."
+
+            recommendations_text = "\n".join(
+                f"- {recommendation}"
+                for recommendation in result["recommendations"]
+            )
+
+            self._set_health_box(
+                self.health_problems_box,
+                problems_text,
+            )
+            self._set_health_box(
+                self.health_recommendations_box,
+                recommendations_text,
+            )
+
+            self.health_status_label.configure(
+                text=(
+                    f"Health refreshed: "
+                    f"{result['score']}/100 "
+                    f"({result['status']})."
+                ),
+            )
+
+        except Exception as error:
+            self.health_status_label.configure(
+                text=f"System health error: {error}",
             )
 
     def create_voice_page(self):
