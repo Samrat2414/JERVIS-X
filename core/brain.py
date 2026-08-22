@@ -1,6 +1,12 @@
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
+from core.alert_center import (
+    get_active_alerts_summary,
+    get_alert_history,
+    clear_alert_history,
+    refresh_alerts,
+)
 from core.system_health import (
     get_system_health,
     get_system_health_report,
@@ -194,6 +200,43 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 59: Smart Alert Center
+    if command in [
+        "active alerts",
+        "show active alerts",
+        "alerts",
+        "alert status",
+    ]:
+        return get_active_alerts_summary()
+
+    if command in [
+        "alert history",
+        "show alert history",
+        "alerts history",
+    ]:
+        return get_alert_history(20)
+
+    if command in [
+        "refresh alerts",
+        "check alerts",
+        "scan alerts",
+    ]:
+        alerts = refresh_alerts()
+
+        if not alerts:
+            return "No active alerts."
+
+        return get_active_alerts_summary()
+
+    if command in [
+        "clear alert history",
+        "clear alerts history",
+    ]:
+        return _log_and_return(
+            "Clear JERVIS alert history",
+            clear_alert_history(),
+        )
 
     # Step 58: Smart System Health Monitor
     if command in [
