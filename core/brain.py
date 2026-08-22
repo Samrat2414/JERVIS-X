@@ -1,6 +1,10 @@
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
+from core.performance_monitor import (
+    get_live_performance,
+    get_live_performance_report,
+)
 from core.notification_manager import (
     get_notification_status,
     get_notification_report,
@@ -207,6 +211,54 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 63: Live System Performance Monitor
+    if command in [
+        "live performance",
+        "system performance",
+        "live system performance",
+        "performance monitor",
+    ]:
+        return get_live_performance_report()
+
+    if command in [
+        "performance score",
+        "system performance score",
+    ]:
+        result = get_live_performance()
+
+        return (
+            f"JERVIS Performance Score: "
+            f"{result['score']}/100 "
+            f"({result['status']})."
+        )
+
+    if command in [
+        "performance status",
+        "system performance status",
+    ]:
+        result = get_live_performance()
+
+        return (
+            f"JERVIS Performance Status: "
+            f"{result['status']}. "
+            f"CPU {result['cpu']}%, "
+            f"RAM {result['ram']}%, "
+            f"Disk {result['disk']}%."
+        )
+
+    if command in [
+        "network speed",
+        "internet speed",
+        "upload download speed",
+    ]:
+        result = get_live_performance()
+
+        return (
+            f"Current network activity: "
+            f"Upload {result['upload_mb_s']} MB/s, "
+            f"Download {result['download_mb_s']} MB/s."
+        )
 
     # Step 60: Smart Notification System
     if command in [

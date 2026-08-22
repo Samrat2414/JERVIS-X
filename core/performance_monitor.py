@@ -3,6 +3,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+import psutil
+
 
 DATA_DIR = Path("data")
 PERFORMANCE_FILE = DATA_DIR / "performance_stats.json"
@@ -260,6 +262,175 @@ def get_slow_operations_summary(
     return "\n".join(lines)
 
 
+def _bytes_to_mb(value):
+    return round(
+        value / (1024 * 1024),
+        2,
+    )
+
+
+def _get_disk_usage():
+    try:
+        root = (
+            Path.home().anchor
+            or "C:\\"
+        )
+
+        return psutil.disk_usage(
+            root
+        ).percent
+
+    except (
+        OSError,
+        PermissionError,
+    ):
+        return 0.0
+
+
+def _performance_score(
+    cpu,
+    ram,
+    disk,
+):
+    score = 100
+
+    if cpu >= 90:
+        score -= 30
+    elif cpu >= 75:
+        score -= 20
+    elif cpu >= 60:
+        score -= 10
+
+    if ram >= 90:
+        score -= 30
+    elif ram >= 80:
+        score -= 20
+    elif ram >= 70:
+        score -= 10
+
+    if disk >= 95:
+        score -= 25
+    elif disk >= 85:
+        score -= 15
+    elif disk >= 75:
+        score -= 5
+
+    return max(
+        0,
+        min(100, score),
+    )
+
+
+def _performance_status(score):
+    if score >= 85:
+        return "Excellent"
+
+    if score >= 70:
+        return "Good"
+
+    if score >= 50:
+        return "Warning"
+
+    return "Critical"
+
+
+def get_live_performance(
+    sample_seconds=1.0,
+):
+    try:
+        sample_seconds = float(
+            sample_seconds
+        )
+    except (TypeError, ValueError):
+        sample_seconds = 1.0
+
+    sample_seconds = max(
+        0.1,
+        min(sample_seconds, 5.0),
+    )
+
+    network_before = (
+        psutil.net_io_counters()
+    )
+
+    cpu = psutil.cpu_percent(
+        interval=sample_seconds
+    )
+
+    network_after = (
+        psutil.net_io_counters()
+    )
+
+    ram = psutil.virtual_memory().percent
+    disk = _get_disk_usage()
+
+    upload_bytes = max(
+        0,
+        network_after.bytes_sent
+        - network_before.bytes_sent,
+    )
+
+    download_bytes = max(
+        0,
+        network_after.bytes_recv
+        - network_before.bytes_recv,
+    )
+
+    upload_speed = (
+        upload_bytes
+        / sample_seconds
+    )
+
+    download_speed = (
+        download_bytes
+        / sample_seconds
+    )
+
+    score = _performance_score(
+        cpu,
+        ram,
+        disk,
+    )
+
+    return {
+        "cpu": round(cpu, 1),
+        "ram": round(ram, 1),
+        "disk": round(disk, 1),
+        "upload_mb_s": _bytes_to_mb(
+            upload_speed
+        ),
+        "download_mb_s": _bytes_to_mb(
+            download_speed
+        ),
+        "score": score,
+        "status": _performance_status(
+            score
+        ),
+        "timestamp": datetime.now().isoformat(
+            timespec="seconds"
+        ),
+    }
+
+
+def get_live_performance_report():
+    result = get_live_performance()
+
+    return (
+        "JERVIS LIVE SYSTEM PERFORMANCE\n\n"
+        f"CPU Usage: {result['cpu']}%\n"
+        f"RAM Usage: {result['ram']}%\n"
+        f"Disk Usage: {result['disk']}%\n\n"
+        f"Upload Speed: "
+        f"{result['upload_mb_s']} MB/s\n"
+        f"Download Speed: "
+        f"{result['download_mb_s']} MB/s\n\n"
+        f"Performance Score: "
+        f"{result['score']}/100\n"
+        f"Performance Status: "
+        f"{result['status']}"
+    )
+
+
 def get_performance_report():
     latest = get_latest_startup_time()
     average = get_average_startup_time()
@@ -288,18 +459,11 @@ def get_performance_report():
 
 
 if __name__ == "__main__":
-    record_startup_time(2.35)
-
-    start_operation(
-        "Performance test"
+    print(
+        get_live_performance_report()
     )
 
-    time.sleep(1.1)
-
-    end_operation(
-        "Performance test"
-    )
-
+    print()
     print(
         get_performance_report()
     )
