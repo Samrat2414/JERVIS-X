@@ -24,6 +24,11 @@ from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
 from core.diagnostics import run_diagnostics
+from core.alert_center import (
+    refresh_alerts,
+    get_alert_history,
+    clear_alert_history,
+)
 from core.system_health import (
     get_system_health,
 )
@@ -431,6 +436,7 @@ class JervisApp(ctk.CTk):
             "Disk Intelligence",
             "Battery & Power",
             "System Health",
+            "Alert Center",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -446,7 +452,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 58 • Smart System Health",
+            text="JERVIS X\nStep 59 • Smart Alert Center",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -502,6 +508,7 @@ class JervisApp(ctk.CTk):
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
+        self.create_alert_center_page()
         self.after(300, self.show_startup_lock_if_needed)
         self.create_voice_page()
 
@@ -10008,6 +10015,303 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.health_status_label.configure(
                 text=f"System health error: {error}",
+            )
+
+    def create_alert_center_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Alert Center"] = page
+        page.grid_columnconfigure((0, 1, 2), weight=1)
+        page.grid_rowconfigure(5, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART ALERT CENTER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Monitor active system warnings and critical alerts with persistent alert history.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.alert_active_card = self.create_info_card(
+            page,
+            "ACTIVE ALERTS",
+            "--",
+        )
+        self.alert_active_card["frame"].grid(
+            row=2,
+            column=0,
+            padx=(30, 6),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.alert_warning_card = self.create_info_card(
+            page,
+            "WARNINGS",
+            "--",
+        )
+        self.alert_warning_card["frame"].grid(
+            row=2,
+            column=1,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.alert_critical_card = self.create_info_card(
+            page,
+            "CRITICAL",
+            "--",
+        )
+        self.alert_critical_card["frame"].grid(
+            row=2,
+            column=2,
+            padx=(6, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(8, 12),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(2, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Alerts",
+            width=140,
+            height=42,
+            command=self.gui_refresh_alert_center,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 6),
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Clear History",
+            width=140,
+            height=42,
+            command=self.gui_clear_alert_history,
+        ).grid(
+            row=0,
+            column=1,
+            padx=6,
+            pady=12,
+        )
+
+        self.alert_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.alert_status_label.grid(
+            row=0,
+            column=2,
+            padx=(10, 15),
+            pady=12,
+            sticky="e",
+        )
+
+        self.alert_summary_label = ctk.CTkLabel(
+            page,
+            text="No alert scan performed.",
+            font=("Arial", 14, "bold"),
+            justify="left",
+        )
+        self.alert_summary_label.grid(
+            row=4,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 12),
+            sticky="w",
+        )
+
+        details = ctk.CTkFrame(page)
+        details.grid(
+            row=5,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 20),
+            sticky="nsew",
+        )
+        details.grid_columnconfigure((0, 1), weight=1)
+        details.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            details,
+            text="ACTIVE ALERTS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            details,
+            text="ALERT HISTORY",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=1,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.alert_active_box = ctk.CTkTextbox(
+            details,
+            font=("Consolas", 12),
+        )
+        self.alert_active_box.grid(
+            row=1,
+            column=0,
+            padx=(15, 7),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.alert_active_box.configure(state="disabled")
+
+        self.alert_history_box = ctk.CTkTextbox(
+            details,
+            font=("Consolas", 12),
+        )
+        self.alert_history_box.grid(
+            row=1,
+            column=1,
+            padx=(7, 15),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.alert_history_box.configure(state="disabled")
+
+        self.gui_refresh_alert_center()
+
+    def _set_alert_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_alert_center(self):
+        try:
+            alerts = refresh_alerts()
+
+            warning_count = sum(
+                1
+                for alert in alerts
+                if alert.get("severity") == "Warning"
+            )
+            critical_count = sum(
+                1
+                for alert in alerts
+                if alert.get("severity") == "Critical"
+            )
+
+            self.alert_active_card["value"].configure(
+                text=str(len(alerts)),
+            )
+            self.alert_warning_card["value"].configure(
+                text=str(warning_count),
+            )
+            self.alert_critical_card["value"].configure(
+                text=str(critical_count),
+            )
+
+            if alerts:
+                active_lines = []
+
+                for number, alert in enumerate(
+                    alerts,
+                    start=1,
+                ):
+                    active_lines.append(
+                        f"{number}. [{alert.get('severity', 'Unknown')}] "
+                        f"{alert.get('type', 'Unknown')}\n"
+                        f"   {alert.get('message', '')}\n"
+                        f"   {alert.get('timestamp', '')}"
+                    )
+
+                active_text = "\n\n".join(active_lines)
+                summary = (
+                    f"{len(alerts)} active alert(s): "
+                    f"{warning_count} warning(s), "
+                    f"{critical_count} critical."
+                )
+            else:
+                active_text = "No active alerts."
+                summary = "System scan completed. No active alerts."
+
+            self._set_alert_box(
+                self.alert_active_box,
+                active_text,
+            )
+
+            history_text = get_alert_history(50)
+
+            self._set_alert_box(
+                self.alert_history_box,
+                history_text,
+            )
+
+            self.alert_summary_label.configure(
+                text=summary,
+            )
+            self.alert_status_label.configure(
+                text="Alerts refreshed.",
+            )
+
+        except Exception as error:
+            self.alert_status_label.configure(
+                text=f"Alert Center error: {error}",
+            )
+
+    def gui_clear_alert_history(self):
+        try:
+            result = clear_alert_history()
+
+            self._set_alert_box(
+                self.alert_history_box,
+                "No alert history available.",
+            )
+
+            self.alert_status_label.configure(
+                text=result,
+            )
+
+        except Exception as error:
+            self.alert_status_label.configure(
+                text=f"Could not clear alert history: {error}",
             )
 
     def create_voice_page(self):
