@@ -1,7 +1,7 @@
 import threading
-import time
 
 from core.notification_manager import get_new_notifications
+from core.windows_notifier import notify_alerts
 
 
 DEFAULT_INTERVAL = 60
@@ -49,8 +49,22 @@ class BackgroundMonitor:
 
     def stop(self):
         self._stop_event.set()
-
         return True
+
+    def _deliver_alerts(self, alerts):
+        if not alerts:
+            return
+
+        try:
+            notify_alerts(alerts)
+        except Exception:
+            pass
+
+        if self.on_notification:
+            try:
+                self.on_notification(alerts)
+            except Exception:
+                pass
 
     def _monitor_loop(self):
         self._running = True
@@ -59,25 +73,11 @@ class BackgroundMonitor:
             while not self._stop_event.is_set():
                 try:
                     alerts = get_new_notifications()
-
-                    if (
-                        alerts
-                        and self.on_notification
-                    ):
-                        try:
-                            self.on_notification(
-                                alerts
-                            )
-
-                        except Exception:
-                            pass
-
+                    self._deliver_alerts(alerts)
                 except Exception:
                     pass
 
-                self._stop_event.wait(
-                    self.interval
-                )
+                self._stop_event.wait(self.interval)
 
         finally:
             self._running = False
@@ -85,21 +85,8 @@ class BackgroundMonitor:
     def check_now(self):
         try:
             alerts = get_new_notifications()
-
-            if (
-                alerts
-                and self.on_notification
-            ):
-                try:
-                    self.on_notification(
-                        alerts
-                    )
-
-                except Exception:
-                    pass
-
+            self._deliver_alerts(alerts)
             return alerts
-
         except Exception:
             return []
 
