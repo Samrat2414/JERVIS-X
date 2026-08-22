@@ -24,6 +24,9 @@ from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
 from core.diagnostics import run_diagnostics
+from core.battery_intelligence import (
+    get_battery_info,
+)
 from core.disk_intelligence import (
     get_disk_partitions,
     get_storage_health,
@@ -423,6 +426,7 @@ class JervisApp(ctk.CTk):
             "System Information",
             "Network Information",
             "Disk Intelligence",
+            "Battery & Power",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -438,7 +442,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 56 • Disk Intelligence",
+            text="JERVIS X\nStep 57 • Battery & Power",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -492,6 +496,7 @@ class JervisApp(ctk.CTk):
         self.create_system_information_page()
         self.create_network_information_page()
         self.create_disk_intelligence_page()
+        self.create_battery_power_page()
         self.after(300, self.show_startup_lock_if_needed)
         self.create_voice_page()
 
@@ -9485,6 +9490,204 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.disk_status_label.configure(
                 text=f"Disk intelligence error: {error}",
+            )
+
+    def create_battery_power_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Battery & Power"] = page
+        page.grid_columnconfigure((0, 1, 2), weight=1)
+        page.grid_rowconfigure(5, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS BATTERY & POWER INTELLIGENCE",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0, column=0, columnspan=3,
+            padx=30, pady=(30, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Monitor battery percentage, charging state, power source, estimated time and warnings.",
+            font=("Arial", 14),
+        ).grid(
+            row=1, column=0, columnspan=3,
+            padx=30, pady=(0, 15), sticky="w",
+        )
+
+        self.battery_percent_card = self.create_info_card(
+            page, "BATTERY", "--"
+        )
+        self.battery_percent_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.battery_charging_card = self.create_info_card(
+            page, "CHARGING", "--"
+        )
+        self.battery_charging_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.battery_source_card = self.create_info_card(
+            page, "POWER SOURCE", "--"
+        )
+        self.battery_source_card["frame"].grid(
+            row=2, column=2, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        self.battery_time_card = self.create_info_card(
+            page, "ESTIMATED TIME", "--"
+        )
+        self.battery_time_card["frame"].grid(
+            row=3, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.battery_warning_card = self.create_info_card(
+            page, "BATTERY STATUS", "--"
+        )
+        self.battery_warning_card["frame"].grid(
+            row=3, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.battery_available_card = self.create_info_card(
+            page, "BATTERY DETECTED", "--"
+        )
+        self.battery_available_card["frame"].grid(
+            row=3, column=2, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=4, column=0, columnspan=3,
+            padx=30, pady=(8, 12), sticky="ew",
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Battery Info",
+            width=170,
+            height=42,
+            command=self.gui_refresh_battery_power,
+        ).grid(
+            row=0, column=0, padx=(15, 6), pady=12,
+        )
+
+        self.battery_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.battery_status_label.grid(
+            row=0, column=1,
+            padx=(10, 15), pady=12, sticky="e",
+        )
+
+        details = ctk.CTkFrame(page)
+        details.grid(
+            row=5, column=0, columnspan=3,
+            padx=30, pady=(0, 20), sticky="nsew",
+        )
+        details.grid_columnconfigure(0, weight=1)
+        details.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            details,
+            text="POWER DETAILS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=0,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        self.battery_details_box = ctk.CTkTextbox(
+            details,
+            font=("Consolas", 12),
+        )
+        self.battery_details_box.grid(
+            row=1, column=0,
+            padx=15, pady=(0, 15), sticky="nsew",
+        )
+        self.battery_details_box.configure(state="disabled")
+
+        self.gui_refresh_battery_power()
+
+    def _set_battery_output(self, text):
+        self.battery_details_box.configure(state="normal")
+        self.battery_details_box.delete("1.0", "end")
+        self.battery_details_box.insert("end", str(text))
+        self.battery_details_box.configure(state="disabled")
+
+    def gui_refresh_battery_power(self):
+        try:
+            info = get_battery_info()
+
+            if not info.get("available"):
+                self.battery_percent_card["value"].configure(text="N/A")
+                self.battery_charging_card["value"].configure(text="N/A")
+                self.battery_source_card["value"].configure(text="N/A")
+                self.battery_time_card["value"].configure(text="N/A")
+                self.battery_warning_card["value"].configure(text="N/A")
+                self.battery_available_card["value"].configure(text="No")
+
+                message = info.get("message", "No battery detected.")
+                self._set_battery_output(message)
+                self.battery_status_label.configure(text=message)
+                return
+
+            charging = "Yes" if info["charging"] else "No"
+            power_source = "AC Power" if info["plugged"] else "Battery"
+            battery_status = (
+                "LOW BATTERY"
+                if info["low_battery"]
+                else "Normal"
+            )
+
+            self.battery_percent_card["value"].configure(
+                text=f"{info['percent']}%"
+            )
+            self.battery_charging_card["value"].configure(
+                text=charging
+            )
+            self.battery_source_card["value"].configure(
+                text=power_source
+            )
+            self.battery_time_card["value"].configure(
+                text=info["time_left"]
+            )
+            self.battery_warning_card["value"].configure(
+                text=battery_status
+            )
+            self.battery_available_card["value"].configure(
+                text="Yes"
+            )
+
+            details_text = (
+                "JERVIS BATTERY & POWER INTELLIGENCE\n\n"
+                f"Battery Percentage: {info['percent']}%\n"
+                f"Charging: {charging}\n"
+                f"Power Source: {power_source}\n"
+                f"Estimated Time Left: {info['time_left']}\n"
+                f"Battery Status: {battery_status}"
+            )
+
+            if info["low_battery"]:
+                details_text += (
+                    "\n\nWARNING: Battery level is low. "
+                    "Connect the charger when possible."
+                )
+
+            self._set_battery_output(details_text)
+
+            self.battery_status_label.configure(
+                text="Battery information refreshed."
+            )
+
+        except Exception as error:
+            self.battery_status_label.configure(
+                text=f"Battery information error: {error}"
             )
 
     def create_voice_page(self):
