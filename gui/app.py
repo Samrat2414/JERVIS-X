@@ -24,6 +24,13 @@ from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
 from core.diagnostics import run_diagnostics
+from core.notification_manager import (
+    get_notification_status,
+    get_notification_report,
+    enable_notifications,
+    disable_notifications,
+    clear_notification_history,
+)
 from core.alert_center import (
     refresh_alerts,
     get_alert_history,
@@ -437,6 +444,7 @@ class JervisApp(ctk.CTk):
             "Battery & Power",
             "System Health",
             "Alert Center",
+            "Notification Center",
             "Settings",
         ]:
             ctk.CTkButton(
@@ -452,7 +460,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 59 • Smart Alert Center",
+            text="JERVIS X\nStep 60 • Notification Center",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -509,6 +517,7 @@ class JervisApp(ctk.CTk):
         self.create_battery_power_page()
         self.create_system_health_page()
         self.create_alert_center_page()
+        self.create_notification_center_page()
         self.after(300, self.show_startup_lock_if_needed)
         self.create_voice_page()
 
@@ -10312,6 +10321,357 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.alert_status_label.configure(
                 text=f"Could not clear alert history: {error}",
+            )
+
+    def create_notification_center_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Notification Center"] = page
+        page.grid_columnconfigure((0, 1, 2), weight=1)
+        page.grid_rowconfigure(5, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS NOTIFICATION CENTER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Manage notification status, check new alerts and control notification history.",
+            font=("Arial", 14),
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.notification_status_card = self.create_info_card(
+            page,
+            "NOTIFICATIONS",
+            "--",
+        )
+        self.notification_status_card["frame"].grid(
+            row=2,
+            column=0,
+            padx=(30, 6),
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.notification_recorded_card = self.create_info_card(
+            page,
+            "RECORDED ALERTS",
+            "--",
+        )
+        self.notification_recorded_card["frame"].grid(
+            row=2,
+            column=1,
+            padx=6,
+            pady=8,
+            sticky="nsew",
+        )
+
+        self.notification_last_card = self.create_info_card(
+            page,
+            "LAST CHECK",
+            "--",
+        )
+        self.notification_last_card["frame"].grid(
+            row=2,
+            column=2,
+            padx=(6, 30),
+            pady=8,
+            sticky="nsew",
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(8, 12),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(4, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Check Notifications",
+            width=150,
+            height=42,
+            command=self.gui_check_notifications,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 6),
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Enable",
+            width=100,
+            height=42,
+            command=self.gui_enable_notifications,
+        ).grid(
+            row=0,
+            column=1,
+            padx=6,
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Disable",
+            width=100,
+            height=42,
+            command=self.gui_disable_notifications,
+        ).grid(
+            row=0,
+            column=2,
+            padx=6,
+            pady=12,
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Clear History",
+            width=120,
+            height=42,
+            command=self.gui_clear_notification_history,
+        ).grid(
+            row=0,
+            column=3,
+            padx=6,
+            pady=12,
+        )
+
+        self.notification_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.notification_status_label.grid(
+            row=0,
+            column=4,
+            padx=(10, 15),
+            pady=12,
+            sticky="e",
+        )
+
+        self.notification_summary_label = ctk.CTkLabel(
+            page,
+            text="No notification check performed.",
+            font=("Arial", 14, "bold"),
+            justify="left",
+            wraplength=900,
+        )
+        self.notification_summary_label.grid(
+            row=4,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 12),
+            sticky="w",
+        )
+
+        details = ctk.CTkFrame(page)
+        details.grid(
+            row=5,
+            column=0,
+            columnspan=3,
+            padx=30,
+            pady=(0, 20),
+            sticky="nsew",
+        )
+        details.grid_columnconfigure(0, weight=1)
+        details.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            details,
+            text="NOTIFICATION OUTPUT",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
+        )
+
+        self.notification_output_box = ctk.CTkTextbox(
+            details,
+            font=("Consolas", 12),
+        )
+        self.notification_output_box.grid(
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.notification_output_box.configure(state="disabled")
+
+        self.gui_refresh_notification_status()
+
+    def _set_notification_output(self, text):
+        self.notification_output_box.configure(state="normal")
+        self.notification_output_box.delete("1.0", "end")
+        self.notification_output_box.insert("end", str(text))
+        self.notification_output_box.configure(state="disabled")
+
+    def gui_refresh_notification_status(self):
+        try:
+            status_text = get_notification_status()
+
+            enabled = "Enabled" in status_text
+            recorded = "0"
+
+            for line in status_text.splitlines():
+                if line.startswith("Recorded Alerts:"):
+                    recorded = line.split(":", 1)[1].strip()
+
+            self.notification_status_card["value"].configure(
+                text="Enabled" if enabled else "Disabled",
+            )
+            self.notification_recorded_card["value"].configure(
+                text=recorded,
+            )
+            self.notification_status_label.configure(
+                text="Notification status refreshed.",
+            )
+
+        except Exception as error:
+            self.notification_status_label.configure(
+                text=f"Notification status error: {error}",
+            )
+
+    def gui_check_notifications(self):
+        try:
+            result = get_notification_report()
+
+            self._set_notification_output(result)
+
+            from datetime import datetime as _dt
+
+            check_time = _dt.now().strftime("%H:%M:%S")
+
+            self.notification_last_card["value"].configure(
+                text=check_time,
+            )
+
+            self.notification_summary_label.configure(
+                text=(
+                    "New notification(s) detected."
+                    if result != "No new notifications."
+                    else "No new notifications."
+                ),
+            )
+
+            self.notification_status_label.configure(
+                text="Notification check completed.",
+            )
+
+            self.gui_refresh_notification_status()
+
+        except Exception as error:
+            self.notification_status_label.configure(
+                text=f"Notification check error: {error}",
+            )
+
+    def gui_enable_notifications(self):
+        try:
+            result = enable_notifications()
+
+            self.notification_status_label.configure(
+                text=result,
+            )
+            self.notification_summary_label.configure(
+                text=result,
+            )
+
+            self.add_history(
+                "Enable notifications",
+                result,
+                source="GUI",
+            )
+
+            self.gui_refresh_notification_status()
+
+        except Exception as error:
+            self.notification_status_label.configure(
+                text=f"Enable notification error: {error}",
+            )
+
+    def gui_disable_notifications(self):
+        try:
+            result = disable_notifications()
+
+            self.notification_status_label.configure(
+                text=result,
+            )
+            self.notification_summary_label.configure(
+                text=result,
+            )
+
+            self.add_history(
+                "Disable notifications",
+                result,
+                source="GUI",
+            )
+
+            self.gui_refresh_notification_status()
+
+        except Exception as error:
+            self.notification_status_label.configure(
+                text=f"Disable notification error: {error}",
+            )
+
+    def gui_clear_notification_history(self):
+        try:
+            confirmed = messagebox.askyesno(
+                "Clear Notification History",
+                "Clear all recorded notification alert history?",
+                parent=self,
+            )
+
+            if not confirmed:
+                return
+
+            result = clear_notification_history()
+
+            self._set_notification_output(
+                "Notification history cleared.",
+            )
+            self.notification_summary_label.configure(
+                text=result,
+            )
+            self.notification_status_label.configure(
+                text=result,
+            )
+
+            self.add_history(
+                "Clear notification history",
+                result,
+                source="GUI",
+            )
+
+            self.gui_refresh_notification_status()
+
+        except Exception as error:
+            self.notification_status_label.configure(
+                text=f"Clear notification history error: {error}",
             )
 
     def create_voice_page(self):
