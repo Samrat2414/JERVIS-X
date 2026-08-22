@@ -1,6 +1,10 @@
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
+from core.system_health import (
+    get_system_health,
+    get_system_health_report,
+)
 from core.battery_intelligence import (
     get_battery_report,
     get_power_status,
@@ -190,6 +194,29 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 58: Smart System Health Monitor
+    if command in [
+        "system health",
+        "smart health",
+        "health report",
+        "system health report",
+        "jervis health report",
+    ]:
+        return get_system_health_report()
+
+    if command in [
+        "health score",
+        "system health score",
+        "jervis health score",
+    ]:
+        result = get_system_health()
+
+        return (
+            f"JERVIS Health Score: "
+            f"{result['score']}/100 "
+            f"({result['status']})."
+        )
 
     # Step 57: Battery & Power Intelligence
     if command in [
