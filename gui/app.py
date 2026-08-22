@@ -69,6 +69,7 @@ from core.performance_monitor import (
     get_average_startup_time,
     get_session_uptime,
     get_slow_operations_summary,
+    get_live_performance,
 )
 from core.security_lock import (
     is_security_enabled,
@@ -464,7 +465,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 61 • Background Monitoring",
+            text="JERVIS X\nStep 63 • Live Performance Monitor",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -8112,17 +8113,17 @@ class JervisApp(ctk.CTk):
     def create_performance_page(self):
         page = ctk.CTkFrame(self.page_container)
         self.pages["Performance"] = page
-        page.grid_columnconfigure((0, 1, 2), weight=1)
-        page.grid_rowconfigure(4, weight=1)
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(6, weight=1)
 
         ctk.CTkLabel(
             page,
-            text="JERVIS PERFORMANCE MONITOR",
+            text="JERVIS LIVE PERFORMANCE MONITOR",
             font=("Arial", 28, "bold"),
         ).grid(
             row=0,
             column=0,
-            columnspan=3,
+            columnspan=4,
             padx=30,
             pady=(30, 8),
             sticky="w",
@@ -8130,53 +8131,135 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             page,
-            text="Track startup speed, average startup time, session uptime and slow operations.",
+            text="Monitor live CPU, RAM, disk and network activity while keeping startup and slow-operation analytics.",
             font=("Arial", 14),
         ).grid(
             row=1,
             column=0,
-            columnspan=3,
+            columnspan=4,
             padx=30,
             pady=(0, 15),
             sticky="w",
         )
 
-        self.performance_latest_card = self.create_info_card(
-            page, "LATEST STARTUP", "--"
+        self.performance_cpu_card = self.create_info_card(
+            page, "CPU", "--"
         )
-        self.performance_latest_card["frame"].grid(
-            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        self.performance_cpu_card["frame"].grid(
+            row=2, column=0,
+            padx=(30, 6), pady=8, sticky="nsew"
         )
 
-        self.performance_average_card = self.create_info_card(
-            page, "AVERAGE STARTUP", "--"
+        self.performance_ram_card = self.create_info_card(
+            page, "RAM", "--"
         )
-        self.performance_average_card["frame"].grid(
-            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        self.performance_ram_card["frame"].grid(
+            row=2, column=1,
+            padx=6, pady=8, sticky="nsew"
+        )
+
+        self.performance_disk_card = self.create_info_card(
+            page, "DISK", "--"
+        )
+        self.performance_disk_card["frame"].grid(
+            row=2, column=2,
+            padx=6, pady=8, sticky="nsew"
+        )
+
+        self.performance_score_card = self.create_info_card(
+            page, "PERFORMANCE SCORE", "-- / 100"
+        )
+        self.performance_score_card["frame"].grid(
+            row=2, column=3,
+            padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        self.performance_upload_card = self.create_info_card(
+            page, "UPLOAD", "--"
+        )
+        self.performance_upload_card["frame"].grid(
+            row=3, column=0,
+            padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.performance_download_card = self.create_info_card(
+            page, "DOWNLOAD", "--"
+        )
+        self.performance_download_card["frame"].grid(
+            row=3, column=1,
+            padx=6, pady=8, sticky="nsew"
+        )
+
+        self.performance_status_card = self.create_info_card(
+            page, "STATUS", "--"
+        )
+        self.performance_status_card["frame"].grid(
+            row=3, column=2,
+            padx=6, pady=8, sticky="nsew"
         )
 
         self.performance_uptime_card = self.create_info_card(
             page, "SESSION UPTIME", "--"
         )
         self.performance_uptime_card["frame"].grid(
-            row=2, column=2, padx=(6, 30), pady=8, sticky="nsew"
+            row=3, column=3,
+            padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        self.performance_latest_card = self.create_info_card(
+            page, "LATEST STARTUP", "--"
+        )
+        self.performance_latest_card["frame"].grid(
+            row=4, column=0,
+            padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.performance_average_card = self.create_info_card(
+            page, "AVERAGE STARTUP", "--"
+        )
+        self.performance_average_card["frame"].grid(
+            row=4, column=1,
+            padx=6, pady=8, sticky="nsew"
+        )
+
+        self.performance_slow_count_card = self.create_info_card(
+            page, "SLOW OPERATIONS", "--"
+        )
+        self.performance_slow_count_card["frame"].grid(
+            row=4, column=2,
+            padx=6, pady=8, sticky="nsew"
+        )
+
+        self.performance_sample_card = self.create_info_card(
+            page, "LIVE SAMPLE", "1.0 s"
+        )
+        self.performance_sample_card["frame"].grid(
+            row=4, column=3,
+            padx=(6, 30), pady=8, sticky="nsew"
         )
 
         controls = ctk.CTkFrame(page)
         controls.grid(
-            row=3, column=0, columnspan=3,
-            padx=30, pady=(8, 12), sticky="ew"
+            row=5,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(8, 12),
+            sticky="ew",
         )
         controls.grid_columnconfigure(1, weight=1)
 
         ctk.CTkButton(
             controls,
-            text="Refresh Performance",
-            width=160,
+            text="Refresh Live Performance",
+            width=190,
             height=42,
             command=self.gui_refresh_performance,
         ).grid(
-            row=0, column=0, padx=(15, 6), pady=12
+            row=0,
+            column=0,
+            padx=(15, 6),
+            pady=12,
         )
 
         self.performance_status_label = ctk.CTkLabel(
@@ -8185,13 +8268,21 @@ class JervisApp(ctk.CTk):
             font=("Arial", 13),
         )
         self.performance_status_label.grid(
-            row=0, column=1, padx=(10, 15), pady=12, sticky="e"
+            row=0,
+            column=1,
+            padx=(10, 15),
+            pady=12,
+            sticky="e",
         )
 
         slow_frame = ctk.CTkFrame(page)
         slow_frame.grid(
-            row=4, column=0, columnspan=3,
-            padx=30, pady=(0, 20), sticky="nsew"
+            row=6,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(0, 20),
+            sticky="nsew",
         )
         slow_frame.grid_columnconfigure(0, weight=1)
         slow_frame.grid_rowconfigure(1, weight=1)
@@ -8201,7 +8292,11 @@ class JervisApp(ctk.CTk):
             text="SLOW OPERATIONS",
             font=("Arial", 17, "bold"),
         ).grid(
-            row=0, column=0, padx=15, pady=(15, 8), sticky="w"
+            row=0,
+            column=0,
+            padx=15,
+            pady=(15, 8),
+            sticky="w",
         )
 
         self.performance_slow_box = ctk.CTkTextbox(
@@ -8209,7 +8304,11 @@ class JervisApp(ctk.CTk):
             font=("Consolas", 12),
         )
         self.performance_slow_box.grid(
-            row=1, column=0, padx=15, pady=(0, 15), sticky="nsew"
+            row=1,
+            column=0,
+            padx=15,
+            pady=(0, 15),
+            sticky="nsew",
         )
         self.performance_slow_box.configure(state="disabled")
 
@@ -8223,25 +8322,83 @@ class JervisApp(ctk.CTk):
 
     def gui_refresh_performance(self):
         try:
+            self.performance_status_label.configure(
+                text="Sampling live performance..."
+            )
+
+            result = get_live_performance(
+                sample_seconds=1.0
+            )
+
             latest = get_latest_startup_time()
             average = get_average_startup_time()
             uptime = get_session_uptime()
             slow_operations = get_slow_operations_summary(10)
 
-            self.performance_latest_card["value"].configure(
-                text=f"{latest} s" if latest is not None else "Not recorded"
+            slow_count = 0
+            if slow_operations != "No slow operations recorded.":
+                slow_count = len(
+                    [
+                        line
+                        for line in slow_operations.splitlines()
+                        if line.strip()
+                    ]
+                )
+
+            self.performance_cpu_card["value"].configure(
+                text=f"{result['cpu']}%"
             )
-            self.performance_average_card["value"].configure(
-                text=f"{average} s" if average is not None else "Not available"
+            self.performance_ram_card["value"].configure(
+                text=f"{result['ram']}%"
+            )
+            self.performance_disk_card["value"].configure(
+                text=f"{result['disk']}%"
+            )
+            self.performance_score_card["value"].configure(
+                text=f"{result['score']} / 100"
+            )
+
+            self.performance_upload_card["value"].configure(
+                text=f"{result['upload_mb_s']} MB/s"
+            )
+            self.performance_download_card["value"].configure(
+                text=f"{result['download_mb_s']} MB/s"
+            )
+            self.performance_status_card["value"].configure(
+                text=result["status"]
             )
             self.performance_uptime_card["value"].configure(
                 text=f"{uptime} s"
             )
 
-            self._set_performance_output(slow_operations)
+            self.performance_latest_card["value"].configure(
+                text=(
+                    f"{latest} s"
+                    if latest is not None
+                    else "Not recorded"
+                )
+            )
+            self.performance_average_card["value"].configure(
+                text=(
+                    f"{average} s"
+                    if average is not None
+                    else "Not available"
+                )
+            )
+            self.performance_slow_count_card["value"].configure(
+                text=str(slow_count)
+            )
+
+            self._set_performance_output(
+                slow_operations
+            )
 
             self.performance_status_label.configure(
-                text="Performance data refreshed."
+                text=(
+                    f"Live performance refreshed: "
+                    f"{result['score']}/100 "
+                    f"({result['status']})."
+                )
             )
 
         except Exception as error:
