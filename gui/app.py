@@ -5,7 +5,7 @@ from datetime import datetime
 
 import customtkinter as ctk
 import psutil
-from tkinter import messagebox
+from tkinter import TclError, messagebox
 import pystray
 from PIL import Image, ImageDraw
 
@@ -498,6 +498,14 @@ class JervisApp(ctk.CTk):
         self.create_automation_page()
         self.create_files_page()
         self.create_settings_page()
+
+    def safe_after(self, callback, delay=0):
+        """Run a Tkinter callback only while the GUI is still alive."""
+        try:
+            if self.winfo_exists():
+                self.after(delay, callback)
+        except (RuntimeError, TclError):
+            pass
 
     def create_dashboard_page(self):
         page = ctk.CTkFrame(self.page_container)
@@ -6014,7 +6022,7 @@ class JervisApp(ctk.CTk):
             largest = get_largest_files_summary(10)
             file_types = get_file_types_summary(15)
 
-            self.after(
+            self.safe_after(
                 0,
                 lambda: self.finish_storage_analyzer(
                     disk,
@@ -6024,7 +6032,7 @@ class JervisApp(ctk.CTk):
             )
 
         except Exception as error:
-            self.after(
+            self.safe_after(
                 0,
                 lambda err=error: self.storage_status_label.configure(
                     text=f"Storage analyzer error: {err}",
@@ -6284,13 +6292,13 @@ class JervisApp(ctk.CTk):
                 else "No running processes found."
             )
 
-            self.after(
+            self.safe_after(
                 0,
                 lambda: self.finish_process_refresh(result),
             )
 
         except Exception as error:
-            self.after(
+            self.safe_after(
                 0,
                 lambda err=error: self.process_status_label.configure(
                     text=f"Process Manager error: {err}",
@@ -6565,13 +6573,13 @@ class JervisApp(ctk.CTk):
         try:
             result = run_diagnostics()
 
-            self.after(
+            self.safe_after(
                 0,
                 lambda: self.finish_diagnostics(result),
             )
 
         except Exception as error:
-            self.after(
+            self.safe_after(
                 0,
                 lambda err=error: self.diagnostics_status_label.configure(
                     text=f"Diagnostics error: {err}"

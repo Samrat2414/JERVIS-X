@@ -1,6 +1,10 @@
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
+from core.battery_intelligence import (
+    get_battery_report,
+    get_power_status,
+)
 from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
@@ -186,6 +190,26 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 57: Battery & Power Intelligence
+    if command in [
+        "battery information",
+        "battery info",
+        "battery status",
+        "battery health",
+        "show battery information",
+        "show battery status",
+    ]:
+        return get_battery_report()
+
+    if command in [
+        "power status",
+        "power information",
+        "power info",
+        "charging status",
+        "check power status",
+    ]:
+        return get_power_status()
 
     # Step 56: Storage & Disk Intelligence
     if command in [
