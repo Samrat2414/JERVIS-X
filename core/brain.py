@@ -1,6 +1,13 @@
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
+from core.notification_manager import (
+    get_notification_status,
+    get_notification_report,
+    enable_notifications,
+    disable_notifications,
+    clear_notification_history,
+)
 from core.alert_center import (
     get_active_alerts_summary,
     get_alert_history,
@@ -200,6 +207,48 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 60: Smart Notification System
+    if command in [
+        "notification status",
+        "notifications status",
+        "show notification status",
+    ]:
+        return get_notification_status()
+
+    if command in [
+        "check notifications",
+        "show notifications",
+        "new notifications",
+    ]:
+        return get_notification_report()
+
+    if command in [
+        "enable notifications",
+        "turn on notifications",
+    ]:
+        return _log_and_return(
+            "Enable JERVIS notifications",
+            enable_notifications(),
+        )
+
+    if command in [
+        "disable notifications",
+        "turn off notifications",
+    ]:
+        return _log_and_return(
+            "Disable JERVIS notifications",
+            disable_notifications(),
+        )
+
+    if command in [
+        "clear notification history",
+        "clear notifications history",
+    ]:
+        return _log_and_return(
+            "Clear JERVIS notification history",
+            clear_notification_history(),
+        )
 
     # Step 59: Smart Alert Center
     if command in [
