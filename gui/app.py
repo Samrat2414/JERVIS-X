@@ -24,6 +24,10 @@ from core.security_tools import generate_password
 from core.qr_generator import generate_qr
 from core.translator import translate_text
 from core.diagnostics import run_diagnostics
+from core.background_monitor import (
+    BackgroundMonitor,
+    format_background_alerts,
+)
 from core.notification_manager import (
     get_notification_status,
     get_notification_report,
@@ -460,7 +464,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 60 • Notification Center",
+            text="JERVIS X\nStep 61 • Background Monitoring",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -518,6 +522,11 @@ class JervisApp(ctk.CTk):
         self.create_system_health_page()
         self.create_alert_center_page()
         self.create_notification_center_page()
+        self.background_monitor = BackgroundMonitor(
+            interval=60,
+            on_notification=self.handle_background_notifications,
+        )
+        self.background_monitor.start()
         self.after(300, self.show_startup_lock_if_needed)
         self.create_voice_page()
 
@@ -10673,6 +10682,64 @@ class JervisApp(ctk.CTk):
             self.notification_status_label.configure(
                 text=f"Clear notification history error: {error}",
             )
+
+    def handle_background_notifications(self, alerts):
+        if not alerts:
+            return
+
+        self.safe_after(
+            lambda: self._apply_background_notifications(alerts)
+        )
+
+    def _apply_background_notifications(self, alerts):
+        try:
+            output = format_background_alerts(alerts)
+
+            if hasattr(self, "notification_output_box"):
+                self._set_notification_output(output)
+
+            if hasattr(self, "notification_summary_label"):
+                self.notification_summary_label.configure(
+                    text=f"{len(alerts)} new background notification(s) detected."
+                )
+
+            if hasattr(self, "notification_status_label"):
+                self.notification_status_label.configure(
+                    text="Background monitor detected new alert(s)."
+                )
+
+            if hasattr(self, "notification_last_card"):
+                from datetime import datetime as _dt
+                self.notification_last_card["value"].configure(
+                    text=_dt.now().strftime("%H:%M:%S")
+                )
+
+            if hasattr(self, "alert_status_label"):
+                self.gui_refresh_alert_center()
+
+            if hasattr(self, "notification_status_card"):
+                self.gui_refresh_notification_status()
+
+            self.add_history(
+                "Background monitor",
+                output,
+                source="SYSTEM",
+            )
+
+        except Exception:
+            pass
+
+    def stop_background_monitor(self):
+        try:
+            monitor = getattr(self, "background_monitor", None)
+            if monitor is not None:
+                monitor.stop()
+        except Exception:
+            pass
+
+    def destroy(self):
+        self.stop_background_monitor()
+        super().destroy()
 
     def create_voice_page(self):
         page = ctk.CTkFrame(self.page_container)
