@@ -39,6 +39,10 @@ from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
 )
+from core.alert_intelligence import (
+    get_alert_intelligence,
+    get_alert_intelligence_report,
+)
 from core.security_center import (
     get_security_analysis,
     get_security_report,
@@ -244,6 +248,102 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 72: Smart Alert & Notification Intelligence
+    if command in [
+        "alert intelligence",
+        "smart alert intelligence",
+        "alert intelligence report",
+        "notification intelligence",
+    ]:
+        return get_alert_intelligence_report()
+
+    if command in [
+        "alert intelligence score",
+        "alert score",
+        "notification intelligence score",
+    ]:
+        result = get_alert_intelligence()
+
+        return (
+            "JERVIS ALERT INTELLIGENCE SCORE\n\n"
+            f"Score: {result['score']}/100\n"
+            f"Status: {result['status']}\n"
+            f"Active Alerts: {result['total_alerts']}\n"
+            f"Critical: {result['critical_count']}\n"
+            f"Warnings: {result['warning_count']}\n"
+            f"Notifications: {result['notifications']}"
+        )
+
+    if command in [
+        "alert priorities",
+        "show alert priorities",
+        "priority alerts",
+    ]:
+        result = get_alert_intelligence()
+        alerts = result.get("alerts", [])
+
+        if not alerts:
+            return "No active alerts."
+
+        lines = [
+            "JERVIS ALERT PRIORITIES",
+            "",
+        ]
+
+        for number, alert in enumerate(
+            alerts,
+            start=1,
+        ):
+            lines.append(
+                f"{number}. "
+                f"[{alert.get('severity', 'Info')}] "
+                f"{alert.get('type', 'System')} "
+                f"- Priority: {alert.get('priority', 'Low')}"
+            )
+
+        return "\n".join(lines)
+
+    if command in [
+        "alert recommendations",
+        "alert actions",
+        "notification recommendations",
+    ]:
+        result = get_alert_intelligence()
+        alerts = result.get("alerts", [])
+
+        if not alerts:
+            return (
+                "JERVIS ALERT RECOMMENDATIONS\n\n"
+                "- No active alert action is required."
+            )
+
+        lines = [
+            "JERVIS ALERT RECOMMENDATIONS",
+            "",
+        ]
+
+        for number, alert in enumerate(
+            alerts,
+            start=1,
+        ):
+            lines.append(
+                f"{number}. {alert.get('type', 'System')}: "
+                f"{alert.get('recommended_action', '')}"
+            )
+
+        lines.extend(
+            [
+                "",
+                (
+                    "Safety: JERVIS alert intelligence only analyzes "
+                    "and prioritizes alerts. It will not automatically "
+                    "make system changes."
+                ),
+            ]
+        )
+
+        return "\n".join(lines)
 
     # Step 71: Smart Security Center
     if command in [
