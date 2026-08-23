@@ -55,6 +55,9 @@ from core.disk_intelligence import (
 )
 from core.network_info import (
     get_network_info,
+    get_network_health,
+    get_network_activity_analysis,
+    get_network_recommendations,
 )
 from core.system_info import (
     get_system_info,
@@ -487,7 +490,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 68 • Smart Battery & Power",
+            text="JERVIS X\nStep 69 • Smart Network Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -9729,11 +9732,11 @@ class JervisApp(ctk.CTk):
         page = ctk.CTkFrame(self.page_container)
         self.pages["Network Information"] = page
         page.grid_columnconfigure((0, 1, 2, 3), weight=1)
-        page.grid_rowconfigure(5, weight=1)
+        page.grid_rowconfigure(6, weight=1)
 
         ctk.CTkLabel(
             page,
-            text="JERVIS NETWORK INFORMATION CENTER",
+            text="JERVIS SMART NETWORK INTELLIGENCE",
             font=("Arial", 28, "bold"),
         ).grid(
             row=0,
@@ -9746,7 +9749,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             page,
-            text="View internet status, local IP, network traffic, packets and interface details.",
+            text="Monitor connectivity, primary interface, traffic activity, problems and recommendations.",
             font=("Arial", 14),
         ).grid(
             row=1,
@@ -9757,12 +9760,12 @@ class JervisApp(ctk.CTk):
             sticky="w",
         )
 
-        self.netinfo_status_card = self.create_info_card(
+        self.net_health_card = self.create_info_card(
             page,
-            "INTERNET",
+            "NETWORK HEALTH",
             "--",
         )
-        self.netinfo_status_card["frame"].grid(
+        self.net_health_card["frame"].grid(
             row=2,
             column=0,
             padx=(30, 6),
@@ -9770,12 +9773,12 @@ class JervisApp(ctk.CTk):
             sticky="nsew",
         )
 
-        self.netinfo_ip_card = self.create_info_card(
+        self.net_internet_card = self.create_info_card(
             page,
-            "LOCAL IP",
+            "INTERNET",
             "--",
         )
-        self.netinfo_ip_card["frame"].grid(
+        self.net_internet_card["frame"].grid(
             row=2,
             column=1,
             padx=6,
@@ -9783,12 +9786,12 @@ class JervisApp(ctk.CTk):
             sticky="nsew",
         )
 
-        self.netinfo_sent_card = self.create_info_card(
+        self.net_ip_card = self.create_info_card(
             page,
-            "DATA SENT",
+            "LOCAL IP",
             "--",
         )
-        self.netinfo_sent_card["frame"].grid(
+        self.net_ip_card["frame"].grid(
             row=2,
             column=2,
             padx=6,
@@ -9796,12 +9799,12 @@ class JervisApp(ctk.CTk):
             sticky="nsew",
         )
 
-        self.netinfo_received_card = self.create_info_card(
+        self.net_interface_card = self.create_info_card(
             page,
-            "DATA RECEIVED",
+            "PRIMARY INTERFACE",
             "--",
         )
-        self.netinfo_received_card["frame"].grid(
+        self.net_interface_card["frame"].grid(
             row=2,
             column=3,
             padx=(6, 30),
@@ -9809,12 +9812,12 @@ class JervisApp(ctk.CTk):
             sticky="nsew",
         )
 
-        self.netinfo_packets_sent_card = self.create_info_card(
+        self.net_speed_card = self.create_info_card(
             page,
-            "PACKETS SENT",
+            "LINK SPEED",
             "--",
         )
-        self.netinfo_packets_sent_card["frame"].grid(
+        self.net_speed_card["frame"].grid(
             row=3,
             column=0,
             padx=(30, 6),
@@ -9822,12 +9825,12 @@ class JervisApp(ctk.CTk):
             sticky="nsew",
         )
 
-        self.netinfo_packets_recv_card = self.create_info_card(
+        self.net_sent_card = self.create_info_card(
             page,
-            "PACKETS RECEIVED",
+            "DATA SENT",
             "--",
         )
-        self.netinfo_packets_recv_card["frame"].grid(
+        self.net_sent_card["frame"].grid(
             row=3,
             column=1,
             padx=6,
@@ -9835,12 +9838,12 @@ class JervisApp(ctk.CTk):
             sticky="nsew",
         )
 
-        self.netinfo_hostname_card = self.create_info_card(
+        self.net_received_card = self.create_info_card(
             page,
-            "HOSTNAME",
+            "DATA RECEIVED",
             "--",
         )
-        self.netinfo_hostname_card["frame"].grid(
+        self.net_received_card["frame"].grid(
             row=3,
             column=2,
             padx=6,
@@ -9848,12 +9851,12 @@ class JervisApp(ctk.CTk):
             sticky="nsew",
         )
 
-        self.netinfo_active_card = self.create_info_card(
+        self.net_active_card = self.create_info_card(
             page,
             "ACTIVE INTERFACES",
             "--",
         )
-        self.netinfo_active_card["frame"].grid(
+        self.net_active_card["frame"].grid(
             row=3,
             column=3,
             padx=(6, 30),
@@ -9874,8 +9877,8 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             controls,
-            text="Refresh Network Info",
-            width=170,
+            text="Refresh Network Intelligence",
+            width=205,
             height=42,
             command=self.gui_refresh_network_information,
         ).grid(
@@ -9885,12 +9888,12 @@ class JervisApp(ctk.CTk):
             pady=12,
         )
 
-        self.netinfo_status_label = ctk.CTkLabel(
+        self.net_status_label = ctk.CTkLabel(
             controls,
             text="Ready",
             font=("Arial", 13),
         )
-        self.netinfo_status_label.grid(
+        self.net_status_label.grid(
             row=0,
             column=1,
             padx=(10, 15),
@@ -9898,71 +9901,106 @@ class JervisApp(ctk.CTk):
             sticky="e",
         )
 
-        details = ctk.CTkFrame(page)
-        details.grid(
+        self.net_safety_label = ctk.CTkLabel(
+            page,
+            text=(
+                "Safety mode: monitoring and recommendations only. "
+                "JERVIS will not automatically change Windows network settings."
+            ),
+            font=("Arial", 13, "bold"),
+            justify="left",
+            wraplength=950,
+        )
+        self.net_safety_label.grid(
             row=5,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(0, 12),
+            sticky="w",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=6,
             column=0,
             columnspan=4,
             padx=30,
             pady=(0, 20),
             sticky="nsew",
         )
-        details.grid_columnconfigure((0, 1), weight=1)
-        details.grid_rowconfigure(1, weight=1)
+        content.grid_columnconfigure((0, 1, 2), weight=1)
+        content.grid_rowconfigure(1, weight=1)
 
         ctk.CTkLabel(
-            details,
-            text="NETWORK INTERFACES",
+            content,
+            text="NETWORK ACTIVITY",
             font=("Arial", 17, "bold"),
         ).grid(
-            row=0,
-            column=0,
-            padx=15,
-            pady=(15, 8),
-            sticky="w",
+            row=0, column=0,
+            padx=15, pady=(15, 8), sticky="w",
         )
 
         ctk.CTkLabel(
-            details,
-            text="NETWORK SUMMARY",
+            content,
+            text="DETECTED PROBLEMS",
             font=("Arial", 17, "bold"),
         ).grid(
-            row=0,
-            column=1,
-            padx=15,
-            pady=(15, 8),
-            sticky="w",
+            row=0, column=1,
+            padx=15, pady=(15, 8), sticky="w",
         )
 
-        self.netinfo_interfaces_box = ctk.CTkTextbox(
-            details,
+        ctk.CTkLabel(
+            content,
+            text="RECOMMENDATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=2,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        self.net_activity_box = ctk.CTkTextbox(
+            content,
             font=("Consolas", 12),
         )
-        self.netinfo_interfaces_box.grid(
+        self.net_activity_box.grid(
             row=1,
             column=0,
             padx=(15, 7),
             pady=(0, 15),
             sticky="nsew",
         )
-        self.netinfo_interfaces_box.configure(state="disabled")
+        self.net_activity_box.configure(state="disabled")
 
-        self.netinfo_summary_box = ctk.CTkTextbox(
-            details,
+        self.net_problems_box = ctk.CTkTextbox(
+            content,
             font=("Consolas", 12),
         )
-        self.netinfo_summary_box.grid(
+        self.net_problems_box.grid(
             row=1,
             column=1,
+            padx=7,
+            pady=(0, 15),
+            sticky="nsew",
+        )
+        self.net_problems_box.configure(state="disabled")
+
+        self.net_recommendations_box = ctk.CTkTextbox(
+            content,
+            font=("Consolas", 12),
+        )
+        self.net_recommendations_box.grid(
+            row=1,
+            column=2,
             padx=(7, 15),
             pady=(0, 15),
             sticky="nsew",
         )
-        self.netinfo_summary_box.configure(state="disabled")
+        self.net_recommendations_box.configure(state="disabled")
 
         self.gui_refresh_network_information()
 
-    def _set_network_info_box(self, box, text):
+    def _set_network_box(self, box, text):
         box.configure(state="normal")
         box.delete("1.0", "end")
         box.insert("end", str(text))
@@ -9971,93 +10009,94 @@ class JervisApp(ctk.CTk):
     def gui_refresh_network_information(self):
         try:
             info = get_network_info()
+            health = get_network_health()
+            activity = get_network_activity_analysis()
+            recommendations = get_network_recommendations()
 
-            self.netinfo_status_card["value"].configure(
-                text="Connected" if info["internet"] else "Disconnected",
+            primary = health.get("primary_interface")
+
+            self.net_health_card["value"].configure(
+                text=health.get("status", "Unknown")
             )
-            self.netinfo_ip_card["value"].configure(
-                text=info["local_ip"],
+            self.net_internet_card["value"].configure(
+                text="Connected" if health.get("internet") else "Disconnected"
             )
-            self.netinfo_sent_card["value"].configure(
-                text=f"{info['sent_mb']} MB",
+            self.net_ip_card["value"].configure(
+                text=health.get("local_ip", "Unavailable")
             )
-            self.netinfo_received_card["value"].configure(
-                text=f"{info['received_mb']} MB",
+            self.net_interface_card["value"].configure(
+                text=(
+                    primary.get("name", "Unknown")
+                    if primary
+                    else "Unavailable"
+                )
             )
-            self.netinfo_packets_sent_card["value"].configure(
-                text=str(info["packets_sent"]),
+            self.net_speed_card["value"].configure(
+                text=(
+                    f"{primary.get('speed_mbps', 0)} Mbps"
+                    if primary
+                    else "N/A"
+                )
             )
-            self.netinfo_packets_recv_card["value"].configure(
-                text=str(info["packets_received"]),
+            self.net_sent_card["value"].configure(
+                text=f"{activity.get('sent_mb', 0)} MB"
             )
-            self.netinfo_hostname_card["value"].configure(
-                text=info["hostname"],
+            self.net_received_card["value"].configure(
+                text=f"{activity.get('received_mb', 0)} MB"
+            )
+            self.net_active_card["value"].configure(
+                text=str(len(health.get("active_interfaces", [])))
             )
 
-            active_interfaces = [
-                interface
-                for interface in info["interfaces"]
-                if interface.get("is_up")
+            activity_lines = [
+                f"Packets Sent: {activity.get('packets_sent', 0)}",
+                f"Packets Received: {activity.get('packets_received', 0)}",
+                "",
+                "Analysis:",
             ]
 
-            self.netinfo_active_card["value"].configure(
-                text=str(len(active_interfaces)),
+            activity_lines.extend(
+                f"- {note}"
+                for note in activity.get("notes", [])
             )
 
-            interface_lines = []
+            problems = health.get("problems", [])
+            problems_text = (
+                "\n".join(f"- {item}" for item in problems)
+                if problems
+                else "- No major network problem detected."
+            )
 
-            for number, interface in enumerate(
-                info["interfaces"],
-                start=1,
-            ):
-                status = "UP" if interface["is_up"] else "DOWN"
-                ipv4 = (
-                    ", ".join(interface["ipv4"])
-                    if interface["ipv4"]
-                    else "No IPv4"
+            recommendation_text = (
+                "\n".join(f"- {item}" for item in recommendations)
+                if recommendations
+                else "- No network recommendations available."
+            )
+
+            self._set_network_box(
+                self.net_activity_box,
+                "\n".join(activity_lines),
+            )
+            self._set_network_box(
+                self.net_problems_box,
+                problems_text,
+            )
+            self._set_network_box(
+                self.net_recommendations_box,
+                recommendation_text,
+            )
+
+            self.net_status_label.configure(
+                text=(
+                    f"Network refreshed: "
+                    f"{health.get('status', 'Unknown')} • "
+                    f"{'Connected' if health.get('internet') else 'Disconnected'}"
                 )
-
-                interface_lines.append(
-                    f"{number}. {interface['name']}\n"
-                    f"   Status: {status}\n"
-                    f"   Speed: {interface['speed_mbps']} Mbps\n"
-                    f"   IPv4: {ipv4}\n"
-                    f"   MAC: {interface['mac']}"
-                )
-
-            self._set_network_info_box(
-                self.netinfo_interfaces_box,
-                "\n\n".join(interface_lines)
-                if interface_lines
-                else "No interfaces found.",
-            )
-
-            summary_text = (
-                "JERVIS NETWORK INFORMATION\n\n"
-                f"Hostname: {info['hostname']}\n"
-                f"Local IP: {info['local_ip']}\n"
-                f"Internet: "
-                f"{'Connected' if info['internet'] else 'Disconnected'}\n\n"
-                f"Data Sent: {info['sent_mb']} MB\n"
-                f"Data Received: {info['received_mb']} MB\n"
-                f"Packets Sent: {info['packets_sent']}\n"
-                f"Packets Received: {info['packets_received']}\n"
-                f"Total Interfaces: {len(info['interfaces'])}\n"
-                f"Active Interfaces: {len(active_interfaces)}"
-            )
-
-            self._set_network_info_box(
-                self.netinfo_summary_box,
-                summary_text,
-            )
-
-            self.netinfo_status_label.configure(
-                text="Network information refreshed.",
             )
 
         except Exception as error:
-            self.netinfo_status_label.configure(
-                text=f"Network information error: {error}",
+            self.net_status_label.configure(
+                text=f"Network Intelligence error: {error}"
             )
 
     def create_disk_intelligence_page(self):
