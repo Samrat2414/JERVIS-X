@@ -64,6 +64,9 @@ from plugins.plugin_manager import (
     disable_plugin,
     is_plugin_enabled,
 )
+from core.disk_cleanup_analyzer import (
+    get_cleanup_analysis,
+)
 from core.startup_manager import (
     get_startup_analysis,
 )
@@ -450,6 +453,7 @@ class JervisApp(ctk.CTk):
             "Storage Analyzer",
             "Process Manager",
             "Startup Manager",
+            "Disk Cleanup",
             "Diagnostics",
             "Logs",
             "Analytics",
@@ -480,7 +484,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 66 • Smart Startup Manager",
+            text="JERVIS X\nStep 67 • Smart Disk Cleanup",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -525,6 +529,7 @@ class JervisApp(ctk.CTk):
         self.create_storage_analyzer_page()
         self.create_process_manager_page()
         self.create_startup_manager_page()
+        self.create_disk_cleanup_page()
         self.create_diagnostics_page()
         self.create_logs_page()
         self.create_analytics_page()
@@ -8814,6 +8819,271 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.startup_status_label.configure(
                 text=f"Startup Manager error: {error}"
+            )
+
+    def create_disk_cleanup_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Disk Cleanup"] = page
+        page.grid_columnconfigure((0, 1, 2), weight=1)
+        page.grid_rowconfigure(5, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART DISK CLEANUP ANALYZER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0, column=0, columnspan=3,
+            padx=30, pady=(30, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Analyze temporary/cache storage and large files with safety-first cleanup recommendations.",
+            font=("Arial", 14),
+        ).grid(
+            row=1, column=0, columnspan=3,
+            padx=30, pady=(0, 15), sticky="w",
+        )
+
+        self.cleanup_reclaimable_card = self.create_info_card(
+            page, "TEMP / CACHE SIZE", "--"
+        )
+        self.cleanup_reclaimable_card["frame"].grid(
+            row=2, column=0,
+            padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.cleanup_temp_count_card = self.create_info_card(
+            page, "TEMP LOCATIONS", "--"
+        )
+        self.cleanup_temp_count_card["frame"].grid(
+            row=2, column=1,
+            padx=6, pady=8, sticky="nsew"
+        )
+
+        self.cleanup_large_count_card = self.create_info_card(
+            page, "LARGE FILES", "--"
+        )
+        self.cleanup_large_count_card["frame"].grid(
+            row=2, column=2,
+            padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3, column=0, columnspan=3,
+            padx=30, pady=(8, 12), sticky="ew",
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Cleanup Analysis",
+            width=190,
+            height=42,
+            command=self.gui_refresh_disk_cleanup,
+        ).grid(
+            row=0, column=0,
+            padx=(15, 6), pady=12,
+        )
+
+        self.cleanup_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.cleanup_status_label.grid(
+            row=0, column=1,
+            padx=(10, 15), pady=12, sticky="e",
+        )
+
+        self.cleanup_safety_label = ctk.CTkLabel(
+            page,
+            text=(
+                "Safety mode: analysis only. "
+                "JERVIS will not automatically delete files, caches, or temporary data."
+            ),
+            font=("Arial", 13, "bold"),
+            justify="left",
+            wraplength=950,
+        )
+        self.cleanup_safety_label.grid(
+            row=4, column=0, columnspan=3,
+            padx=30, pady=(0, 12), sticky="w",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=5, column=0, columnspan=3,
+            padx=30, pady=(0, 20), sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1, 2), weight=1)
+        content.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            content,
+            text="TEMP & CACHE LOCATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=0,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="LARGE FILES",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=1,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="RECOMMENDATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=2,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        self.cleanup_temp_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.cleanup_temp_box.grid(
+            row=1, column=0,
+            padx=(15, 7), pady=(0, 15), sticky="nsew",
+        )
+        self.cleanup_temp_box.configure(state="disabled")
+
+        self.cleanup_large_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.cleanup_large_box.grid(
+            row=1, column=1,
+            padx=7, pady=(0, 15), sticky="nsew",
+        )
+        self.cleanup_large_box.configure(state="disabled")
+
+        self.cleanup_recommendations_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.cleanup_recommendations_box.grid(
+            row=1, column=2,
+            padx=(7, 15), pady=(0, 15), sticky="nsew",
+        )
+        self.cleanup_recommendations_box.configure(state="disabled")
+
+        self.gui_refresh_disk_cleanup()
+
+    def _set_cleanup_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_disk_cleanup(self):
+        try:
+            self.cleanup_status_label.configure(
+                text="Analyzing temporary files and large files..."
+            )
+
+            result = get_cleanup_analysis()
+
+            temp_locations = result.get(
+                "temp_locations",
+                [],
+            )
+            large_files = result.get(
+                "large_files",
+                [],
+            )
+            recommendations = result.get(
+                "recommendations",
+                [],
+            )
+            reclaimable_mb = result.get(
+                "reclaimable_mb",
+                0,
+            )
+
+            if reclaimable_mb >= 1024:
+                reclaimable_text = (
+                    f"{round(reclaimable_mb / 1024, 2)} GB"
+                )
+            else:
+                reclaimable_text = f"{reclaimable_mb} MB"
+
+            self.cleanup_reclaimable_card["value"].configure(
+                text=reclaimable_text
+            )
+            self.cleanup_temp_count_card["value"].configure(
+                text=str(len(temp_locations))
+            )
+            self.cleanup_large_count_card["value"].configure(
+                text=str(len(large_files))
+            )
+
+            if temp_locations:
+                temp_text = "\n\n".join(
+                    (
+                        f"{number}. {item.get('folder', 'Unknown')}\n"
+                        f"   Size: {item.get('size_mb', 0)} MB"
+                    )
+                    for number, item in enumerate(
+                        temp_locations,
+                        start=1,
+                    )
+                )
+            else:
+                temp_text = "No accessible temp/cache folders found."
+
+            if large_files:
+                large_text = "\n\n".join(
+                    (
+                        f"{number}. {item.get('path', 'Unknown')}\n"
+                        f"   Size: {item.get('size_mb', 0)} MB"
+                    )
+                    for number, item in enumerate(
+                        large_files,
+                        start=1,
+                    )
+                )
+            else:
+                large_text = "No large files were found in the scanned folders."
+
+            if recommendations:
+                recommendation_text = "\n".join(
+                    f"- {item}"
+                    for item in recommendations
+                )
+            else:
+                recommendation_text = "No cleanup recommendations are available."
+
+            self._set_cleanup_box(
+                self.cleanup_temp_box,
+                temp_text,
+            )
+            self._set_cleanup_box(
+                self.cleanup_large_box,
+                large_text,
+            )
+            self._set_cleanup_box(
+                self.cleanup_recommendations_box,
+                recommendation_text,
+            )
+
+            self.cleanup_status_label.configure(
+                text=(
+                    f"Cleanup analysis complete: "
+                    f"{reclaimable_text} temp/cache, "
+                    f"{len(large_files)} large file(s)."
+                )
+            )
+
+        except Exception as error:
+            self.cleanup_status_label.configure(
+                text=f"Disk Cleanup Analyzer error: {error}"
             )
 
     def create_plugin_manager_page(self):
