@@ -64,6 +64,11 @@ from plugins.plugin_manager import (
     disable_plugin,
     is_plugin_enabled,
 )
+from core.resource_optimizer import (
+    get_resource_status,
+    get_top_processes,
+    get_recommendations,
+)
 from core.performance_monitor import (
     get_latest_startup_time,
     get_average_startup_time,
@@ -442,6 +447,7 @@ class JervisApp(ctk.CTk):
             "Backup & Restore",
             "Security",
             "Performance",
+            "Resource Optimizer",
             "Plugin Manager",
             "System Information",
             "Network Information",
@@ -465,7 +471,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 63 • Live Performance Monitor",
+            text="JERVIS X\nStep 64 • Resource Optimizer",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -515,6 +521,7 @@ class JervisApp(ctk.CTk):
         self.create_backup_restore_page()
         self.create_security_page()
         self.create_performance_page()
+        self.create_resource_optimizer_page()
         self.create_plugin_manager_page()
         self.create_system_information_page()
         self.create_network_information_page()
@@ -8404,6 +8411,194 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.performance_status_label.configure(
                 text=f"Performance monitor error: {error}"
+            )
+
+    def create_resource_optimizer_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Resource Optimizer"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(5, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART RESOURCE OPTIMIZER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0, column=0, columnspan=4,
+            padx=30, pady=(30, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Analyze CPU and RAM usage, identify heavy processes, and get safe optimization recommendations.",
+            font=("Arial", 14),
+        ).grid(
+            row=1, column=0, columnspan=4,
+            padx=30, pady=(0, 15), sticky="w",
+        )
+
+        self.resource_cpu_card = self.create_info_card(page, "CPU USAGE", "--")
+        self.resource_cpu_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.resource_ram_card = self.create_info_card(page, "RAM USAGE", "--")
+        self.resource_ram_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.resource_cpu_status_card = self.create_info_card(page, "HIGH CPU", "--")
+        self.resource_cpu_status_card["frame"].grid(
+            row=2, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.resource_ram_status_card = self.create_info_card(page, "HIGH RAM", "--")
+        self.resource_ram_status_card["frame"].grid(
+            row=2, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3, column=0, columnspan=4,
+            padx=30, pady=(8, 12), sticky="ew",
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Analysis",
+            width=160,
+            height=42,
+            command=self.gui_refresh_resource_optimizer,
+        ).grid(
+            row=0, column=0, padx=(15, 6), pady=12,
+        )
+
+        self.resource_status_label = ctk.CTkLabel(
+            controls, text="Ready", font=("Arial", 13)
+        )
+        self.resource_status_label.grid(
+            row=0, column=1, padx=(10, 15), pady=12, sticky="e"
+        )
+
+        self.resource_safety_label = ctk.CTkLabel(
+            page,
+            text="Safety mode: JERVIS analyzes and recommends only. It will not automatically terminate any process.",
+            font=("Arial", 13, "bold"),
+            justify="left",
+            wraplength=950,
+        )
+        self.resource_safety_label.grid(
+            row=4, column=0, columnspan=4,
+            padx=30, pady=(0, 12), sticky="w",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=5, column=0, columnspan=4,
+            padx=30, pady=(0, 20), sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            content,
+            text="TOP RESOURCE PROCESSES",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=0, padx=15, pady=(15, 8), sticky="w"
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="OPTIMIZATION RECOMMENDATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=1, padx=15, pady=(15, 8), sticky="w"
+        )
+
+        self.resource_process_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.resource_process_box.grid(
+            row=1, column=0, padx=(15, 7), pady=(0, 15), sticky="nsew"
+        )
+        self.resource_process_box.configure(state="disabled")
+
+        self.resource_recommendation_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.resource_recommendation_box.grid(
+            row=1, column=1, padx=(7, 15), pady=(0, 15), sticky="nsew"
+        )
+        self.resource_recommendation_box.configure(state="disabled")
+
+        self.gui_refresh_resource_optimizer()
+
+    def _set_resource_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_resource_optimizer(self):
+        try:
+            self.resource_status_label.configure(
+                text="Analyzing system resources..."
+            )
+
+            status = get_resource_status()
+            processes = get_top_processes(10)
+            recommendations = get_recommendations()
+
+            self.resource_cpu_card["value"].configure(
+                text=f"{status['cpu']}%"
+            )
+            self.resource_ram_card["value"].configure(
+                text=f"{status['ram']}%"
+            )
+            self.resource_cpu_status_card["value"].configure(
+                text="Yes" if status["high_cpu"] else "No"
+            )
+            self.resource_ram_status_card["value"].configure(
+                text="Yes" if status["high_ram"] else "No"
+            )
+
+            if processes:
+                process_text = "\n\n".join(
+                    (
+                        f"{i}. {p['name']} (PID {p['pid']})\n"
+                        f"   CPU: {p['cpu']}% | RAM: {p['ram']}%\n"
+                        f"   Status: {p['status']}"
+                    )
+                    for i, p in enumerate(processes, start=1)
+                )
+            else:
+                process_text = "No process data available."
+
+            recommendation_text = "\n".join(
+                f"- {item}" for item in recommendations
+            )
+
+            self._set_resource_box(
+                self.resource_process_box,
+                process_text,
+            )
+            self._set_resource_box(
+                self.resource_recommendation_box,
+                recommendation_text,
+            )
+
+            self.resource_status_label.configure(
+                text=(
+                    f"Analysis complete. CPU {status['cpu']}% | "
+                    f"RAM {status['ram']}%."
+                )
+            )
+
+        except Exception as error:
+            self.resource_status_label.configure(
+                text=f"Resource optimizer error: {error}"
             )
 
     def create_plugin_manager_page(self):
