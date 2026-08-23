@@ -53,6 +53,10 @@ from core.disk_intelligence import (
     get_disk_partitions,
     get_storage_health,
 )
+from core.automation_intelligence import (
+    get_automation_intelligence,
+    get_automation_recommendations,
+)
 from core.backup_intelligence import (
     get_backup_intelligence,
     get_backup_recommendations,
@@ -505,7 +509,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 73 • Backup Intelligence",
+            text="JERVIS X\nStep 74 • Automation Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -565,6 +569,7 @@ class JervisApp(ctk.CTk):
         self.create_security_center_page()
         self.create_alert_intelligence_page()
         self.create_backup_intelligence_page()
+        self.create_automation_intelligence_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -11114,6 +11119,298 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.backup_refresh_label.configure(
                 text=f"Backup Intelligence error: {error}"
+            )
+
+    def create_automation_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Automation Intelligence"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(6, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART AUTOMATION INTELLIGENCE",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0, column=0, columnspan=4,
+            padx=30, pady=(30, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Review automation readiness, available actions, task activity, "
+                "risk awareness and safety-first recommendations."
+            ),
+            font=("Arial", 14),
+            wraplength=1000,
+            justify="left",
+        ).grid(
+            row=1, column=0, columnspan=4,
+            padx=30, pady=(0, 15), sticky="w",
+        )
+
+        self.auto_int_score_card = self.create_info_card(
+            page, "AUTOMATION SCORE", "--"
+        )
+        self.auto_int_score_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.auto_int_status_card = self.create_info_card(
+            page, "STATUS", "--"
+        )
+        self.auto_int_status_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.auto_int_actions_card = self.create_info_card(
+            page, "AVAILABLE ACTIONS", "--"
+        )
+        self.auto_int_actions_card["frame"].grid(
+            row=2, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.auto_int_categories_card = self.create_info_card(
+            page, "CATEGORIES", "--"
+        )
+        self.auto_int_categories_card["frame"].grid(
+            row=2, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        self.auto_int_total_tasks_card = self.create_info_card(
+            page, "TOTAL TASKS", "--"
+        )
+        self.auto_int_total_tasks_card["frame"].grid(
+            row=3, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.auto_int_pending_tasks_card = self.create_info_card(
+            page, "PENDING TASKS", "--"
+        )
+        self.auto_int_pending_tasks_card["frame"].grid(
+            row=3, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.auto_int_completed_tasks_card = self.create_info_card(
+            page, "COMPLETED TASKS", "--"
+        )
+        self.auto_int_completed_tasks_card["frame"].grid(
+            row=3, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.auto_int_risks_card = self.create_info_card(
+            page, "RISK COUNT", "--"
+        )
+        self.auto_int_risks_card["frame"].grid(
+            row=3, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=4, column=0, columnspan=4,
+            padx=30, pady=(8, 12), sticky="ew",
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Automation Intelligence",
+            width=220,
+            height=42,
+            command=self.gui_refresh_automation_intelligence,
+        ).grid(
+            row=0, column=0, padx=(15, 6), pady=12,
+        )
+
+        self.auto_int_refresh_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.auto_int_refresh_label.grid(
+            row=0, column=1,
+            padx=(10, 15), pady=12, sticky="e",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Safety mode: intelligence only. Actions that may interrupt "
+                "applications or the current session should require explicit confirmation."
+            ),
+            font=("Arial", 13, "bold"),
+            justify="left",
+            wraplength=1000,
+        ).grid(
+            row=5, column=0, columnspan=4,
+            padx=30, pady=(0, 12), sticky="w",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=6, column=0, columnspan=4,
+            padx=30, pady=(0, 20), sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1, 2), weight=1)
+        content.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            content,
+            text="AUTOMATION CAPABILITIES",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=0,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="AUTOMATION RISKS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=1,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="RECOMMENDATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=2,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        self.auto_int_capabilities_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.auto_int_capabilities_box.grid(
+            row=1, column=0, padx=(15, 7),
+            pady=(0, 15), sticky="nsew",
+        )
+
+        self.auto_int_risks_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.auto_int_risks_box.grid(
+            row=1, column=1, padx=7,
+            pady=(0, 15), sticky="nsew",
+        )
+
+        self.auto_int_recommendations_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.auto_int_recommendations_box.grid(
+            row=1, column=2, padx=(7, 15),
+            pady=(0, 15), sticky="nsew",
+        )
+
+        for box in (
+            self.auto_int_capabilities_box,
+            self.auto_int_risks_box,
+            self.auto_int_recommendations_box,
+        ):
+            box.configure(state="disabled")
+
+        self.gui_refresh_automation_intelligence()
+
+    def _set_automation_intelligence_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_automation_intelligence(self):
+        try:
+            result = get_automation_intelligence()
+            recommendations = get_automation_recommendations()
+            tasks = result.get("task_summary", {})
+            capabilities = result.get("capabilities", [])
+            risks = result.get("risks", [])
+
+            self.auto_int_score_card["value"].configure(
+                text=f"{result.get('score', 0)}/100"
+            )
+            self.auto_int_status_card["value"].configure(
+                text=result.get("status", "Unknown")
+            )
+            self.auto_int_actions_card["value"].configure(
+                text=str(result.get("action_count", 0))
+            )
+            self.auto_int_categories_card["value"].configure(
+                text=str(result.get("category_count", 0))
+            )
+            self.auto_int_total_tasks_card["value"].configure(
+                text=str(tasks.get("total", 0))
+            )
+            self.auto_int_pending_tasks_card["value"].configure(
+                text=str(tasks.get("pending", 0))
+            )
+            self.auto_int_completed_tasks_card["value"].configure(
+                text=str(tasks.get("completed", 0))
+            )
+            self.auto_int_risks_card["value"].configure(
+                text=str(len(risks))
+            )
+
+            capability_lines = []
+
+            for capability in capabilities:
+                capability_lines.append(
+                    f"{capability.get('category', 'Unknown')} "
+                    f"({capability.get('count', 0)})"
+                )
+
+                for action in capability.get("actions", []):
+                    capability_lines.append(
+                        f"- {action}"
+                    )
+
+                capability_lines.append("")
+
+            capabilities_text = (
+                "\n".join(capability_lines).rstrip()
+                if capability_lines
+                else "No automation capabilities are available."
+            )
+
+            risks_text = (
+                "\n".join(f"- {item}" for item in risks)
+                if risks
+                else "- No major automation risk detected."
+            )
+
+            recommendations_text = (
+                "\n".join(f"- {item}" for item in recommendations)
+                if recommendations
+                else "- No automation recommendation is available."
+            )
+
+            self._set_automation_intelligence_box(
+                self.auto_int_capabilities_box,
+                capabilities_text,
+            )
+            self._set_automation_intelligence_box(
+                self.auto_int_risks_box,
+                risks_text,
+            )
+            self._set_automation_intelligence_box(
+                self.auto_int_recommendations_box,
+                recommendations_text,
+            )
+
+            self.auto_int_refresh_label.configure(
+                text=(
+                    f"{result.get('status', 'Unknown')} • "
+                    f"{result.get('action_count', 0)} actions • "
+                    f"{tasks.get('pending', 0)} pending task(s)"
+                )
+            )
+
+        except Exception as error:
+            self.auto_int_refresh_label.configure(
+                text=f"Automation Intelligence error: {error}"
             )
 
     def create_disk_intelligence_page(self):
