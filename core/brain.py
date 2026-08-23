@@ -39,6 +39,11 @@ from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
 )
+from core.security_center import (
+    get_security_analysis,
+    get_security_report,
+    get_security_recommendations,
+)
 from core.maintenance_advisor import (
     get_maintenance_analysis,
     get_maintenance_report,
@@ -239,6 +244,68 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 71: Smart Security Center
+    if command in [
+        "security center",
+        "smart security",
+        "smart security center",
+        "security report",
+        "system security report",
+    ]:
+        return get_security_report()
+
+    if command in [
+        "security score",
+        "system security score",
+        "jervis security score",
+    ]:
+        result = get_security_analysis()
+
+        return (
+            "JERVIS SECURITY SCORE\n\n"
+            f"Score: {result['score']}/100\n"
+            f"Status: {result['status']}\n"
+            f"PIN Lock: "
+            f"{'Enabled' if result['pin_enabled'] else 'Disabled'}"
+        )
+
+    if command in [
+        "security status",
+        "system security status",
+        "jervis security status",
+    ]:
+        result = get_security_analysis()
+
+        risk_count = len(
+            result.get("risks", [])
+        )
+
+        return (
+            "JERVIS SECURITY STATUS\n\n"
+            f"Status: {result['status']}\n"
+            f"Security Score: {result['score']}/100\n"
+            f"PIN Lock: "
+            f"{'Enabled' if result['pin_enabled'] else 'Disabled'}\n"
+            f"Detected Risks: {risk_count}"
+        )
+
+    if command in [
+        "security recommendations",
+        "security advice",
+        "system security recommendations",
+    ]:
+        recommendations = get_security_recommendations()
+
+        return (
+            "JERVIS SECURITY RECOMMENDATIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in recommendations
+            )
+            + "\n\nSafety: Advisory mode only. "
+            "JERVIS will not automatically change Windows security settings."
+        )
 
     # Step 70: Smart Maintenance Advisor
     if command in [
