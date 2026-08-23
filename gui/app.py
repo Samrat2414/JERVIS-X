@@ -45,6 +45,9 @@ from core.system_health import (
 )
 from core.battery_intelligence import (
     get_battery_info,
+    get_power_efficiency_status,
+    get_battery_recommendations,
+    get_power_usage_summary,
 )
 from core.disk_intelligence import (
     get_disk_partitions,
@@ -484,7 +487,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 67 • Smart Disk Cleanup",
+            text="JERVIS X\nStep 68 • Smart Battery & Power",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -10362,24 +10365,24 @@ class JervisApp(ctk.CTk):
     def create_battery_power_page(self):
         page = ctk.CTkFrame(self.page_container)
         self.pages["Battery & Power"] = page
-        page.grid_columnconfigure((0, 1, 2), weight=1)
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
         page.grid_rowconfigure(5, weight=1)
 
         ctk.CTkLabel(
             page,
-            text="JERVIS BATTERY & POWER INTELLIGENCE",
+            text="JERVIS SMART BATTERY & POWER MANAGER",
             font=("Arial", 28, "bold"),
         ).grid(
-            row=0, column=0, columnspan=3,
+            row=0, column=0, columnspan=4,
             padx=30, pady=(30, 8), sticky="w",
         )
 
         ctk.CTkLabel(
             page,
-            text="Monitor battery percentage, charging state, power source, estimated time and warnings.",
+            text="Live battery status, power efficiency analysis and safety-first recommendations.",
             font=("Arial", 14),
         ).grid(
-            row=1, column=0, columnspan=3,
+            row=1, column=0, columnspan=4,
             padx=30, pady=(0, 15), sticky="w",
         )
 
@@ -10390,10 +10393,10 @@ class JervisApp(ctk.CTk):
             row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
         )
 
-        self.battery_charging_card = self.create_info_card(
-            page, "CHARGING", "--"
+        self.battery_level_card = self.create_info_card(
+            page, "BATTERY LEVEL", "--"
         )
-        self.battery_charging_card["frame"].grid(
+        self.battery_level_card["frame"].grid(
             row=2, column=1, padx=6, pady=8, sticky="nsew"
         )
 
@@ -10401,160 +10404,164 @@ class JervisApp(ctk.CTk):
             page, "POWER SOURCE", "--"
         )
         self.battery_source_card["frame"].grid(
-            row=2, column=2, padx=(6, 30), pady=8, sticky="nsew"
+            row=2, column=2, padx=6, pady=8, sticky="nsew"
         )
 
         self.battery_time_card = self.create_info_card(
             page, "ESTIMATED TIME", "--"
         )
         self.battery_time_card["frame"].grid(
-            row=3, column=0, padx=(30, 6), pady=8, sticky="nsew"
-        )
-
-        self.battery_warning_card = self.create_info_card(
-            page, "BATTERY STATUS", "--"
-        )
-        self.battery_warning_card["frame"].grid(
-            row=3, column=1, padx=6, pady=8, sticky="nsew"
-        )
-
-        self.battery_available_card = self.create_info_card(
-            page, "BATTERY DETECTED", "--"
-        )
-        self.battery_available_card["frame"].grid(
-            row=3, column=2, padx=(6, 30), pady=8, sticky="nsew"
+            row=2, column=3, padx=(6, 30), pady=8, sticky="nsew"
         )
 
         controls = ctk.CTkFrame(page)
         controls.grid(
-            row=4, column=0, columnspan=3,
+            row=3, column=0, columnspan=4,
             padx=30, pady=(8, 12), sticky="ew",
         )
         controls.grid_columnconfigure(1, weight=1)
 
         ctk.CTkButton(
             controls,
-            text="Refresh Battery Info",
-            width=170,
+            text="Refresh Battery Status",
+            width=180,
             height=42,
             command=self.gui_refresh_battery_power,
-        ).grid(
-            row=0, column=0, padx=(15, 6), pady=12,
-        )
+        ).grid(row=0, column=0, padx=(15, 6), pady=12)
 
         self.battery_status_label = ctk.CTkLabel(
-            controls,
-            text="Ready",
-            font=("Arial", 13),
+            controls, text="Ready", font=("Arial", 13)
         )
         self.battery_status_label.grid(
-            row=0, column=1,
-            padx=(10, 15), pady=12, sticky="e",
+            row=0, column=1, padx=(10, 15), pady=12, sticky="e",
         )
 
-        details = ctk.CTkFrame(page)
-        details.grid(
-            row=5, column=0, columnspan=3,
+        self.battery_safety_label = ctk.CTkLabel(
+            page,
+            text=(
+                "Safety mode: monitoring and recommendations only. "
+                "JERVIS will not automatically change Windows power settings."
+            ),
+            font=("Arial", 13, "bold"),
+            justify="left",
+            wraplength=950,
+        )
+        self.battery_safety_label.grid(
+            row=4, column=0, columnspan=4,
+            padx=30, pady=(0, 12), sticky="w",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=5, column=0, columnspan=4,
             padx=30, pady=(0, 20), sticky="nsew",
         )
-        details.grid_columnconfigure(0, weight=1)
-        details.grid_rowconfigure(1, weight=1)
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure(1, weight=1)
 
         ctk.CTkLabel(
-            details,
-            text="POWER DETAILS",
+            content, text="POWER INTELLIGENCE",
             font=("Arial", 17, "bold"),
-        ).grid(
-            row=0, column=0,
-            padx=15, pady=(15, 8), sticky="w",
-        )
+        ).grid(row=0, column=0, padx=15, pady=(15, 8), sticky="w")
 
-        self.battery_details_box = ctk.CTkTextbox(
-            details,
-            font=("Consolas", 12),
+        ctk.CTkLabel(
+            content, text="EFFICIENCY & RECOMMENDATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=1, padx=15, pady=(15, 8), sticky="w")
+
+        self.battery_power_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
         )
-        self.battery_details_box.grid(
-            row=1, column=0,
-            padx=15, pady=(0, 15), sticky="nsew",
+        self.battery_power_box.grid(
+            row=1, column=0, padx=(15, 7), pady=(0, 15), sticky="nsew",
         )
-        self.battery_details_box.configure(state="disabled")
+        self.battery_power_box.configure(state="disabled")
+
+        self.battery_recommendations_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.battery_recommendations_box.grid(
+            row=1, column=1, padx=(7, 15), pady=(0, 15), sticky="nsew",
+        )
+        self.battery_recommendations_box.configure(state="disabled")
 
         self.gui_refresh_battery_power()
 
-    def _set_battery_output(self, text):
-        self.battery_details_box.configure(state="normal")
-        self.battery_details_box.delete("1.0", "end")
-        self.battery_details_box.insert("end", str(text))
-        self.battery_details_box.configure(state="disabled")
+    def _set_battery_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
 
     def gui_refresh_battery_power(self):
         try:
             info = get_battery_info()
 
             if not info.get("available"):
-                self.battery_percent_card["value"].configure(text="N/A")
-                self.battery_charging_card["value"].configure(text="N/A")
-                self.battery_source_card["value"].configure(text="N/A")
-                self.battery_time_card["value"].configure(text="N/A")
-                self.battery_warning_card["value"].configure(text="N/A")
-                self.battery_available_card["value"].configure(text="No")
+                for card in (
+                    self.battery_percent_card,
+                    self.battery_level_card,
+                    self.battery_source_card,
+                    self.battery_time_card,
+                ):
+                    card["value"].configure(text="N/A")
 
                 message = info.get("message", "No battery detected.")
-                self._set_battery_output(message)
+                self._set_battery_box(self.battery_power_box, message)
+                self._set_battery_box(
+                    self.battery_recommendations_box,
+                    "No battery-specific recommendation is available.",
+                )
                 self.battery_status_label.configure(text=message)
                 return
 
-            charging = "Yes" if info["charging"] else "No"
-            power_source = "AC Power" if info["plugged"] else "Battery"
-            battery_status = (
-                "LOW BATTERY"
-                if info["low_battery"]
-                else "Normal"
-            )
+            efficiency = get_power_efficiency_status()
+            recommendations = get_battery_recommendations()
+            source = "AC Power" if info.get("plugged") else "Battery"
 
             self.battery_percent_card["value"].configure(
-                text=f"{info['percent']}%"
+                text=f"{info.get('percent', 0)}%"
             )
-            self.battery_charging_card["value"].configure(
-                text=charging
+            self.battery_level_card["value"].configure(
+                text=info.get("level", "Unknown")
             )
-            self.battery_source_card["value"].configure(
-                text=power_source
-            )
+            self.battery_source_card["value"].configure(text=source)
             self.battery_time_card["value"].configure(
-                text=info["time_left"]
-            )
-            self.battery_warning_card["value"].configure(
-                text=battery_status
-            )
-            self.battery_available_card["value"].configure(
-                text="Yes"
+                text=info.get("time_left", "Unknown")
             )
 
-            details_text = (
-                "JERVIS BATTERY & POWER INTELLIGENCE\n\n"
-                f"Battery Percentage: {info['percent']}%\n"
-                f"Charging: {charging}\n"
-                f"Power Source: {power_source}\n"
-                f"Estimated Time Left: {info['time_left']}\n"
-                f"Battery Status: {battery_status}"
+            power_text = (
+                f"{get_power_usage_summary()}\n\n"
+                f"Charging: {'Yes' if info.get('charging') else 'No'}\n"
+                f"Low Battery Warning: "
+                f"{'Yes' if info.get('low_battery') else 'No'}"
             )
 
-            if info["low_battery"]:
-                details_text += (
-                    "\n\nWARNING: Battery level is low. "
-                    "Connect the charger when possible."
-                )
+            recommendation_text = (
+                f"POWER EFFICIENCY\n\n"
+                f"Status: {efficiency.get('status', 'Unknown')}\n"
+                f"Note: {efficiency.get('reason', '')}\n\n"
+                f"RECOMMENDATIONS\n\n"
+                + "\n".join(f"- {item}" for item in recommendations)
+            )
 
-            self._set_battery_output(details_text)
+            self._set_battery_box(self.battery_power_box, power_text)
+            self._set_battery_box(
+                self.battery_recommendations_box,
+                recommendation_text,
+            )
 
             self.battery_status_label.configure(
-                text="Battery information refreshed."
+                text=(
+                    f"{info.get('percent', 0)}% • "
+                    f"{source} • "
+                    f"{efficiency.get('status', 'Unknown')}"
+                )
             )
 
         except Exception as error:
             self.battery_status_label.configure(
-                text=f"Battery information error: {error}"
+                text=f"Battery Manager error: {error}"
             )
 
     def create_system_health_page(self):
