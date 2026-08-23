@@ -39,6 +39,11 @@ from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
 )
+from core.backup_intelligence import (
+    get_backup_intelligence,
+    get_backup_intelligence_report,
+    get_backup_recommendations,
+)
 from core.alert_intelligence import (
     get_alert_intelligence,
     get_alert_intelligence_report,
@@ -248,6 +253,73 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 73: Smart Backup & Recovery Intelligence
+    if command in [
+        "backup intelligence",
+        "smart backup intelligence",
+        "backup intelligence report",
+        "backup recovery intelligence",
+    ]:
+        return get_backup_intelligence_report()
+
+    if command in [
+        "backup health",
+        "backup health score",
+        "backup status",
+    ]:
+        result = get_backup_intelligence()
+
+        return (
+            "JERVIS BACKUP HEALTH\n\n"
+            f"Score: {result['score']}/100\n"
+            f"Status: {result['status']}\n"
+            f"Backup Count: {result['backup_count']}\n"
+            f"Recovery Ready: "
+            f"{'Yes' if result['recovery_ready'] else 'No'}"
+        )
+
+    if command in [
+        "backup readiness",
+        "recovery readiness",
+        "backup recovery readiness",
+    ]:
+        result = get_backup_intelligence()
+
+        latest = result.get("latest_backup")
+        latest_text = str(latest) if latest else "Unavailable"
+
+        return (
+            "JERVIS BACKUP RECOVERY READINESS\n\n"
+            f"Recovery Ready: "
+            f"{'Yes' if result['recovery_ready'] else 'No'}\n"
+            f"Backup Count: {result['backup_count']}\n"
+            f"Latest Backup: {latest_text}\n"
+            f"Backup Path Available: "
+            f"{'Yes' if result['latest_exists'] else 'No'}"
+        )
+
+    if command in [
+        "backup recommendations",
+        "backup advice",
+        "recovery recommendations",
+    ]:
+        recommendations = get_backup_recommendations()
+
+        if not recommendations:
+            recommendations = [
+                "No additional backup recommendation is available."
+            ]
+
+        return (
+            "JERVIS BACKUP RECOMMENDATIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in recommendations
+            )
+            + "\n\nSafety: Backup intelligence is advisory. "
+            "Restore operations should only run after explicit user confirmation."
+        )
 
     # Step 72: Smart Alert & Notification Intelligence
     if command in [
