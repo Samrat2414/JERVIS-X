@@ -41,6 +41,10 @@ from core.disk_intelligence import (
 )
 from core.network_info import (
     get_network_report,
+    get_network_health_report,
+    get_network_health,
+    get_network_activity_analysis,
+    get_network_recommendations,
 )
 from core.system_info import (
     get_system_info_report,
@@ -231,6 +235,72 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 69: Smart Network Intelligence
+    if command in [
+        "network intelligence",
+        "smart network",
+        "smart network intelligence",
+        "network manager",
+    ]:
+        return get_network_health_report()
+
+    if command in [
+        "network health",
+        "network health status",
+        "connection health",
+    ]:
+        result = get_network_health()
+
+        return (
+            f"Network Health: {result['status']}\n"
+            f"Internet: "
+            f"{'Connected' if result['internet'] else 'Disconnected'}\n"
+            f"Local IP: {result['local_ip']}\n"
+            f"Active Interfaces: {len(result['active_interfaces'])}"
+        )
+
+    if command in [
+        "network activity",
+        "network usage",
+        "network activity analysis",
+    ]:
+        result = get_network_activity_analysis()
+
+        lines = [
+            "JERVIS NETWORK ACTIVITY",
+            "",
+            f"Data Sent: {result['sent_mb']} MB",
+            f"Data Received: {result['received_mb']} MB",
+            f"Packets Sent: {result['packets_sent']}",
+            f"Packets Received: {result['packets_received']}",
+            "",
+            "Analysis:",
+        ]
+
+        lines.extend(
+            f"- {note}"
+            for note in result.get("notes", [])
+        )
+
+        return "\n".join(lines)
+
+    if command in [
+        "network recommendations",
+        "connection recommendations",
+        "network advice",
+    ]:
+        recommendations = get_network_recommendations()
+
+        return (
+            "JERVIS NETWORK RECOMMENDATIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in recommendations
+            )
+            + "\n\nSafety: JERVIS will not automatically "
+            "change Windows network settings."
+        )
 
     # Step 68: Smart Battery & Power Manager
     if command in [
