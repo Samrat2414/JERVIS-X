@@ -64,6 +64,9 @@ from plugins.plugin_manager import (
     disable_plugin,
     is_plugin_enabled,
 )
+from core.startup_manager import (
+    get_startup_analysis,
+)
 from core.process_manager import (
     get_process_details,
     get_process_by_pid,
@@ -446,6 +449,7 @@ class JervisApp(ctk.CTk):
             "Network Monitor",
             "Storage Analyzer",
             "Process Manager",
+            "Startup Manager",
             "Diagnostics",
             "Logs",
             "Analytics",
@@ -476,7 +480,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 65 • Smart Process Manager",
+            text="JERVIS X\nStep 66 • Smart Startup Manager",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -520,6 +524,7 @@ class JervisApp(ctk.CTk):
         self.create_network_monitor_page()
         self.create_storage_analyzer_page()
         self.create_process_manager_page()
+        self.create_startup_manager_page()
         self.create_diagnostics_page()
         self.create_logs_page()
         self.create_analytics_page()
@@ -8587,6 +8592,228 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.resource_status_label.configure(
                 text=f"Resource optimizer error: {error}"
+            )
+
+    def create_startup_manager_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Startup Manager"] = page
+        page.grid_columnconfigure((0, 1, 2), weight=1)
+        page.grid_rowconfigure(5, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART STARTUP MANAGER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0, column=0, columnspan=3,
+            padx=30, pady=(30, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text="Analyze Windows startup applications, review optional entries and get safe optimization recommendations.",
+            font=("Arial", 14),
+        ).grid(
+            row=1, column=0, columnspan=3,
+            padx=30, pady=(0, 15), sticky="w",
+        )
+
+        self.startup_total_card = self.create_info_card(
+            page, "STARTUP ENTRIES", "--"
+        )
+        self.startup_total_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.startup_review_card = self.create_info_card(
+            page, "REVIEW ITEMS", "--"
+        )
+        self.startup_review_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.startup_normal_card = self.create_info_card(
+            page, "NORMAL ITEMS", "--"
+        )
+        self.startup_normal_card["frame"].grid(
+            row=2, column=2, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3, column=0, columnspan=3,
+            padx=30, pady=(8, 12), sticky="ew",
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Analysis",
+            width=160,
+            height=42,
+            command=self.gui_refresh_startup_manager,
+        ).grid(
+            row=0, column=0, padx=(15, 6), pady=12,
+        )
+
+        self.startup_status_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.startup_status_label.grid(
+            row=0, column=1, padx=(10, 15), pady=12, sticky="e",
+        )
+
+        self.startup_safety_label = ctk.CTkLabel(
+            page,
+            text=(
+                "Safety mode: analysis only. "
+                "JERVIS will not disable or delete startup entries automatically."
+            ),
+            font=("Arial", 13, "bold"),
+            justify="left",
+            wraplength=950,
+        )
+        self.startup_safety_label.grid(
+            row=4, column=0, columnspan=3,
+            padx=30, pady=(0, 12), sticky="w",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=5, column=0, columnspan=3,
+            padx=30, pady=(0, 20), sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            content,
+            text="STARTUP ENTRIES",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=0, padx=15, pady=(15, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="RECOMMENDATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=1, padx=15, pady=(15, 8), sticky="w",
+        )
+
+        self.startup_entries_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.startup_entries_box.grid(
+            row=1, column=0, padx=(15, 7), pady=(0, 15), sticky="nsew",
+        )
+        self.startup_entries_box.configure(state="disabled")
+
+        self.startup_recommendations_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.startup_recommendations_box.grid(
+            row=1, column=1, padx=(7, 15), pady=(0, 15), sticky="nsew",
+        )
+        self.startup_recommendations_box.configure(state="disabled")
+
+        self.gui_refresh_startup_manager()
+
+    def _set_startup_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_startup_manager(self):
+        try:
+            entries = get_startup_analysis()
+
+            review_entries = [
+                entry
+                for entry in entries
+                if entry.get("status") == "Review"
+            ]
+
+            normal_entries = [
+                entry
+                for entry in entries
+                if entry.get("status") != "Review"
+            ]
+
+            self.startup_total_card["value"].configure(
+                text=str(len(entries))
+            )
+            self.startup_review_card["value"].configure(
+                text=str(len(review_entries))
+            )
+            self.startup_normal_card["value"].configure(
+                text=str(len(normal_entries))
+            )
+
+            if entries:
+                entry_lines = []
+
+                for number, entry in enumerate(entries, start=1):
+                    entry_lines.append(
+                        f"{number}. {entry.get('name', 'Unknown')}\n"
+                        f"   Source: {entry.get('source', 'Unknown')}\n"
+                        f"   Type: {entry.get('type', 'Unknown')}\n"
+                        f"   Status: {entry.get('status', 'Unknown')}\n"
+                        f"   Command: {entry.get('command', '')}"
+                    )
+
+                entries_text = "\n\n".join(entry_lines)
+            else:
+                entries_text = "No startup entries detected."
+
+            if review_entries:
+                recommendation_lines = []
+
+                for number, entry in enumerate(review_entries, start=1):
+                    recommendation_lines.append(
+                        f"{number}. {entry.get('name', 'Unknown')}"
+                    )
+
+                    for recommendation in entry.get("recommendations", []):
+                        recommendation_lines.append(
+                            f"   - {recommendation}"
+                        )
+
+                    recommendation_lines.append("")
+
+                recommendations_text = "\n".join(
+                    recommendation_lines
+                ).rstrip()
+            else:
+                recommendations_text = (
+                    "No startup entries are currently marked for review."
+                )
+
+            self._set_startup_box(
+                self.startup_entries_box,
+                entries_text,
+            )
+
+            self._set_startup_box(
+                self.startup_recommendations_box,
+                recommendations_text,
+            )
+
+            self.startup_status_label.configure(
+                text=(
+                    f"Startup analysis complete: "
+                    f"{len(entries)} entries, "
+                    f"{len(review_entries)} review item(s)."
+                )
+            )
+
+        except Exception as error:
+            self.startup_status_label.configure(
+                text=f"Startup Manager error: {error}"
             )
 
     def create_plugin_manager_page(self):
