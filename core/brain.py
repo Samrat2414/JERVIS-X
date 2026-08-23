@@ -31,6 +31,9 @@ from core.system_health import (
 from core.battery_intelligence import (
     get_battery_report,
     get_power_status,
+    get_power_usage_summary,
+    get_power_efficiency_status,
+    get_battery_recommendations,
 )
 from core.disk_intelligence import (
     get_disk_summary,
@@ -228,6 +231,51 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 68: Smart Battery & Power Manager
+    if command in [
+        "battery intelligence",
+        "smart battery",
+        "battery manager",
+        "smart battery manager",
+    ]:
+        return get_battery_report()
+
+    if command in [
+        "power usage summary",
+        "power summary",
+        "battery usage summary",
+    ]:
+        return get_power_usage_summary()
+
+    if command in [
+        "power efficiency",
+        "battery efficiency",
+        "power efficiency status",
+    ]:
+        result = get_power_efficiency_status()
+
+        return (
+            f"Power Efficiency: {result['status']}\n"
+            f"Note: {result['reason']}"
+        )
+
+    if command in [
+        "battery recommendations",
+        "power recommendations",
+        "battery advice",
+    ]:
+        recommendations = get_battery_recommendations()
+
+        return (
+            "JERVIS BATTERY RECOMMENDATIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in recommendations
+            )
+            + "\n\nSafety: JERVIS will not automatically "
+            "change Windows power settings."
+        )
 
     # Step 67: Smart Disk Cleanup Analyzer
     if command in [
