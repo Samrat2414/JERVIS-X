@@ -81,6 +81,10 @@ from core.logger import (
     log_action,
     log_error,
 )
+from core.disk_cleanup_analyzer import (
+    get_cleanup_report,
+    get_cleanup_analysis,
+)
 from core.startup_manager import (
     get_startup_report,
     get_startup_analysis,
@@ -224,6 +228,69 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 67: Smart Disk Cleanup Analyzer
+    if command in [
+        "disk cleanup",
+        "cleanup analysis",
+        "disk cleanup analysis",
+        "storage cleanup analysis",
+        "analyze disk cleanup",
+    ]:
+        return get_cleanup_report()
+
+    if command in [
+        "large files",
+        "show large files",
+        "find large files",
+    ]:
+        result = get_cleanup_analysis()
+        files = result.get("large_files", [])
+
+        if not files:
+            return "No large files were found in the scanned folders."
+
+        lines = [
+            "JERVIS LARGE FILES",
+            "",
+        ]
+
+        for number, item in enumerate(
+            files,
+            start=1,
+        ):
+            lines.append(
+                f"{number}. {item.get('path', 'Unknown')}"
+            )
+            lines.append(
+                f"   Size: {item.get('size_mb', 0)} MB"
+            )
+
+        return "\n".join(lines)
+
+    if command in [
+        "cleanup recommendations",
+        "disk cleanup recommendations",
+        "storage cleanup recommendations",
+    ]:
+        result = get_cleanup_analysis()
+        recommendations = result.get(
+            "recommendations",
+            [],
+        )
+
+        if not recommendations:
+            return "No cleanup recommendations are available."
+
+        return (
+            "JERVIS CLEANUP RECOMMENDATIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in recommendations
+            )
+            + "\n\nSafety: Analysis-only mode. "
+            "JERVIS will not automatically delete files."
+        )
 
     # Step 66: Smart Startup Manager
     if command in [
