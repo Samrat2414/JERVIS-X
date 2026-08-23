@@ -53,6 +53,10 @@ from core.disk_intelligence import (
     get_disk_partitions,
     get_storage_health,
 )
+from core.security_center import (
+    get_security_analysis,
+    get_security_recommendations,
+)
 from core.maintenance_advisor import (
     get_maintenance_analysis,
     get_maintenance_report,
@@ -494,7 +498,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 70 • Smart Maintenance Advisor",
+            text="JERVIS X\nStep 71 • Smart Security Center",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -551,6 +555,7 @@ class JervisApp(ctk.CTk):
         self.create_system_information_page()
         self.create_network_information_page()
         self.create_maintenance_advisor_page()
+        self.create_security_center_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -10361,6 +10366,199 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.maintenance_refresh_label.configure(
                 text=f"Maintenance Advisor error: {error}"
+            )
+
+    def create_security_center_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Security Center"] = page
+        page.grid_columnconfigure((0, 1, 2), weight=1)
+        page.grid_rowconfigure(5, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART SECURITY CENTER",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0, column=0, columnspan=3,
+            padx=30, pady=(30, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Review JERVIS security posture, PIN lock status, detected risks "
+                "and safety-first recommendations."
+            ),
+            font=("Arial", 14),
+            wraplength=1000,
+            justify="left",
+        ).grid(
+            row=1, column=0, columnspan=3,
+            padx=30, pady=(0, 15), sticky="w",
+        )
+
+        self.security_score_card = self.create_info_card(
+            page, "SECURITY SCORE", "--"
+        )
+        self.security_score_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.security_status_card = self.create_info_card(
+            page, "SECURITY STATUS", "--"
+        )
+        self.security_status_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.security_pin_card = self.create_info_card(
+            page, "PIN LOCK", "--"
+        )
+        self.security_pin_card["frame"].grid(
+            row=2, column=2, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3, column=0, columnspan=3,
+            padx=30, pady=(8, 12), sticky="ew",
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Security Analysis",
+            width=200,
+            height=42,
+            command=self.gui_refresh_security_center,
+        ).grid(
+            row=0, column=0, padx=(15, 6), pady=12,
+        )
+
+        self.security_refresh_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.security_refresh_label.grid(
+            row=0, column=1,
+            padx=(10, 15), pady=12, sticky="e",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Safety mode: advisory only. "
+                "JERVIS will not automatically change Windows security settings."
+            ),
+            font=("Arial", 13, "bold"),
+            justify="left",
+            wraplength=1000,
+        ).grid(
+            row=4, column=0, columnspan=3,
+            padx=30, pady=(0, 12), sticky="w",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=5, column=0, columnspan=3,
+            padx=30, pady=(0, 20), sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            content,
+            text="DETECTED RISKS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=0,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="SECURITY RECOMMENDATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=1,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        self.security_risks_box = ctk.CTkTextbox(
+            content,
+            font=("Consolas", 12),
+        )
+        self.security_risks_box.grid(
+            row=1, column=0,
+            padx=(15, 7), pady=(0, 15), sticky="nsew",
+        )
+
+        self.security_recommendations_box = ctk.CTkTextbox(
+            content,
+            font=("Consolas", 12),
+        )
+        self.security_recommendations_box.grid(
+            row=1, column=1,
+            padx=(7, 15), pady=(0, 15), sticky="nsew",
+        )
+
+        self.security_risks_box.configure(state="disabled")
+        self.security_recommendations_box.configure(state="disabled")
+
+        self.gui_refresh_security_center()
+
+    def _set_security_box(self, box, items, empty_message):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+
+        if items:
+            box.insert(
+                "end",
+                "\n".join(f"- {item}" for item in items),
+            )
+        else:
+            box.insert("end", empty_message)
+
+        box.configure(state="disabled")
+
+    def gui_refresh_security_center(self):
+        try:
+            result = get_security_analysis()
+            recommendations = get_security_recommendations()
+
+            self.security_score_card["value"].configure(
+                text=f"{result.get('score', 0)}/100"
+            )
+            self.security_status_card["value"].configure(
+                text=result.get("status", "Unknown")
+            )
+            self.security_pin_card["value"].configure(
+                text="Enabled" if result.get("pin_enabled") else "Disabled"
+            )
+
+            self._set_security_box(
+                self.security_risks_box,
+                result.get("risks", []),
+                "- No major JERVIS security risk detected.",
+            )
+            self._set_security_box(
+                self.security_recommendations_box,
+                recommendations,
+                "- No security recommendation is available.",
+            )
+
+            self.security_refresh_label.configure(
+                text=(
+                    f"{result.get('status', 'Unknown')} • "
+                    f"Score {result.get('score', 0)}/100 • "
+                    f"PIN {'Enabled' if result.get('pin_enabled') else 'Disabled'}"
+                )
+            )
+
+        except Exception as error:
+            self.security_refresh_label.configure(
+                text=f"Security Center error: {error}"
             )
 
     def create_disk_intelligence_page(self):
