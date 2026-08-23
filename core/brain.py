@@ -81,6 +81,10 @@ from core.logger import (
     log_action,
     log_error,
 )
+from core.startup_manager import (
+    get_startup_report,
+    get_startup_analysis,
+)
 from core.process_manager import (
     show_processes,
     search_processes,
@@ -220,6 +224,69 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 66: Smart Startup Manager
+    if command in [
+        "startup manager",
+        "startup apps",
+        "startup applications",
+        "startup analysis",
+        "show startup apps",
+        "show startup applications",
+    ]:
+        return get_startup_report()
+
+    if command in [
+        "startup recommendations",
+        "startup optimization",
+        "startup review",
+    ]:
+        entries = get_startup_analysis()
+
+        review_entries = [
+            entry
+            for entry in entries
+            if entry.get("status") == "Review"
+        ]
+
+        if not review_entries:
+            return (
+                "JERVIS STARTUP RECOMMENDATIONS\n\n"
+                "No startup entries are currently marked for review."
+            )
+
+        lines = [
+            "JERVIS STARTUP RECOMMENDATIONS",
+            "",
+        ]
+
+        for number, entry in enumerate(
+            review_entries,
+            start=1,
+        ):
+            lines.append(
+                f"{number}. {entry.get('name', 'Unknown')}"
+            )
+
+            for recommendation in entry.get(
+                "recommendations",
+                [],
+            ):
+                lines.append(
+                    f"   - {recommendation}"
+                )
+
+        lines.extend(
+            [
+                "",
+                (
+                    "Safety: JERVIS is in analysis-only mode. "
+                    "No startup entry will be disabled or deleted automatically."
+                ),
+            ]
+        )
+
+        return "\n".join(lines)
 
     # Step 65: Smart Process Manager Upgrade
     if command.startswith("process details "):
