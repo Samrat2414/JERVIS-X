@@ -53,6 +53,9 @@ from core.disk_intelligence import (
     get_disk_partitions,
     get_storage_health,
 )
+from core.alert_intelligence import (
+    get_alert_intelligence,
+)
 from core.security_center import (
     get_security_analysis,
     get_security_recommendations,
@@ -498,7 +501,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 71 • Smart Security Center",
+            text="JERVIS X\nStep 72 • Alert Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -556,6 +559,7 @@ class JervisApp(ctk.CTk):
         self.create_network_information_page()
         self.create_maintenance_advisor_page()
         self.create_security_center_page()
+        self.create_alert_intelligence_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -10559,6 +10563,262 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.security_refresh_label.configure(
                 text=f"Security Center error: {error}"
+            )
+
+    def create_alert_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Alert Intelligence"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(6, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART ALERT & NOTIFICATION INTELLIGENCE",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0, column=0, columnspan=4,
+            padx=30, pady=(30, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Prioritize active system alerts, track severity, "
+                "notification readiness and recommended actions."
+            ),
+            font=("Arial", 14),
+            wraplength=1000,
+            justify="left",
+        ).grid(
+            row=1, column=0, columnspan=4,
+            padx=30, pady=(0, 15), sticky="w",
+        )
+
+        self.alert_int_score_card = self.create_info_card(
+            page, "ALERT SCORE", "--"
+        )
+        self.alert_int_score_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.alert_int_status_card = self.create_info_card(
+            page, "OVERALL STATUS", "--"
+        )
+        self.alert_int_status_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.alert_int_active_card = self.create_info_card(
+            page, "ACTIVE ALERTS", "--"
+        )
+        self.alert_int_active_card["frame"].grid(
+            row=2, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.alert_int_notifications_card = self.create_info_card(
+            page, "NOTIFICATIONS", "--"
+        )
+        self.alert_int_notifications_card["frame"].grid(
+            row=2, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        self.alert_int_critical_card = self.create_info_card(
+            page, "CRITICAL", "--"
+        )
+        self.alert_int_critical_card["frame"].grid(
+            row=3, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.alert_int_warning_card = self.create_info_card(
+            page, "WARNINGS", "--"
+        )
+        self.alert_int_warning_card["frame"].grid(
+            row=3, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.alert_int_immediate_card = self.create_info_card(
+            page, "IMMEDIATE", "--"
+        )
+        self.alert_int_immediate_card["frame"].grid(
+            row=3, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.alert_int_high_card = self.create_info_card(
+            page, "HIGH PRIORITY", "--"
+        )
+        self.alert_int_high_card["frame"].grid(
+            row=3, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=4, column=0, columnspan=4,
+            padx=30, pady=(8, 12), sticky="ew",
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Alert Intelligence",
+            width=205,
+            height=42,
+            command=self.gui_refresh_alert_intelligence,
+        ).grid(
+            row=0, column=0, padx=(15, 6), pady=12,
+        )
+
+        self.alert_int_refresh_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.alert_int_refresh_label.grid(
+            row=0, column=1,
+            padx=(10, 15), pady=12, sticky="e",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Safety mode: intelligence and recommendations only. "
+                "JERVIS will not automatically make system changes."
+            ),
+            font=("Arial", 13, "bold"),
+            justify="left",
+            wraplength=1000,
+        ).grid(
+            row=5, column=0, columnspan=4,
+            padx=30, pady=(0, 12), sticky="w",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=6, column=0, columnspan=4,
+            padx=30, pady=(0, 20), sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            content,
+            text="PRIORITY ALERTS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=0,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="RECOMMENDED ACTIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=1,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        self.alert_int_alerts_box = ctk.CTkTextbox(
+            content,
+            font=("Consolas", 12),
+        )
+        self.alert_int_alerts_box.grid(
+            row=1, column=0,
+            padx=(15, 7), pady=(0, 15), sticky="nsew",
+        )
+
+        self.alert_int_actions_box = ctk.CTkTextbox(
+            content,
+            font=("Consolas", 12),
+        )
+        self.alert_int_actions_box.grid(
+            row=1, column=1,
+            padx=(7, 15), pady=(0, 15), sticky="nsew",
+        )
+
+        self.alert_int_alerts_box.configure(state="disabled")
+        self.alert_int_actions_box.configure(state="disabled")
+
+        self.gui_refresh_alert_intelligence()
+
+    def _set_alert_intelligence_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_alert_intelligence(self):
+        try:
+            result = get_alert_intelligence()
+            alerts = result.get("alerts", [])
+
+            self.alert_int_score_card["value"].configure(
+                text=f"{result.get('score', 0)}/100"
+            )
+            self.alert_int_status_card["value"].configure(
+                text=result.get("status", "Unknown")
+            )
+            self.alert_int_active_card["value"].configure(
+                text=str(result.get("total_alerts", 0))
+            )
+            self.alert_int_notifications_card["value"].configure(
+                text=result.get("notifications", "Unknown")
+            )
+            self.alert_int_critical_card["value"].configure(
+                text=str(result.get("critical_count", 0))
+            )
+            self.alert_int_warning_card["value"].configure(
+                text=str(result.get("warning_count", 0))
+            )
+            self.alert_int_immediate_card["value"].configure(
+                text=str(result.get("immediate_count", 0))
+            )
+            self.alert_int_high_card["value"].configure(
+                text=str(result.get("high_priority_count", 0))
+            )
+
+            if alerts:
+                priority_text = "\n\n".join(
+                    (
+                        f"{index}. [{alert.get('severity', 'Info')}] "
+                        f"{alert.get('type', 'System')}\n"
+                        f"   Priority: {alert.get('priority', 'Low')}\n"
+                        f"   Severity Score: {alert.get('severity_score', 0)}\n"
+                        f"   Message: {alert.get('message', '')}"
+                    )
+                    for index, alert in enumerate(alerts, start=1)
+                )
+
+                action_text = "\n\n".join(
+                    (
+                        f"{index}. {alert.get('type', 'System')}\n"
+                        f"   {alert.get('recommended_action', '')}"
+                    )
+                    for index, alert in enumerate(alerts, start=1)
+                )
+            else:
+                priority_text = "No active alerts."
+                action_text = "No active alert action is required."
+
+            self._set_alert_intelligence_box(
+                self.alert_int_alerts_box,
+                priority_text,
+            )
+            self._set_alert_intelligence_box(
+                self.alert_int_actions_box,
+                action_text,
+            )
+
+            self.alert_int_refresh_label.configure(
+                text=(
+                    f"{result.get('status', 'Unknown')} • "
+                    f"{result.get('total_alerts', 0)} active • "
+                    f"Notifications {result.get('notifications', 'Unknown')}"
+                )
+            )
+
+        except Exception as error:
+            self.alert_int_refresh_label.configure(
+                text=f"Alert Intelligence error: {error}"
             )
 
     def create_disk_intelligence_page(self):
