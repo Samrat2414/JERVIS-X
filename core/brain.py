@@ -39,6 +39,11 @@ from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
 )
+from core.automation_intelligence import (
+    get_automation_intelligence,
+    get_automation_intelligence_report,
+    get_automation_recommendations,
+)
 from core.backup_intelligence import (
     get_backup_intelligence,
     get_backup_intelligence_report,
@@ -253,6 +258,82 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 74: Smart Automation Intelligence
+    if command in [
+        "automation intelligence",
+        "smart automation intelligence",
+        "automation intelligence report",
+        "automation report",
+    ]:
+        return get_automation_intelligence_report()
+
+    if command in [
+        "automation score",
+        "automation health",
+        "automation status",
+    ]:
+        result = get_automation_intelligence()
+        tasks = result.get("task_summary", {})
+
+        return (
+            "JERVIS AUTOMATION SCORE\n\n"
+            f"Score: {result['score']}/100\n"
+            f"Status: {result['status']}\n"
+            f"Available Actions: {result['action_count']}\n"
+            f"Categories: {result['category_count']}\n"
+            f"Pending Tasks: {tasks.get('pending', 0)}"
+        )
+
+    if command in [
+        "automation capabilities",
+        "automation actions",
+        "show automation capabilities",
+    ]:
+        result = get_automation_intelligence()
+        capabilities = result.get("capabilities", [])
+
+        lines = [
+            "JERVIS AUTOMATION CAPABILITIES",
+            "",
+        ]
+
+        for capability in capabilities:
+            lines.append(
+                f"{capability.get('category', 'Unknown')} "
+                f"({capability.get('count', 0)})"
+            )
+
+            for action in capability.get("actions", []):
+                lines.append(
+                    f"- {action}"
+                )
+
+            lines.append("")
+
+        return "\n".join(lines).rstrip()
+
+    if command in [
+        "automation recommendations",
+        "automation advice",
+        "automation safety recommendations",
+    ]:
+        recommendations = get_automation_recommendations()
+
+        if not recommendations:
+            recommendations = [
+                "No additional automation recommendation is available."
+            ]
+
+        return (
+            "JERVIS AUTOMATION RECOMMENDATIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in recommendations
+            )
+            + "\n\nSafety: Actions that may interrupt work "
+            "should require explicit user confirmation."
+        )
 
     # Step 73: Smart Backup & Recovery Intelligence
     if command in [
