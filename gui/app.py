@@ -64,6 +64,11 @@ from plugins.plugin_manager import (
     disable_plugin,
     is_plugin_enabled,
 )
+from core.process_manager import (
+    get_process_details,
+    get_process_by_pid,
+    is_safe_to_terminate,
+)
 from core.resource_optimizer import (
     get_resource_status,
     get_top_processes,
@@ -471,7 +476,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 64 • Resource Optimizer",
+            text="JERVIS X\nStep 65 • Smart Process Manager",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -6126,327 +6131,310 @@ class JervisApp(ctk.CTk):
     def create_process_manager_page(self):
         page = ctk.CTkFrame(self.page_container)
         self.pages["Process Manager"] = page
-        page.grid_columnconfigure(0, weight=1)
-        page.grid_rowconfigure(4, weight=1)
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(5, weight=1)
 
         ctk.CTkLabel(
             page,
-            text="JERVIS PROCESS MANAGER",
+            text="JERVIS SMART PROCESS MANAGER",
             font=("Arial", 28, "bold"),
         ).grid(
-            row=0,
-            column=0,
-            padx=30,
-            pady=(30, 8),
-            sticky="w",
+            row=0, column=0, columnspan=4,
+            padx=30, pady=(30, 8), sticky="w",
         )
 
         ctk.CTkLabel(
             page,
-            text="View, search and safely terminate normal user processes.",
+            text="Search running processes, inspect PID details and safely request process termination.",
             font=("Arial", 14),
         ).grid(
-            row=1,
-            column=0,
-            padx=30,
-            pady=(0, 15),
-            sticky="w",
+            row=1, column=0, columnspan=4,
+            padx=30, pady=(0, 15), sticky="w",
         )
 
-        search_frame = ctk.CTkFrame(page)
-        search_frame.grid(
-            row=2,
-            column=0,
-            padx=30,
-            pady=(0, 12),
-            sticky="ew",
+        self.process_count_card = self.create_info_card(
+            page, "RUNNING PROCESSES", "--"
         )
-        search_frame.grid_columnconfigure(0, weight=1)
+        self.process_count_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.process_selected_card = self.create_info_card(
+            page, "SELECTED PID", "--"
+        )
+        self.process_selected_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.process_cpu_card = self.create_info_card(
+            page, "PROCESS CPU", "--"
+        )
+        self.process_cpu_card["frame"].grid(
+            row=2, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.process_ram_card = self.create_info_card(
+            page, "PROCESS RAM", "--"
+        )
+        self.process_ram_card["frame"].grid(
+            row=2, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=3, column=0, columnspan=4,
+            padx=30, pady=(8, 8), sticky="ew",
+        )
+        controls.grid_columnconfigure(0, weight=1)
 
         self.process_search_entry = ctk.CTkEntry(
-            search_frame,
-            placeholder_text="Search process, e.g. notepad or chrome",
-            height=44,
+            controls,
+            placeholder_text="Process name or PID",
+            height=40,
         )
         self.process_search_entry.grid(
-            row=0,
-            column=0,
-            padx=(15, 8),
-            pady=15,
-            sticky="ew",
-        )
-        self.process_search_entry.bind(
-            "<Return>",
-            lambda event: self.gui_search_processes(),
+            row=0, column=0, padx=(15, 6), pady=12, sticky="ew"
         )
 
         ctk.CTkButton(
-            search_frame,
+            controls,
             text="Search",
-            width=110,
-            height=44,
+            width=100,
+            height=40,
             command=self.gui_search_processes,
-        ).grid(
-            row=0,
-            column=1,
-            padx=5,
-            pady=15,
-        )
+        ).grid(row=0, column=1, padx=6, pady=12)
 
         ctk.CTkButton(
-            search_frame,
-            text="Refresh All",
-            width=120,
-            height=44,
-            command=self.gui_refresh_processes,
-        ).grid(
-            row=0,
-            column=2,
-            padx=(5, 15),
-            pady=15,
-        )
-
-        terminate_frame = ctk.CTkFrame(page)
-        terminate_frame.grid(
-            row=3,
-            column=0,
-            padx=30,
-            pady=(0, 12),
-            sticky="ew",
-        )
-        terminate_frame.grid_columnconfigure(0, weight=1)
-
-        self.process_pid_entry = ctk.CTkEntry(
-            terminate_frame,
-            placeholder_text="Enter PID to terminate",
-            height=42,
-        )
-        self.process_pid_entry.grid(
-            row=0,
-            column=0,
-            padx=(15, 8),
-            pady=15,
-            sticky="ew",
-        )
+            controls,
+            text="PID Details",
+            width=110,
+            height=40,
+            command=self.gui_process_pid_details,
+        ).grid(row=0, column=2, padx=6, pady=12)
 
         ctk.CTkButton(
-            terminate_frame,
-            text="Terminate PID",
-            width=140,
-            height=42,
-            command=self.gui_terminate_process,
-        ).grid(
-            row=0,
-            column=1,
-            padx=(5, 15),
-            pady=15,
-        )
+            controls,
+            text="Refresh",
+            width=100,
+            height=40,
+            command=self.gui_refresh_process_manager,
+        ).grid(row=0, column=3, padx=6, pady=12)
 
-        process_frame = ctk.CTkFrame(page)
-        process_frame.grid(
-            row=4,
-            column=0,
-            padx=30,
-            pady=(0, 12),
-            sticky="nsew",
-        )
-        process_frame.grid_columnconfigure(0, weight=1)
-        process_frame.grid_rowconfigure(1, weight=1)
-
-        ctk.CTkLabel(
-            process_frame,
-            text="RUNNING PROCESSES",
-            font=("Arial", 17, "bold"),
-        ).grid(
-            row=0,
-            column=0,
-            padx=15,
-            pady=(15, 8),
-            sticky="w",
-        )
-
-        self.process_manager_box = ctk.CTkTextbox(
-            process_frame,
-            font=("Arial", 13),
-        )
-        self.process_manager_box.grid(
-            row=1,
-            column=0,
-            padx=15,
-            pady=(0, 15),
-            sticky="nsew",
-        )
-        self.process_manager_box.configure(state="disabled")
+        ctk.CTkButton(
+            controls,
+            text="Terminate",
+            width=110,
+            height=40,
+            command=self.gui_request_process_termination,
+        ).grid(row=0, column=4, padx=(6, 15), pady=12)
 
         self.process_status_label = ctk.CTkLabel(
             page,
-            text="Ready",
-            font=("Arial", 13),
-            wraplength=780,
-            justify="left",
+            text="Safety mode enabled. Termination always requires confirmation.",
+            font=("Arial", 13, "bold"),
         )
         self.process_status_label.grid(
-            row=5,
-            column=0,
-            padx=30,
-            pady=(0, 20),
-            sticky="w",
+            row=4, column=0, columnspan=4,
+            padx=30, pady=(0, 10), sticky="w",
         )
 
-        self.gui_refresh_processes()
-
-    def _set_process_manager_output(self, text):
-        self.process_manager_box.configure(state="normal")
-        self.process_manager_box.delete("1.0", "end")
-        self.process_manager_box.insert("end", str(text))
-        self.process_manager_box.configure(state="disabled")
-
-    def gui_refresh_processes(self):
-        self.process_status_label.configure(
-            text="Loading processes...",
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=5, column=0, columnspan=4,
+            padx=30, pady=(0, 20), sticky="nsew",
         )
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure(1, weight=1)
 
-        threading.Thread(
-            target=self.process_refresh_worker,
-            daemon=True,
-        ).start()
+        ctk.CTkLabel(
+            content,
+            text="RUNNING / SEARCH RESULTS",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=0, padx=15, pady=(15, 8), sticky="w")
 
-    def process_refresh_worker(self):
+        ctk.CTkLabel(
+            content,
+            text="PROCESS DETAILS",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=1, padx=15, pady=(15, 8), sticky="w")
+
+        self.process_list_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.process_list_box.grid(
+            row=1, column=0, padx=(15, 7), pady=(0, 15), sticky="nsew"
+        )
+        self.process_list_box.configure(state="disabled")
+
+        self.process_details_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.process_details_box.grid(
+            row=1, column=1, padx=(7, 15), pady=(0, 15), sticky="nsew"
+        )
+        self.process_details_box.configure(state="disabled")
+
+        self.gui_refresh_process_manager()
+
+    def _set_process_text(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_process_manager(self):
         try:
-            processes = get_running_processes(limit=50)
-
-            lines = []
-
-            for number, process in enumerate(
-                processes,
-                start=1,
-            ):
-                lines.append(
-                    f"{number}. {process['name']} "
-                    f"(PID {process['pid']})\n"
-                    f"   CPU: {process['cpu']}% "
-                    f"| RAM: {process['memory']}% "
-                    f"| Status: {process['status']}"
-                )
-
-            result = (
-                "\n\n".join(lines)
-                if lines
-                else "No running processes found."
+            processes = get_running_processes(30)
+            self.process_count_card["value"].configure(
+                text=str(len(processes))
             )
-
-            self.safe_after(
-                0,
-                lambda: self.finish_process_refresh(result),
+            self._set_process_text(
+                self.process_list_box,
+                format_processes(processes),
             )
-
+            self.process_status_label.configure(
+                text="Process list refreshed. Safety mode enabled."
+            )
         except Exception as error:
-            self.safe_after(
-                0,
-                lambda err=error: self.process_status_label.configure(
-                    text=f"Process Manager error: {err}",
-                ),
+            self.process_status_label.configure(
+                text=f"Process refresh error: {error}"
             )
-
-    def finish_process_refresh(self, result):
-        self._set_process_manager_output(result)
-        self.process_status_label.configure(
-            text="Process list refreshed.",
-        )
 
     def gui_search_processes(self):
         query = self.process_search_entry.get().strip()
 
         if not query:
             self.process_status_label.configure(
-                text="Enter a process name to search.",
+                text="Enter a process name or PID."
             )
             return
 
-        self.process_status_label.configure(
-            text=f'Searching for "{query}"...',
-        )
+        if query.isdigit():
+            self.gui_process_pid_details()
+            return
 
-        threading.Thread(
-            target=self.process_search_worker,
-            args=(query,),
-            daemon=True,
-        ).start()
-
-    def process_search_worker(self, query):
-        result = search_processes(query)
-
-        self.after(
-            0,
-            lambda: self.finish_process_search(
-                query,
+        try:
+            result = search_processes(query)
+            self._set_process_text(
+                self.process_list_box,
                 result,
-            ),
+            )
+            self.process_status_label.configure(
+                text=f'Search completed for "{query}".'
+            )
+        except Exception as error:
+            self.process_status_label.configure(
+                text=f"Process search error: {error}"
+            )
+
+    def gui_process_pid_details(self):
+        pid_text = self.process_search_entry.get().strip()
+
+        if not pid_text.isdigit():
+            self.process_status_label.configure(
+                text="Enter a numeric PID for PID Details."
+            )
+            return
+
+        pid = int(pid_text)
+        process = get_process_by_pid(pid)
+
+        if not process:
+            self._set_process_text(
+                self.process_details_box,
+                f"No accessible process found with PID {pid}.",
+            )
+            self.process_status_label.configure(
+                text=f"PID {pid} was not found or is inaccessible."
+            )
+            return
+
+        self.process_selected_card["value"].configure(
+            text=str(pid)
+        )
+        self.process_cpu_card["value"].configure(
+            text=f"{process['cpu']}%"
+        )
+        self.process_ram_card["value"].configure(
+            text=f"{process['ram']}%"
         )
 
-    def finish_process_search(self, query, result):
-        self._set_process_manager_output(result)
+        allowed, reason = is_safe_to_terminate(pid)
+
+        details = (
+            f"{get_process_details(pid)}\n\n"
+            f"TERMINATION SAFETY\n"
+            f"Allowed after confirmation: {'Yes' if allowed else 'No'}\n"
+            f"Reason: {reason}"
+        )
+
+        self._set_process_text(
+            self.process_details_box,
+            details,
+        )
         self.process_status_label.configure(
-            text=f'Search completed for "{query}".',
+            text=f"Loaded details for PID {pid}."
         )
 
-        self.add_history(
-            f"Find process {query}",
-            "Process search completed.",
-            source="GUI",
-        )
+    def gui_request_process_termination(self):
+        pid_text = self.process_search_entry.get().strip()
 
-    def gui_terminate_process(self):
-        pid = self.process_pid_entry.get().strip()
-
-        if not pid:
+        if not pid_text.isdigit():
             self.process_status_label.configure(
-                text="Enter a PID first.",
+                text="Enter a numeric PID before requesting termination."
             )
             return
 
-        if not pid.isdigit():
+        pid = int(pid_text)
+        process = get_process_by_pid(pid)
+
+        if not process:
             self.process_status_label.configure(
-                text="PID must be a number.",
+                text=f"No accessible process found with PID {pid}."
             )
             return
 
-        protected_pids = {"0", "4"}
+        allowed, reason = is_safe_to_terminate(pid)
 
-        if pid in protected_pids:
+        if not allowed:
             self.process_status_label.configure(
-                text="JERVIS will not terminate protected Windows system PIDs.",
+                text=f"Termination blocked: {reason}"
             )
             return
 
-        confirmed = messagebox.askyesno(
-            "Terminate Process",
-            f"Terminate process PID {pid}?\n\n"
-            "Only terminate a normal app/process that you recognize.",
-            parent=self,
-        )
+        try:
+            from tkinter import messagebox
 
-        if not confirmed:
-            return
+            confirmed = messagebox.askyesno(
+                "JERVIS Process Safety",
+                (
+                    f"Terminate {process['name']} (PID {pid})?\n\n"
+                    "Unsaved work in this application may be lost.\n"
+                    "JERVIS will not force-kill the process if it does not exit."
+                ),
+            )
 
-        result = terminate_process_by_pid(pid)
+            if not confirmed:
+                self.process_status_label.configure(
+                    text="Termination cancelled."
+                )
+                return
 
-        self.process_status_label.configure(
-            text=result,
-        )
+            result = terminate_process_by_pid(pid)
 
-        self.add_history(
-            f"Terminate process {pid}",
-            result,
-            source="GUI",
-        )
+            self._set_process_text(
+                self.process_details_box,
+                result,
+            )
+            self.process_status_label.configure(
+                text=result,
+            )
+            self.gui_refresh_process_manager()
 
-        self.process_pid_entry.delete(0, "end")
-
-        self.after(
-            800,
-            self.gui_refresh_processes,
-        )
+        except Exception as error:
+            self.process_status_label.configure(
+                text=f"Termination error: {error}"
+            )
 
     def create_diagnostics_page(self):
         page = ctk.CTkFrame(self.page_container)
