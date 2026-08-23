@@ -86,6 +86,9 @@ from core.process_manager import (
     search_processes,
     terminate_process_by_pid,
     terminate_process_by_name,
+    get_process_details,
+    get_process_by_pid,
+    is_safe_to_terminate,
 )
 from core.storage_analyzer import (
     get_storage_summary,
@@ -217,6 +220,80 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 65: Smart Process Manager Upgrade
+    if command.startswith("process details "):
+        pid_text = original_command[len("process details "):].strip()
+
+        if not pid_text.isdigit():
+            return "Use: process details PID"
+
+        return get_process_details(
+            int(pid_text)
+        )
+
+    if command.startswith("process pid "):
+        pid_text = original_command[len("process pid "):].strip()
+
+        if not pid_text.isdigit():
+            return "Use: process pid PID"
+
+        return get_process_details(
+            int(pid_text)
+        )
+
+    if command.startswith("check process pid "):
+        pid_text = original_command[len("check process pid "):].strip()
+
+        if not pid_text.isdigit():
+            return "Use: check process pid PID"
+
+        process = get_process_by_pid(
+            int(pid_text)
+        )
+
+        if not process:
+            return f"No accessible process found with PID {pid_text}."
+
+        allowed, reason = is_safe_to_terminate(
+            int(pid_text)
+        )
+
+        return (
+            f"{get_process_details(int(pid_text))}\n\n"
+            f"Termination Safety: "
+            f"{'Allowed after confirmation' if allowed else 'Blocked'}\n"
+            f"Reason: {reason}"
+        )
+
+    if command.startswith("terminate process "):
+        pid_text = original_command[len("terminate process "):].strip()
+
+        if not pid_text.isdigit():
+            return (
+                "For safety, terminate by PID only. "
+                "Use: terminate process PID"
+            )
+
+        pid = int(pid_text)
+        process = get_process_by_pid(pid)
+
+        if not process:
+            return f"No accessible process found with PID {pid}."
+
+        allowed, reason = is_safe_to_terminate(pid)
+
+        if not allowed:
+            return (
+                f"Termination blocked for safety. "
+                f"{reason}"
+            )
+
+        return (
+            f"Confirmation required before terminating "
+            f"{process['name']} (PID {pid}). "
+            f"Use the Process Manager GUI to confirm termination."
+        )
 
     # Step 64: Smart Resource Optimizer
     if command in [
