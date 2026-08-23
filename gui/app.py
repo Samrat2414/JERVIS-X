@@ -53,6 +53,10 @@ from core.disk_intelligence import (
     get_disk_partitions,
     get_storage_health,
 )
+from core.backup_intelligence import (
+    get_backup_intelligence,
+    get_backup_recommendations,
+)
 from core.alert_intelligence import (
     get_alert_intelligence,
 )
@@ -501,7 +505,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 72 • Alert Intelligence",
+            text="JERVIS X\nStep 73 • Backup Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -560,6 +564,7 @@ class JervisApp(ctk.CTk):
         self.create_maintenance_advisor_page()
         self.create_security_center_page()
         self.create_alert_intelligence_page()
+        self.create_backup_intelligence_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -10819,6 +10824,296 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.alert_int_refresh_label.configure(
                 text=f"Alert Intelligence error: {error}"
+            )
+
+    def create_backup_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Backup Intelligence"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(6, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART BACKUP & RECOVERY INTELLIGENCE",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0, column=0, columnspan=4,
+            padx=30, pady=(30, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Monitor backup health, recovery readiness, latest backup availability "
+                "and safety-first recovery recommendations."
+            ),
+            font=("Arial", 14),
+            wraplength=1000,
+            justify="left",
+        ).grid(
+            row=1, column=0, columnspan=4,
+            padx=30, pady=(0, 15), sticky="w",
+        )
+
+        self.backup_score_card = self.create_info_card(
+            page, "BACKUP HEALTH SCORE", "--"
+        )
+        self.backup_score_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.backup_status_card = self.create_info_card(
+            page, "BACKUP STATUS", "--"
+        )
+        self.backup_status_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.backup_count_card = self.create_info_card(
+            page, "BACKUP COUNT", "--"
+        )
+        self.backup_count_card["frame"].grid(
+            row=2, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.backup_ready_card = self.create_info_card(
+            page, "RECOVERY READY", "--"
+        )
+        self.backup_ready_card["frame"].grid(
+            row=2, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        self.backup_path_card = self.create_info_card(
+            page, "PATH AVAILABLE", "--"
+        )
+        self.backup_path_card["frame"].grid(
+            row=3, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.backup_age_card = self.create_info_card(
+            page, "LATEST AGE", "--"
+        )
+        self.backup_age_card["frame"].grid(
+            row=3, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.backup_risk_card = self.create_info_card(
+            page, "RISK COUNT", "--"
+        )
+        self.backup_risk_card["frame"].grid(
+            row=3, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.backup_recommendation_card = self.create_info_card(
+            page, "RECOMMENDATIONS", "--"
+        )
+        self.backup_recommendation_card["frame"].grid(
+            row=3, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=4, column=0, columnspan=4,
+            padx=30, pady=(8, 12), sticky="ew",
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Backup Intelligence",
+            width=210,
+            height=42,
+            command=self.gui_refresh_backup_intelligence,
+        ).grid(
+            row=0, column=0, padx=(15, 6), pady=12,
+        )
+
+        self.backup_refresh_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.backup_refresh_label.grid(
+            row=0, column=1,
+            padx=(10, 15), pady=12, sticky="e",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Safety mode: backup intelligence is advisory. "
+                "Restore operations must only run after explicit user confirmation."
+            ),
+            font=("Arial", 13, "bold"),
+            justify="left",
+            wraplength=1000,
+        ).grid(
+            row=5, column=0, columnspan=4,
+            padx=30, pady=(0, 12), sticky="w",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=6, column=0, columnspan=4,
+            padx=30, pady=(0, 20), sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1, 2), weight=1)
+        content.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            content,
+            text="LATEST BACKUP",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=0,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="DETECTED RISKS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=1,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="BACKUP RECOMMENDATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=2,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        self.backup_latest_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.backup_latest_box.grid(
+            row=1, column=0, padx=(15, 7),
+            pady=(0, 15), sticky="nsew",
+        )
+
+        self.backup_risks_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.backup_risks_box.grid(
+            row=1, column=1, padx=7,
+            pady=(0, 15), sticky="nsew",
+        )
+
+        self.backup_recommendations_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.backup_recommendations_box.grid(
+            row=1, column=2, padx=(7, 15),
+            pady=(0, 15), sticky="nsew",
+        )
+
+        for box in (
+            self.backup_latest_box,
+            self.backup_risks_box,
+            self.backup_recommendations_box,
+        ):
+            box.configure(state="disabled")
+
+        self.gui_refresh_backup_intelligence()
+
+    def _set_backup_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_backup_intelligence(self):
+        try:
+            result = get_backup_intelligence()
+            recommendations = get_backup_recommendations()
+
+            self.backup_score_card["value"].configure(
+                text=f"{result.get('score', 0)}/100"
+            )
+            self.backup_status_card["value"].configure(
+                text=result.get("status", "Unknown")
+            )
+            self.backup_count_card["value"].configure(
+                text=str(result.get("backup_count", 0))
+            )
+            self.backup_ready_card["value"].configure(
+                text="Yes" if result.get("recovery_ready") else "No"
+            )
+            self.backup_path_card["value"].configure(
+                text="Yes" if result.get("latest_exists") else "No"
+            )
+
+            age = result.get("latest_age_hours")
+            self.backup_age_card["value"].configure(
+                text=f"{age} h" if age is not None else "Unknown"
+            )
+
+            risks = result.get("risks", [])
+            self.backup_risk_card["value"].configure(
+                text=str(len(risks))
+            )
+            self.backup_recommendation_card["value"].configure(
+                text=str(len(recommendations))
+            )
+
+            latest = result.get("latest_backup")
+
+            if latest:
+                latest_lines = [
+                    str(latest),
+                    "",
+                    f"Path Available: {'Yes' if result.get('latest_exists') else 'No'}",
+                ]
+
+                if age is not None:
+                    latest_lines.append(
+                        f"Age: {age} hours"
+                    )
+
+                latest_text = "\n".join(latest_lines)
+            else:
+                latest_text = "No latest backup available."
+
+            risks_text = (
+                "\n".join(f"- {item}" for item in risks)
+                if risks
+                else "- No major backup risk detected."
+            )
+
+            recommendations_text = (
+                "\n".join(f"- {item}" for item in recommendations)
+                if recommendations
+                else "- No backup recommendation is available."
+            )
+
+            self._set_backup_box(
+                self.backup_latest_box,
+                latest_text,
+            )
+            self._set_backup_box(
+                self.backup_risks_box,
+                risks_text,
+            )
+            self._set_backup_box(
+                self.backup_recommendations_box,
+                recommendations_text,
+            )
+
+            self.backup_refresh_label.configure(
+                text=(
+                    f"{result.get('status', 'Unknown')} • "
+                    f"{result.get('backup_count', 0)} backup(s) • "
+                    f"Recovery {'Ready' if result.get('recovery_ready') else 'Not Ready'}"
+                )
+            )
+
+        except Exception as error:
+            self.backup_refresh_label.configure(
+                text=f"Backup Intelligence error: {error}"
             )
 
     def create_disk_intelligence_page(self):
