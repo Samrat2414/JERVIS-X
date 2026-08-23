@@ -39,6 +39,10 @@ from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
 )
+from core.maintenance_advisor import (
+    get_maintenance_analysis,
+    get_maintenance_report,
+)
 from core.network_info import (
     get_network_report,
     get_network_health_report,
@@ -235,6 +239,67 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 70: Smart Maintenance Advisor
+    if command in [
+        "maintenance advisor",
+        "smart maintenance",
+        "smart maintenance advisor",
+        "maintenance report",
+        "system maintenance report",
+    ]:
+        return get_maintenance_report()
+
+    if command in [
+        "maintenance score",
+        "system maintenance score",
+        "pc maintenance score",
+    ]:
+        result = get_maintenance_analysis()
+
+        return (
+            "JERVIS MAINTENANCE SCORE\n\n"
+            f"Score: {result['score']}/100\n"
+            f"Status: {result['status']}\n"
+            f"System Health: {result['system_health_score']}/100\n"
+            f"Performance: {result['performance_score']}/100"
+        )
+
+    if command in [
+        "priority actions",
+        "maintenance priority actions",
+        "maintenance actions",
+    ]:
+        result = get_maintenance_analysis()
+        actions = result.get("priority_actions", [])
+
+        return (
+            "JERVIS MAINTENANCE PRIORITY ACTIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in actions
+            )
+            + "\n\nSafety: Advisory mode only. "
+            "JERVIS will not automatically make system changes."
+        )
+
+    if command in [
+        "maintenance recommendations",
+        "maintenance advice",
+        "system maintenance recommendations",
+    ]:
+        result = get_maintenance_analysis()
+        recommendations = result.get("recommendations", [])
+
+        return (
+            "JERVIS MAINTENANCE RECOMMENDATIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in recommendations
+            )
+            + "\n\nSafety: Advisory mode only. "
+            "JERVIS will not automatically make system changes."
+        )
 
     # Step 69: Smart Network Intelligence
     if command in [
