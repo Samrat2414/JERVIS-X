@@ -1,6 +1,3 @@
-
-
-
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
@@ -41,6 +38,11 @@ from core.battery_intelligence import (
 from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
+)
+from core.intent_intelligence import (
+    analyze_intent,
+    get_intent_system_status,
+    get_intent_intelligence_report,
 )
 from core.usage_intelligence import (
     get_usage_intelligence,
@@ -266,6 +268,104 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 76: Smart Intent & AI Intelligence
+    if command in [
+        "intent intelligence",
+        "smart intent intelligence",
+        "intent intelligence report",
+        "ai intent intelligence",
+    ]:
+        return get_intent_intelligence_report()
+
+    if command in [
+        "intent score",
+        "intent intelligence score",
+        "intent system status",
+    ]:
+        result = get_intent_system_status()
+
+        return (
+            "JERVIS INTENT INTELLIGENCE SCORE\n\n"
+            f"Score: {result['score']}/100\n"
+            f"Status: {result['status']}\n"
+            f"AI Fallback Ready: "
+            f"{'Yes' if result['ai_fallback_ready'] else 'No'}"
+        )
+
+    if command.startswith("analyze intent "):
+        target = original_command[len("analyze intent "):].strip()
+
+        if not target:
+            return "Use: analyze intent YOUR COMMAND"
+
+        result = analyze_intent(target)
+
+        lines = [
+            "JERVIS INTENT ANALYSIS",
+            "",
+            f"Command: {result['command']}",
+            f"Detected Intent: {result['intent']}",
+        ]
+
+        parameter = result.get("parameter")
+
+        if parameter:
+            lines.append(
+                f"Intent Parameter: {parameter}"
+            )
+
+        lines.extend(
+            [
+                f"Routing Confidence: {result['confidence']}%",
+                f"Understanding: {result['understanding']}",
+                f"Routing Status: {result['routing_status']}",
+                (
+                    "AI Fallback Ready: "
+                    + (
+                        "Yes"
+                        if result['ai_fallback_ready']
+                        else "No"
+                    )
+                ),
+                "",
+                "Recommendations:",
+            ]
+        )
+
+        lines.extend(
+            f"- {item}"
+            for item in result.get("recommendations", [])
+        )
+
+        lines.extend(
+            [
+                "",
+                (
+                    "Safety: Intent analysis does not execute "
+                    "the analyzed command."
+                ),
+            ]
+        )
+
+        return "\n".join(lines)
+
+    if command in [
+        "intent recommendations",
+        "intent advice",
+        "intent routing recommendations",
+    ]:
+        result = analyze_intent("system health")
+
+        return (
+            "JERVIS INTENT RECOMMENDATIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in result.get("recommendations", [])
+            )
+            + "\n\nCurrent Test Intent: "
+            f"{result['intent']} ({result['confidence']}%)"
+        )
 
     # Step 75: Smart Usage Intelligence
     if command in ["usage intelligence", "smart usage intelligence", "usage intelligence report", "command usage intelligence"]:
