@@ -1,3 +1,6 @@
+
+
+
 from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
@@ -38,6 +41,11 @@ from core.battery_intelligence import (
 from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
+)
+from core.usage_intelligence import (
+    get_usage_intelligence,
+    get_usage_intelligence_report,
+    get_usage_recommendations,
 )
 from core.automation_intelligence import (
     get_automation_intelligence,
@@ -258,6 +266,35 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 75: Smart Usage Intelligence
+    if command in ["usage intelligence", "smart usage intelligence", "usage intelligence report", "command usage intelligence"]:
+        return get_usage_intelligence_report()
+
+    if command in ["usage score", "usage intelligence score", "command usage score"]:
+        result = get_usage_intelligence()
+        return (
+            "JERVIS USAGE INTELLIGENCE SCORE\n\n"
+            f"Score: {result['score']}/100\n"
+            f"Status: {result['status']}\n"
+            f"Total Commands: {result['total_commands']}\n"
+            f"History Entries: {result['history_count']}\n"
+            f"Unique Commands: {result['unique_commands']}\n"
+            f"Command Diversity: {result['diversity_percent']}%"
+        )
+
+    if command in ["usage insights", "command usage insights", "show usage insights"]:
+        result = get_usage_intelligence()
+        insights = result.get("insights", []) or ["No usage insight is currently available."]
+        return "JERVIS USAGE INSIGHTS\n\n" + "\n".join(f"- {item}" for item in insights)
+
+    if command in ["usage recommendations", "usage advice", "command usage recommendations"]:
+        recommendations = get_usage_recommendations() or ["No additional usage recommendation is available."]
+        return (
+            "JERVIS USAGE RECOMMENDATIONS\n\n"
+            + "\n".join(f"- {item}" for item in recommendations)
+            + "\n\nPrivacy: Usage intelligence analyzes locally recorded JERVIS command analytics and history data."
+        )
 
     # Step 74: Smart Automation Intelligence
     if command in [
