@@ -39,6 +39,11 @@ from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
 )
+from core.productivity_intelligence import (
+    get_productivity_intelligence,
+    get_productivity_intelligence_report,
+    get_productivity_recommendations,
+)
 from core.memory_intelligence import (
     get_memory_intelligence,
     get_memory_intelligence_report,
@@ -273,6 +278,75 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 78: Smart Productivity Intelligence
+    if command in [
+        "productivity intelligence",
+        "smart productivity intelligence",
+        "productivity intelligence report",
+    ]:
+        return get_productivity_intelligence_report()
+
+    if command in [
+        "productivity score",
+        "productivity status",
+        "productivity intelligence score",
+    ]:
+        result = get_productivity_intelligence()
+
+        return (
+            "JERVIS PRODUCTIVITY INTELLIGENCE SCORE\n\n"
+            f"Score: {result['score']}/100\n"
+            f"Status: {result['status']}\n"
+            f"Pending Tasks: {result['pending_tasks']}\n"
+            f"Completed Tasks: {result['completed_tasks']}\n"
+            f"Stored Notes: {result['total_notes']}\n"
+            f"Active Reminders: {result['active_reminders']}\n"
+            f"Recorded Commands: {result['total_commands']}"
+        )
+
+    if command in [
+        "productivity insights",
+        "productivity intelligence insights",
+        "show productivity insights",
+    ]:
+        result = get_productivity_intelligence()
+        insights = result.get("insights", [])
+
+        if not insights:
+            insights = [
+                "No productivity insight is currently available."
+            ]
+
+        return (
+            "JERVIS PRODUCTIVITY INSIGHTS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in insights
+            )
+        )
+
+    if command in [
+        "productivity recommendations",
+        "productivity advice",
+        "productivity intelligence recommendations",
+    ]:
+        recommendations = get_productivity_recommendations()
+
+        if not recommendations:
+            recommendations = [
+                "No additional productivity recommendation is available."
+            ]
+
+        return (
+            "JERVIS PRODUCTIVITY RECOMMENDATIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in recommendations
+            )
+            + "\n\nPrivacy: Productivity Intelligence analyzes "
+            "locally stored JERVIS productivity data."
+        )
 
     # Step 77: Smart Memory Intelligence
     if command in [
