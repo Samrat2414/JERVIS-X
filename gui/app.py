@@ -53,6 +53,10 @@ from core.disk_intelligence import (
     get_disk_partitions,
     get_storage_health,
 )
+from core.memory_intelligence import (
+    get_memory_intelligence,
+    get_memory_recommendations,
+)
 from core.intent_intelligence import (
     analyze_intent,
     get_intent_system_status,
@@ -517,7 +521,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 76 • Intent & AI Intelligence",
+            text="JERVIS X\nStep 77 • Memory Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -580,6 +584,7 @@ class JervisApp(ctk.CTk):
         self.create_automation_intelligence_page()
         self.create_usage_intelligence_page()
         self.create_intent_intelligence_page()
+        self.create_memory_intelligence_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -11978,6 +11983,259 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.intent_refresh_label.configure(
                 text=f"Intent Intelligence error: {error}"
+            )
+
+    def create_memory_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Memory Intelligence"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(6, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART MEMORY INTELLIGENCE",
+            font=("Arial", 28, "bold"),
+        ).grid(row=0, column=0, columnspan=4, padx=30, pady=(30, 8), sticky="w")
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Review locally stored JERVIS memory health, recall readiness, "
+                "memory keys, risks, insights and recommendations."
+            ),
+            font=("Arial", 14),
+            wraplength=1000,
+            justify="left",
+        ).grid(row=1, column=0, columnspan=4, padx=30, pady=(0, 15), sticky="w")
+
+        self.memory_int_score_card = self.create_info_card(page, "MEMORY SCORE", "--")
+        self.memory_int_score_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.memory_int_status_card = self.create_info_card(page, "STATUS", "--")
+        self.memory_int_status_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.memory_int_total_card = self.create_info_card(page, "STORED ITEMS", "--")
+        self.memory_int_total_card["frame"].grid(
+            row=2, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.memory_int_recall_card = self.create_info_card(page, "RECALL READY", "--")
+        self.memory_int_recall_card["frame"].grid(
+            row=2, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        self.memory_int_general_card = self.create_info_card(page, "GENERAL MEMORY", "--")
+        self.memory_int_general_card["frame"].grid(
+            row=3, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.memory_int_fact_card = self.create_info_card(page, "FACT MEMORY", "--")
+        self.memory_int_fact_card["frame"].grid(
+            row=3, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.memory_int_risk_card = self.create_info_card(page, "RISKS", "--")
+        self.memory_int_risk_card["frame"].grid(
+            row=3, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.memory_int_key_card = self.create_info_card(page, "MEMORY KEYS", "--")
+        self.memory_int_key_card["frame"].grid(
+            row=3, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=4, column=0, columnspan=4, padx=30, pady=(8, 12), sticky="ew"
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Memory Intelligence",
+            width=210,
+            height=42,
+            command=self.gui_refresh_memory_intelligence,
+        ).grid(row=0, column=0, padx=(15, 6), pady=12)
+
+        self.memory_int_refresh_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.memory_int_refresh_label.grid(
+            row=0, column=1, padx=(10, 15), pady=12, sticky="e"
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Privacy: Memory Intelligence analyzes locally stored "
+                "JERVIS memory data only."
+            ),
+            font=("Arial", 13, "bold"),
+            wraplength=1000,
+            justify="left",
+        ).grid(row=5, column=0, columnspan=4, padx=30, pady=(0, 12), sticky="w")
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=6, column=0, columnspan=4, padx=30, pady=(0, 20), sticky="nsew"
+        )
+        content.grid_columnconfigure((0, 1, 2), weight=1)
+        content.grid_rowconfigure((1, 3), weight=1)
+
+        ctk.CTkLabel(
+            content, text="MEMORY KEYS", font=("Arial", 17, "bold")
+        ).grid(row=0, column=0, padx=15, pady=(15, 8), sticky="w")
+
+        ctk.CTkLabel(
+            content, text="FACT KEYS", font=("Arial", 17, "bold")
+        ).grid(row=0, column=1, padx=15, pady=(15, 8), sticky="w")
+
+        ctk.CTkLabel(
+            content, text="MEMORY RISKS", font=("Arial", 17, "bold")
+        ).grid(row=0, column=2, padx=15, pady=(15, 8), sticky="w")
+
+        self.memory_int_keys_box = ctk.CTkTextbox(content, font=("Consolas", 12))
+        self.memory_int_keys_box.grid(
+            row=1, column=0, padx=(15, 7), pady=(0, 12), sticky="nsew"
+        )
+
+        self.memory_int_fact_keys_box = ctk.CTkTextbox(content, font=("Consolas", 12))
+        self.memory_int_fact_keys_box.grid(
+            row=1, column=1, padx=7, pady=(0, 12), sticky="nsew"
+        )
+
+        self.memory_int_risks_box = ctk.CTkTextbox(content, font=("Consolas", 12))
+        self.memory_int_risks_box.grid(
+            row=1, column=2, padx=(7, 15), pady=(0, 12), sticky="nsew"
+        )
+
+        ctk.CTkLabel(
+            content, text="MEMORY INSIGHTS", font=("Arial", 17, "bold")
+        ).grid(row=2, column=0, padx=15, pady=(5, 8), sticky="w")
+
+        ctk.CTkLabel(
+            content, text="MEMORY RECOMMENDATIONS", font=("Arial", 17, "bold")
+        ).grid(row=2, column=1, columnspan=2, padx=15, pady=(5, 8), sticky="w")
+
+        self.memory_int_insights_box = ctk.CTkTextbox(content, font=("Consolas", 12))
+        self.memory_int_insights_box.grid(
+            row=3, column=0, padx=(15, 7), pady=(0, 15), sticky="nsew"
+        )
+
+        self.memory_int_recommendations_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.memory_int_recommendations_box.grid(
+            row=3, column=1, columnspan=2, padx=(7, 15), pady=(0, 15), sticky="nsew"
+        )
+
+        for box in (
+            self.memory_int_keys_box,
+            self.memory_int_fact_keys_box,
+            self.memory_int_risks_box,
+            self.memory_int_insights_box,
+            self.memory_int_recommendations_box,
+        ):
+            box.configure(state="disabled")
+
+        self.gui_refresh_memory_intelligence()
+
+    def _set_memory_intelligence_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_memory_intelligence(self):
+        try:
+            result = get_memory_intelligence()
+            recommendations = get_memory_recommendations()
+
+            keys = result.get("keys", [])
+            fact_keys = result.get("fact_keys", [])
+            risks = result.get("risks", [])
+            insights = result.get("insights", [])
+
+            self.memory_int_score_card["value"].configure(
+                text=f"{result.get('score', 0)}/100"
+            )
+            self.memory_int_status_card["value"].configure(
+                text=result.get("status", "Unknown")
+            )
+            self.memory_int_total_card["value"].configure(
+                text=str(result.get("total_items", 0))
+            )
+            self.memory_int_recall_card["value"].configure(
+                text="Yes" if result.get("recall_ready") else "No"
+            )
+            self.memory_int_general_card["value"].configure(
+                text=str(result.get("general_count", 0))
+            )
+            self.memory_int_fact_card["value"].configure(
+                text=str(result.get("fact_count", 0))
+            )
+            self.memory_int_risk_card["value"].configure(
+                text=str(len(risks))
+            )
+            self.memory_int_key_card["value"].configure(
+                text=str(len(keys) + len(fact_keys))
+            )
+
+            keys_text = (
+                "\n".join(f"{i}. {key}" for i, key in enumerate(keys, start=1))
+                if keys else "No general memory keys stored."
+            )
+
+            fact_keys_text = (
+                "\n".join(f"{i}. {key}" for i, key in enumerate(fact_keys, start=1))
+                if fact_keys else "No fact memory keys stored."
+            )
+
+            risks_text = (
+                "\n".join(f"- {item}" for item in risks)
+                if risks else "- No major memory risk detected."
+            )
+
+            insights_text = (
+                "\n".join(f"- {item}" for item in insights)
+                if insights else "- No memory insight is currently available."
+            )
+
+            recommendations_text = (
+                "\n".join(f"- {item}" for item in recommendations)
+                if recommendations else "- No memory recommendation is available."
+            )
+
+            self._set_memory_intelligence_box(self.memory_int_keys_box, keys_text)
+            self._set_memory_intelligence_box(
+                self.memory_int_fact_keys_box, fact_keys_text
+            )
+            self._set_memory_intelligence_box(self.memory_int_risks_box, risks_text)
+            self._set_memory_intelligence_box(
+                self.memory_int_insights_box, insights_text
+            )
+            self._set_memory_intelligence_box(
+                self.memory_int_recommendations_box, recommendations_text
+            )
+
+            self.memory_int_refresh_label.configure(
+                text=(
+                    f"{result.get('status', 'Unknown')} • "
+                    f"{result.get('total_items', 0)} stored item(s) • "
+                    f"Recall {'ready' if result.get('recall_ready') else 'not ready'}"
+                )
+            )
+
+        except Exception as error:
+            self.memory_int_refresh_label.configure(
+                text=f"Memory Intelligence error: {error}"
             )
 
     def create_disk_intelligence_page(self):
