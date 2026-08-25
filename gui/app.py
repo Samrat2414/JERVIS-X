@@ -53,6 +53,10 @@ from core.disk_intelligence import (
     get_disk_partitions,
     get_storage_health,
 )
+from core.intent_intelligence import (
+    analyze_intent,
+    get_intent_system_status,
+)
 from core.usage_intelligence import (
     get_usage_intelligence,
     get_usage_recommendations,
@@ -513,7 +517,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 75 • Usage Intelligence",
+            text="JERVIS X\nStep 76 • Intent & AI Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -575,6 +579,7 @@ class JervisApp(ctk.CTk):
         self.create_backup_intelligence_page()
         self.create_automation_intelligence_page()
         self.create_usage_intelligence_page()
+        self.create_intent_intelligence_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -11704,6 +11709,275 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.usage_refresh_label.configure(
                 text=f"Usage Intelligence error: {error}"
+            )
+
+    def create_intent_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Intent Intelligence"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(7, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART INTENT & AI INTELLIGENCE",
+            font=("Arial", 28, "bold"),
+        ).grid(row=0, column=0, columnspan=4, padx=30, pady=(30, 8), sticky="w")
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Analyze command understanding, intent parameters, routing confidence "
+                "and AI fallback readiness without executing the analyzed command."
+            ),
+            font=("Arial", 14),
+            wraplength=1000,
+            justify="left",
+        ).grid(row=1, column=0, columnspan=4, padx=30, pady=(0, 15), sticky="w")
+
+        self.intent_score_card = self.create_info_card(page, "INTENT SCORE", "--")
+        self.intent_score_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.intent_system_card = self.create_info_card(page, "SYSTEM STATUS", "--")
+        self.intent_system_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.intent_ai_card = self.create_info_card(page, "AI FALLBACK", "--")
+        self.intent_ai_card["frame"].grid(
+            row=2, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.intent_confidence_card = self.create_info_card(page, "CONFIDENCE", "--")
+        self.intent_confidence_card["frame"].grid(
+            row=2, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        self.intent_detected_card = self.create_info_card(page, "DETECTED INTENT", "--")
+        self.intent_detected_card["frame"].grid(
+            row=3, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.intent_parameter_card = self.create_info_card(page, "PARAMETER", "--")
+        self.intent_parameter_card["frame"].grid(
+            row=3, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.intent_understanding_card = self.create_info_card(page, "UNDERSTANDING", "--")
+        self.intent_understanding_card["frame"].grid(
+            row=3, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.intent_routing_card = self.create_info_card(page, "ROUTING STATUS", "--")
+        self.intent_routing_card["frame"].grid(
+            row=3, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        analyzer = ctk.CTkFrame(page)
+        analyzer.grid(
+            row=4, column=0, columnspan=4, padx=30, pady=(8, 12), sticky="ew"
+        )
+        analyzer.grid_columnconfigure(0, weight=1)
+
+        self.intent_command_entry = ctk.CTkEntry(
+            analyzer,
+            placeholder_text="Enter a command to analyze, e.g. search google for python jobs",
+            height=42,
+        )
+        self.intent_command_entry.grid(
+            row=0, column=0, padx=(15, 7), pady=12, sticky="ew"
+        )
+        self.intent_command_entry.bind(
+            "<Return>",
+            lambda event: self.gui_analyze_intent(),
+        )
+
+        ctk.CTkButton(
+            analyzer,
+            text="Analyze Intent",
+            width=140,
+            height=42,
+            command=self.gui_analyze_intent,
+        ).grid(row=0, column=1, padx=7, pady=12)
+
+        ctk.CTkButton(
+            analyzer,
+            text="Refresh Status",
+            width=140,
+            height=42,
+            command=self.gui_refresh_intent_intelligence,
+        ).grid(row=0, column=2, padx=(7, 15), pady=12)
+
+        self.intent_refresh_label = ctk.CTkLabel(
+            page,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.intent_refresh_label.grid(
+            row=5, column=0, columnspan=4, padx=30, pady=(0, 8), sticky="w"
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Safety: Intent Intelligence analyzes command understanding only. "
+                "The command entered here is not executed."
+            ),
+            font=("Arial", 13, "bold"),
+            wraplength=1000,
+            justify="left",
+        ).grid(row=6, column=0, columnspan=4, padx=30, pady=(0, 12), sticky="w")
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=7, column=0, columnspan=4, padx=30, pady=(0, 20), sticky="nsew"
+        )
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            content,
+            text="COMMAND ANALYSIS",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=0, padx=15, pady=(15, 8), sticky="w")
+
+        ctk.CTkLabel(
+            content,
+            text="RECOMMENDATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=1, padx=15, pady=(15, 8), sticky="w")
+
+        self.intent_analysis_box = ctk.CTkTextbox(content, font=("Consolas", 12))
+        self.intent_analysis_box.grid(
+            row=1, column=0, padx=(15, 7), pady=(0, 15), sticky="nsew"
+        )
+
+        self.intent_recommendations_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.intent_recommendations_box.grid(
+            row=1, column=1, padx=(7, 15), pady=(0, 15), sticky="nsew"
+        )
+
+        self.intent_analysis_box.configure(state="disabled")
+        self.intent_recommendations_box.configure(state="disabled")
+
+        self.gui_refresh_intent_intelligence()
+        self._display_intent_analysis("system health")
+
+    def _set_intent_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def _display_intent_analysis(self, command):
+        result = analyze_intent(command)
+
+        self.intent_detected_card["value"].configure(
+            text=result.get("intent", "unknown")
+        )
+        self.intent_parameter_card["value"].configure(
+            text=str(result.get("parameter") or "None")
+        )
+        self.intent_confidence_card["value"].configure(
+            text=f"{result.get('confidence', 0)}%"
+        )
+        self.intent_understanding_card["value"].configure(
+            text=result.get("understanding", "Unknown")
+        )
+        self.intent_routing_card["value"].configure(
+            text=result.get("routing_status", "Unknown")
+        )
+
+        analysis_lines = [
+            f"Command: {result.get('command', '')}",
+            f"Detected Intent: {result.get('intent', 'unknown')}",
+        ]
+
+        parameter = result.get("parameter")
+        if parameter:
+            analysis_lines.append(f"Intent Parameter: {parameter}")
+
+        analysis_lines.extend(
+            [
+                f"Routing Confidence: {result.get('confidence', 0)}%",
+                f"Understanding: {result.get('understanding', 'Unknown')}",
+                f"Routing Status: {result.get('routing_status', 'Unknown')}",
+                (
+                    "AI Fallback Ready: "
+                    + ("Yes" if result.get("ai_fallback_ready") else "No")
+                ),
+            ]
+        )
+
+        recommendations = result.get("recommendations", [])
+        recommendation_text = (
+            "\n".join(f"- {item}" for item in recommendations)
+            if recommendations
+            else "- No intent recommendation is available."
+        )
+
+        self._set_intent_box(
+            self.intent_analysis_box,
+            "\n".join(analysis_lines),
+        )
+        self._set_intent_box(
+            self.intent_recommendations_box,
+            recommendation_text,
+        )
+
+        return result
+
+    def gui_analyze_intent(self):
+        command = self.intent_command_entry.get().strip()
+
+        if not command:
+            self.intent_refresh_label.configure(
+                text="Enter a command before analyzing."
+            )
+            return
+
+        try:
+            result = self._display_intent_analysis(command)
+            self.intent_refresh_label.configure(
+                text=(
+                    f"Analyzed safely • {result.get('intent', 'unknown')} • "
+                    f"{result.get('confidence', 0)}% confidence"
+                )
+            )
+        except Exception as error:
+            self.intent_refresh_label.configure(
+                text=f"Intent analysis error: {error}"
+            )
+
+    def gui_refresh_intent_intelligence(self):
+        try:
+            status = get_intent_system_status()
+
+            self.intent_score_card["value"].configure(
+                text=f"{status.get('score', 0)}/100"
+            )
+            self.intent_system_card["value"].configure(
+                text=status.get("status", "Unknown")
+            )
+            self.intent_ai_card["value"].configure(
+                text="Ready" if status.get("ai_fallback_ready") else "Unavailable"
+            )
+
+            self.intent_refresh_label.configure(
+                text=(
+                    f"{status.get('status', 'Unknown')} • "
+                    f"Score {status.get('score', 0)}/100 • "
+                    f"AI fallback "
+                    f"{'ready' if status.get('ai_fallback_ready') else 'unavailable'}"
+                )
+            )
+
+        except Exception as error:
+            self.intent_refresh_label.configure(
+                text=f"Intent Intelligence error: {error}"
             )
 
     def create_disk_intelligence_page(self):
