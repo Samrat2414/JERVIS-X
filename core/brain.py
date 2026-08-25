@@ -39,6 +39,11 @@ from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
 )
+from core.memory_intelligence import (
+    get_memory_intelligence,
+    get_memory_intelligence_report,
+    get_memory_recommendations,
+)
 from core.intent_intelligence import (
     analyze_intent,
     get_intent_system_status,
@@ -268,6 +273,75 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 77: Smart Memory Intelligence
+    if command in [
+        "memory intelligence",
+        "smart memory intelligence",
+        "memory intelligence report",
+    ]:
+        return get_memory_intelligence_report()
+
+    if command in [
+        "memory score",
+        "memory health",
+        "memory intelligence score",
+    ]:
+        result = get_memory_intelligence()
+
+        return (
+            "JERVIS MEMORY INTELLIGENCE SCORE\n\n"
+            f"Score: {result['score']}/100\n"
+            f"Status: {result['status']}\n"
+            f"Stored Items: {result['total_items']}\n"
+            f"General Memory: {result['general_count']}\n"
+            f"Fact Memory: {result['fact_count']}\n"
+            f"Recall Ready: "
+            f"{'Yes' if result['recall_ready'] else 'No'}"
+        )
+
+    if command in [
+        "memory insights",
+        "memory intelligence insights",
+        "show memory insights",
+    ]:
+        result = get_memory_intelligence()
+        insights = result.get("insights", [])
+
+        if not insights:
+            insights = [
+                "No memory insight is currently available."
+            ]
+
+        return (
+            "JERVIS MEMORY INSIGHTS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in insights
+            )
+        )
+
+    if command in [
+        "memory recommendations",
+        "memory advice",
+        "memory intelligence recommendations",
+    ]:
+        recommendations = get_memory_recommendations()
+
+        if not recommendations:
+            recommendations = [
+                "No additional memory recommendation is available."
+            ]
+
+        return (
+            "JERVIS MEMORY RECOMMENDATIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in recommendations
+            )
+            + "\n\nPrivacy: Memory Intelligence analyzes "
+            "locally stored JERVIS memory data only."
+        )
 
     # Step 76: Smart Intent & AI Intelligence
     if command in [
