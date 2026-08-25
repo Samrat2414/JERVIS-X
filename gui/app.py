@@ -53,6 +53,10 @@ from core.disk_intelligence import (
     get_disk_partitions,
     get_storage_health,
 )
+from core.productivity_intelligence import (
+    get_productivity_intelligence,
+    get_productivity_recommendations,
+)
 from core.memory_intelligence import (
     get_memory_intelligence,
     get_memory_recommendations,
@@ -521,7 +525,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 77 • Memory Intelligence",
+            text="JERVIS X\nStep 78 • Productivity Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -585,6 +589,7 @@ class JervisApp(ctk.CTk):
         self.create_usage_intelligence_page()
         self.create_intent_intelligence_page()
         self.create_memory_intelligence_page()
+        self.create_productivity_intelligence_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -12236,6 +12241,284 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.memory_int_refresh_label.configure(
                 text=f"Memory Intelligence error: {error}"
+            )
+
+    def create_productivity_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Productivity Intelligence"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(6, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART PRODUCTIVITY INTELLIGENCE",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0, column=0, columnspan=4,
+            padx=30, pady=(30, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Analyze tasks, notes, reminders and JERVIS usage activity "
+                "to understand productivity, focus and workload health."
+            ),
+            font=("Arial", 14),
+            wraplength=1000,
+            justify="left",
+        ).grid(
+            row=1, column=0, columnspan=4,
+            padx=30, pady=(0, 15), sticky="w",
+        )
+
+        self.productivity_score_card = self.create_info_card(
+            page, "PRODUCTIVITY SCORE", "--"
+        )
+        self.productivity_score_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.productivity_status_card = self.create_info_card(
+            page, "STATUS", "--"
+        )
+        self.productivity_status_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.productivity_pending_card = self.create_info_card(
+            page, "PENDING TASKS", "--"
+        )
+        self.productivity_pending_card["frame"].grid(
+            row=2, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.productivity_completed_card = self.create_info_card(
+            page, "COMPLETED TASKS", "--"
+        )
+        self.productivity_completed_card["frame"].grid(
+            row=2, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        self.productivity_completion_card = self.create_info_card(
+            page, "COMPLETION RATE", "--"
+        )
+        self.productivity_completion_card["frame"].grid(
+            row=3, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.productivity_notes_card = self.create_info_card(
+            page, "STORED NOTES", "--"
+        )
+        self.productivity_notes_card["frame"].grid(
+            row=3, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.productivity_reminders_card = self.create_info_card(
+            page, "ACTIVE REMINDERS", "--"
+        )
+        self.productivity_reminders_card["frame"].grid(
+            row=3, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.productivity_commands_card = self.create_info_card(
+            page, "RECORDED COMMANDS", "--"
+        )
+        self.productivity_commands_card["frame"].grid(
+            row=3, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=4, column=0, columnspan=4,
+            padx=30, pady=(8, 12), sticky="ew",
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Productivity Intelligence",
+            width=225,
+            height=42,
+            command=self.gui_refresh_productivity_intelligence,
+        ).grid(
+            row=0, column=0, padx=(15, 6), pady=12,
+        )
+
+        self.productivity_refresh_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.productivity_refresh_label.grid(
+            row=0, column=1,
+            padx=(10, 15), pady=12, sticky="e",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Privacy: Productivity Intelligence analyzes locally stored "
+                "JERVIS tasks, notes, reminders and usage analytics."
+            ),
+            font=("Arial", 13, "bold"),
+            wraplength=1000,
+            justify="left",
+        ).grid(
+            row=5, column=0, columnspan=4,
+            padx=30, pady=(0, 12), sticky="w",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=6, column=0, columnspan=4,
+            padx=30, pady=(0, 20), sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1, 2), weight=1)
+        content.grid_rowconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            content,
+            text="PRODUCTIVITY RISKS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=0,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="PRODUCTIVITY INSIGHTS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=1,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="RECOMMENDATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=2,
+            padx=15, pady=(15, 8), sticky="w",
+        )
+
+        self.productivity_risks_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.productivity_risks_box.grid(
+            row=1, column=0, padx=(15, 7),
+            pady=(0, 15), sticky="nsew",
+        )
+
+        self.productivity_insights_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.productivity_insights_box.grid(
+            row=1, column=1, padx=7,
+            pady=(0, 15), sticky="nsew",
+        )
+
+        self.productivity_recommendations_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.productivity_recommendations_box.grid(
+            row=1, column=2, padx=(7, 15),
+            pady=(0, 15), sticky="nsew",
+        )
+
+        for box in (
+            self.productivity_risks_box,
+            self.productivity_insights_box,
+            self.productivity_recommendations_box,
+        ):
+            box.configure(state="disabled")
+
+        self.gui_refresh_productivity_intelligence()
+
+    def _set_productivity_intelligence_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_productivity_intelligence(self):
+        try:
+            result = get_productivity_intelligence()
+            recommendations = get_productivity_recommendations()
+
+            risks = result.get("risks", [])
+            insights = result.get("insights", [])
+
+            self.productivity_score_card["value"].configure(
+                text=f"{result.get('score', 0)}/100"
+            )
+            self.productivity_status_card["value"].configure(
+                text=result.get("status", "Unknown")
+            )
+            self.productivity_pending_card["value"].configure(
+                text=str(result.get("pending_tasks", 0))
+            )
+            self.productivity_completed_card["value"].configure(
+                text=str(result.get("completed_tasks", 0))
+            )
+            self.productivity_completion_card["value"].configure(
+                text=f"{result.get('completion_rate', 0)}%"
+            )
+            self.productivity_notes_card["value"].configure(
+                text=str(result.get("total_notes", 0))
+            )
+            self.productivity_reminders_card["value"].configure(
+                text=str(result.get("active_reminders", 0))
+            )
+            self.productivity_commands_card["value"].configure(
+                text=str(result.get("total_commands", 0))
+            )
+
+            risks_text = (
+                "\n".join(f"- {item}" for item in risks)
+                if risks
+                else "- No major productivity risk detected."
+            )
+
+            insights_text = (
+                "\n".join(f"- {item}" for item in insights)
+                if insights
+                else "- No productivity insight is currently available."
+            )
+
+            recommendations_text = (
+                "\n".join(f"- {item}" for item in recommendations)
+                if recommendations
+                else "- No productivity recommendation is available."
+            )
+
+            self._set_productivity_intelligence_box(
+                self.productivity_risks_box,
+                risks_text,
+            )
+            self._set_productivity_intelligence_box(
+                self.productivity_insights_box,
+                insights_text,
+            )
+            self._set_productivity_intelligence_box(
+                self.productivity_recommendations_box,
+                recommendations_text,
+            )
+
+            self.productivity_refresh_label.configure(
+                text=(
+                    f"{result.get('status', 'Unknown')} • "
+                    f"{result.get('pending_tasks', 0)} pending • "
+                    f"{result.get('completion_rate', 0)}% completion • "
+                    f"{result.get('command_diversity', 0)}% command diversity"
+                )
+            )
+
+        except Exception as error:
+            self.productivity_refresh_label.configure(
+                text=f"Productivity Intelligence error: {error}"
             )
 
     def create_disk_intelligence_page(self):
