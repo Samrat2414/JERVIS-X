@@ -53,6 +53,10 @@ from core.disk_intelligence import (
     get_disk_partitions,
     get_storage_health,
 )
+from core.usage_intelligence import (
+    get_usage_intelligence,
+    get_usage_recommendations,
+)
 from core.automation_intelligence import (
     get_automation_intelligence,
     get_automation_recommendations,
@@ -509,7 +513,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 74 • Automation Intelligence",
+            text="JERVIS X\nStep 75 • Usage Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -570,6 +574,7 @@ class JervisApp(ctk.CTk):
         self.create_alert_intelligence_page()
         self.create_backup_intelligence_page()
         self.create_automation_intelligence_page()
+        self.create_usage_intelligence_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -11411,6 +11416,294 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.auto_int_refresh_label.configure(
                 text=f"Automation Intelligence error: {error}"
+            )
+
+    def create_usage_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Usage Intelligence"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(6, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART USAGE INTELLIGENCE",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0, column=0, columnspan=4,
+            padx=30, pady=(30, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Analyze locally recorded command activity, history, command "
+                "diversity, usage insights and productivity recommendations."
+            ),
+            font=("Arial", 14),
+            wraplength=1000,
+            justify="left",
+        ).grid(
+            row=1, column=0, columnspan=4,
+            padx=30, pady=(0, 15), sticky="w",
+        )
+
+        self.usage_score_card = self.create_info_card(
+            page, "USAGE SCORE", "--"
+        )
+        self.usage_score_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.usage_status_card = self.create_info_card(
+            page, "STATUS", "--"
+        )
+        self.usage_status_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.usage_total_card = self.create_info_card(
+            page, "TOTAL COMMANDS", "--"
+        )
+        self.usage_total_card["frame"].grid(
+            row=2, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.usage_history_card = self.create_info_card(
+            page, "HISTORY ENTRIES", "--"
+        )
+        self.usage_history_card["frame"].grid(
+            row=2, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        self.usage_unique_card = self.create_info_card(
+            page, "UNIQUE COMMANDS", "--"
+        )
+        self.usage_unique_card["frame"].grid(
+            row=3, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.usage_diversity_card = self.create_info_card(
+            page, "COMMAND DIVERSITY", "--"
+        )
+        self.usage_diversity_card["frame"].grid(
+            row=3, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.usage_recent_card = self.create_info_card(
+            page, "RECENT COMMANDS", "--"
+        )
+        self.usage_recent_card["frame"].grid(
+            row=3, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.usage_most_used_card = self.create_info_card(
+            page, "MOST USED DATA", "--"
+        )
+        self.usage_most_used_card["frame"].grid(
+            row=3, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=4, column=0, columnspan=4,
+            padx=30, pady=(8, 12), sticky="ew",
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Usage Intelligence",
+            width=205,
+            height=42,
+            command=self.gui_refresh_usage_intelligence,
+        ).grid(
+            row=0, column=0, padx=(15, 6), pady=12,
+        )
+
+        self.usage_refresh_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.usage_refresh_label.grid(
+            row=0, column=1,
+            padx=(10, 15), pady=12, sticky="e",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Privacy: Usage Intelligence analyzes locally recorded "
+                "JERVIS command analytics and history data."
+            ),
+            font=("Arial", 13, "bold"),
+            justify="left",
+            wraplength=1000,
+        ).grid(
+            row=5, column=0, columnspan=4,
+            padx=30, pady=(0, 12), sticky="w",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=6, column=0, columnspan=4,
+            padx=30, pady=(0, 20), sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure((1, 3), weight=1)
+
+        ctk.CTkLabel(
+            content, text="RECENT COMMANDS",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=0, padx=15, pady=(15, 8), sticky="w")
+
+        ctk.CTkLabel(
+            content, text="MOST USED COMMANDS",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=1, padx=15, pady=(15, 8), sticky="w")
+
+        self.usage_recent_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.usage_recent_box.grid(
+            row=1, column=0, padx=(15, 7), pady=(0, 12), sticky="nsew"
+        )
+
+        self.usage_most_used_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.usage_most_used_box.grid(
+            row=1, column=1, padx=(7, 15), pady=(0, 12), sticky="nsew"
+        )
+
+        ctk.CTkLabel(
+            content, text="USAGE INSIGHTS",
+            font=("Arial", 17, "bold"),
+        ).grid(row=2, column=0, padx=15, pady=(5, 8), sticky="w")
+
+        ctk.CTkLabel(
+            content, text="USAGE RECOMMENDATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(row=2, column=1, padx=15, pady=(5, 8), sticky="w")
+
+        self.usage_insights_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.usage_insights_box.grid(
+            row=3, column=0, padx=(15, 7), pady=(0, 15), sticky="nsew"
+        )
+
+        self.usage_recommendations_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.usage_recommendations_box.grid(
+            row=3, column=1, padx=(7, 15), pady=(0, 15), sticky="nsew"
+        )
+
+        for box in (
+            self.usage_recent_box,
+            self.usage_most_used_box,
+            self.usage_insights_box,
+            self.usage_recommendations_box,
+        ):
+            box.configure(state="disabled")
+
+        self.gui_refresh_usage_intelligence()
+
+    def _set_usage_intelligence_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_usage_intelligence(self):
+        try:
+            result = get_usage_intelligence()
+            recommendations = get_usage_recommendations()
+
+            recent = result.get("recent_commands", [])
+            most_used = result.get("most_used_commands", [])
+            insights = result.get("insights", [])
+
+            self.usage_score_card["value"].configure(
+                text=f"{result.get('score', 0)}/100"
+            )
+            self.usage_status_card["value"].configure(
+                text=result.get("status", "Unknown")
+            )
+            self.usage_total_card["value"].configure(
+                text=str(result.get("total_commands", 0))
+            )
+            self.usage_history_card["value"].configure(
+                text=str(result.get("history_count", 0))
+            )
+            self.usage_unique_card["value"].configure(
+                text=str(result.get("unique_commands", 0))
+            )
+            self.usage_diversity_card["value"].configure(
+                text=f"{result.get('diversity_percent', 0)}%"
+            )
+            self.usage_recent_card["value"].configure(
+                text=str(len(recent))
+            )
+            self.usage_most_used_card["value"].configure(
+                text=str(len(most_used))
+            )
+
+            recent_text = (
+                "\n".join(
+                    f"{i}. {item}"
+                    for i, item in enumerate(recent, start=1)
+                )
+                if recent
+                else "No recent command activity."
+            )
+
+            most_used_text = (
+                "\n".join(
+                    f"{i}. {item}"
+                    for i, item in enumerate(most_used, start=1)
+                )
+                if most_used
+                else "No most-used command data available."
+            )
+
+            insights_text = (
+                "\n".join(f"- {item}" for item in insights)
+                if insights
+                else "- No usage insight is currently available."
+            )
+
+            recommendations_text = (
+                "\n".join(f"- {item}" for item in recommendations)
+                if recommendations
+                else "- No usage recommendation is available."
+            )
+
+            self._set_usage_intelligence_box(
+                self.usage_recent_box, recent_text
+            )
+            self._set_usage_intelligence_box(
+                self.usage_most_used_box, most_used_text
+            )
+            self._set_usage_intelligence_box(
+                self.usage_insights_box, insights_text
+            )
+            self._set_usage_intelligence_box(
+                self.usage_recommendations_box, recommendations_text
+            )
+
+            self.usage_refresh_label.configure(
+                text=(
+                    f"{result.get('status', 'Unknown')} • "
+                    f"{result.get('total_commands', 0)} commands • "
+                    f"{result.get('diversity_percent', 0)}% diversity"
+                )
+            )
+
+        except Exception as error:
+            self.usage_refresh_label.configure(
+                text=f"Usage Intelligence error: {error}"
             )
 
     def create_disk_intelligence_page(self):
