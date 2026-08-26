@@ -39,6 +39,13 @@ from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
 )
+from core.personal_assistant_intelligence import (
+    get_personal_assistant_intelligence,
+    get_personal_assistant_report,
+    get_assistant_priorities,
+    get_next_actions,
+    get_personal_assistant_recommendations,
+)
 from core.productivity_intelligence import (
     get_productivity_intelligence,
     get_productivity_intelligence_report,
@@ -278,6 +285,90 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 79: Smart Personal Assistant Intelligence
+    if command in [
+        "personal assistant intelligence",
+        "smart personal assistant intelligence",
+        "assistant intelligence",
+        "assistant intelligence report",
+    ]:
+        return get_personal_assistant_report()
+
+    if command in [
+        "assistant score",
+        "personal assistant score",
+        "assistant intelligence score",
+    ]:
+        result = get_personal_assistant_intelligence()
+        return (
+            "JERVIS PERSONAL ASSISTANT INTELLIGENCE SCORE\n\n"
+            f"Score: {result['score']}/100\n"
+            f"Status: {result['status']}\n"
+            f"System Health: {result['system_score']}/100\n"
+            f"Alert Intelligence: {result['alert_score']}/100\n"
+            f"Productivity: {result['productivity_score']}/100\n"
+            f"Memory Health: {result['memory_score']}/100"
+        )
+
+    if command in [
+        "assistant priorities",
+        "personal assistant priorities",
+        "daily priorities",
+        "what are my priorities",
+    ]:
+        priorities = get_assistant_priorities()
+        if not priorities:
+            priorities = ["No urgent assistant priority detected."]
+        return (
+            "JERVIS ASSISTANT PRIORITIES\n\n"
+            + "\n".join(
+                f"{number}. {item}"
+                for number, item in enumerate(priorities, start=1)
+            )
+        )
+
+    if command in [
+        "what should i do next",
+        "what should i do",
+        "what to do next",
+        "assistant next action",
+        "assistant next actions",
+        "next actions",
+    ]:
+        actions = get_next_actions()
+        if not actions:
+            actions = [
+                "Continue normal work and review JERVIS intelligence dashboards when needed."
+            ]
+        return (
+            "JERVIS WHAT TO DO NEXT\n\n"
+            + "\n".join(
+                f"{number}. {item}"
+                for number, item in enumerate(actions, start=1)
+            )
+            + "\n\nSafety: JERVIS recommends actions only. "
+            "It does not automatically execute these actions."
+        )
+
+    if command in [
+        "assistant recommendations",
+        "personal assistant recommendations",
+        "assistant advice",
+        "smart assistant recommendations",
+    ]:
+        recommendations = get_personal_assistant_recommendations()
+        if not recommendations:
+            recommendations = [
+                "No additional assistant recommendation is available."
+            ]
+        return (
+            "JERVIS PERSONAL ASSISTANT RECOMMENDATIONS\n\n"
+            + "\n".join(f"- {item}" for item in recommendations)
+            + "\n\nSafety: Personal Assistant Intelligence "
+            "provides recommendations only and does not "
+            "automatically make system changes."
+        )
 
     # Step 78: Smart Productivity Intelligence
     if command in [
