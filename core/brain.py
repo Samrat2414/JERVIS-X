@@ -39,6 +39,13 @@ from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
 )
+from core.decision_intelligence import (
+    get_decision_intelligence,
+    get_decision_intelligence_report,
+    get_ranked_decisions,
+    get_best_next_action,
+    get_decision_recommendations,
+)
 from core.context_intelligence import (
     resolve_context,
     get_context_system_status,
@@ -291,6 +298,115 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 81: Smart Decision Intelligence
+    if command in [
+        "decision intelligence",
+        "smart decision intelligence",
+        "decision intelligence report",
+        "decision report",
+    ]:
+        return get_decision_intelligence_report()
+
+    if command in [
+        "decision score",
+        "decision readiness",
+        "decision intelligence score",
+        "decision status",
+    ]:
+        result = get_decision_intelligence()
+
+        return (
+            "JERVIS DECISION INTELLIGENCE SCORE\n\n"
+            f"Readiness Score: {result['score']}/100\n"
+            f"Decision Status: {result['status']}\n"
+            f"Decision Readiness: {result['readiness']}\n"
+            f"Average Confidence: {result['average_confidence']}%\n"
+            f"Total Decisions: {result['total_decisions']}\n"
+            f"Critical: {result['critical_decisions']}\n"
+            f"High: {result['high_decisions']}\n"
+            f"Medium: {result['medium_decisions']}"
+        )
+
+    if command in [
+        "best next action",
+        "best action",
+        "best decision",
+        "what is the best next action",
+    ]:
+        item = get_best_next_action()
+
+        return (
+            "JERVIS BEST NEXT ACTION\n\n"
+            f"Decision #{item.get('rank', 1)}: {item.get('title', 'Unknown')}\n"
+            f"Priority: {item.get('priority', 'Unknown')}\n"
+            f"Reason: {item.get('reason', '')}\n"
+            f"Impact: {item.get('impact', '')}\n"
+            f"Confidence: {item.get('confidence', 0)}%\n"
+            f"Recommended Action: {item.get('action', '')}\n"
+            f"Source: {item.get('source', 'Unknown')}\n\n"
+            "Safety: JERVIS recommends the action only and does not execute it automatically."
+        )
+
+    if command in [
+        "ranked decisions",
+        "show ranked decisions",
+        "decision priorities",
+        "show decisions",
+    ]:
+        decisions = get_ranked_decisions(limit=10)
+
+        lines = [
+            "JERVIS RANKED DECISIONS",
+            "",
+        ]
+
+        for item in decisions:
+            lines.extend(
+                [
+                    (
+                        f"#{item.get('rank', '?')} "
+                        f"{item.get('title', 'Unknown')}"
+                    ),
+                    (
+                        f"Priority: "
+                        f"{item.get('priority', 'Unknown')}"
+                    ),
+                    (
+                        f"Confidence: "
+                        f"{item.get('confidence', 0)}%"
+                    ),
+                    (
+                        f"Action: "
+                        f"{item.get('action', '')}"
+                    ),
+                    "",
+                ]
+            )
+
+        return "\n".join(lines).rstrip()
+
+    if command in [
+        "decision recommendations",
+        "decision advice",
+        "decision intelligence recommendations",
+    ]:
+        recommendations = get_decision_recommendations()
+
+        if not recommendations:
+            recommendations = [
+                "No additional decision recommendation is currently available."
+            ]
+
+        return (
+            "JERVIS DECISION RECOMMENDATIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in recommendations
+            )
+            + "\n\nSafety: Decision Intelligence ranks and recommends actions only. "
+            "It does not automatically execute system or productivity actions."
+        )
 
     # Step 80: Smart Context & Conversation Intelligence
     if command in [
