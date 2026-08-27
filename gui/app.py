@@ -53,6 +53,10 @@ from core.disk_intelligence import (
     get_disk_partitions,
     get_storage_health,
 )
+from core.goal_intelligence import (
+    get_goal_intelligence,
+    get_goal_recommendations,
+)
 from core.decision_intelligence import (
     get_decision_intelligence,
     get_ranked_decisions,
@@ -540,7 +544,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 81 • Decision Intelligence",
+            text="JERVIS X\nStep 82 • Goal Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -608,6 +612,7 @@ class JervisApp(ctk.CTk):
         self.create_personal_assistant_intelligence_page()
         self.create_context_intelligence_page()
         self.create_decision_intelligence_page()
+        self.create_goal_intelligence_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -13266,6 +13271,127 @@ class JervisApp(ctk.CTk):
             self.context_refresh_label.configure(
                 text=f"Context analysis error: {error}"
             )
+
+    def create_goal_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Goal Intelligence"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(6, weight=1)
+
+        ctk.CTkLabel(page, text="JERVIS SMART GOAL & PLANNING INTELLIGENCE",
+                     font=("Arial", 28, "bold")).grid(
+            row=0, column=0, columnspan=4, padx=30, pady=(30, 8), sticky="w")
+        ctk.CTkLabel(page,
+            text="Track goals, progress, priorities and the best next planning action from locally stored JERVIS goal data.",
+            font=("Arial", 14), wraplength=1050, justify="left").grid(
+            row=1, column=0, columnspan=4, padx=30, pady=(0, 15), sticky="w")
+
+        cards = [
+            ("goal_score_card", "PLANNING SCORE"),
+            ("goal_status_card", "PLANNING STATUS"),
+            ("goal_total_card", "TOTAL GOALS"),
+            ("goal_progress_card", "AVG PROGRESS"),
+            ("goal_active_card", "ACTIVE GOALS"),
+            ("goal_completed_card", "COMPLETED GOALS"),
+        ]
+        for n, (attr, title) in enumerate(cards):
+            card = self.create_info_card(page, title, "--")
+            setattr(self, attr, card)
+            row = 2 if n < 4 else 3
+            col = n if n < 4 else n - 4
+            card["frame"].grid(row=row, column=col, padx=6, pady=8, sticky="nsew")
+
+        self.goal_next_card = self.create_info_card(page, "NEXT GOAL", "--")
+        self.goal_next_card["frame"].grid(row=3, column=2, columnspan=2, padx=(6,30), pady=8, sticky="nsew")
+
+        controls=ctk.CTkFrame(page)
+        controls.grid(row=4,column=0,columnspan=4,padx=30,pady=(8,12),sticky="ew")
+        controls.grid_columnconfigure(0,weight=1)
+        self.goal_refresh_label=ctk.CTkLabel(controls,text="Ready",font=("Arial",13))
+        self.goal_refresh_label.grid(row=0,column=0,padx=15,pady=12,sticky="w")
+        ctk.CTkButton(controls,text="Refresh Goals",width=160,height=42,
+                      command=self.gui_refresh_goal_intelligence).grid(row=0,column=1,padx=15,pady=12)
+
+        ctk.CTkLabel(page,
+            text="Safety: Goal Intelligence tracks locally stored planning data. This dashboard does not automatically complete or delete goals.",
+            font=("Arial",13,"bold"),wraplength=1050,justify="left").grid(
+            row=5,column=0,columnspan=4,padx=30,pady=(0,12),sticky="w")
+
+        content=ctk.CTkFrame(page)
+        content.grid(row=6,column=0,columnspan=4,padx=30,pady=(0,20),sticky="nsew")
+        content.grid_columnconfigure((0,1),weight=1)
+        content.grid_rowconfigure((1,3),weight=1)
+
+        for title,row,col in [
+            ("BEST NEXT ACTION",0,0),("GOAL SUMMARY",0,1),
+            ("PLANNING RISKS & INSIGHTS",2,0),("PLANNING RECOMMENDATIONS",2,1)
+        ]:
+            ctk.CTkLabel(content,text=title,font=("Arial",17,"bold")).grid(
+                row=row,column=col,padx=15,pady=(15 if row==0 else 5,8),sticky="w")
+
+        self.goal_best_box=ctk.CTkTextbox(content,font=("Consolas",12))
+        self.goal_summary_box=ctk.CTkTextbox(content,font=("Consolas",12))
+        self.goal_insights_box=ctk.CTkTextbox(content,font=("Consolas",12))
+        self.goal_recommendations_box=ctk.CTkTextbox(content,font=("Consolas",12))
+        self.goal_best_box.grid(row=1,column=0,padx=(15,7),pady=(0,12),sticky="nsew")
+        self.goal_summary_box.grid(row=1,column=1,padx=(7,15),pady=(0,12),sticky="nsew")
+        self.goal_insights_box.grid(row=3,column=0,padx=(15,7),pady=(0,15),sticky="nsew")
+        self.goal_recommendations_box.grid(row=3,column=1,padx=(7,15),pady=(0,15),sticky="nsew")
+        for box in (self.goal_best_box,self.goal_summary_box,self.goal_insights_box,self.goal_recommendations_box):
+            box.configure(state="disabled")
+        self.gui_refresh_goal_intelligence()
+
+    def _set_goal_intelligence_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0","end")
+        box.insert("end",str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_goal_intelligence(self):
+        try:
+            r=get_goal_intelligence()
+            self.goal_score_card["value"].configure(text=f"{r.get('score',0)}/100")
+            self.goal_status_card["value"].configure(text=r.get("status","Unknown"))
+            self.goal_total_card["value"].configure(text=str(r.get("total_goals",0)))
+            self.goal_progress_card["value"].configure(text=f"{r.get('average_progress',0)}%")
+            self.goal_active_card["value"].configure(text=str(r.get("active_goals",0)))
+            self.goal_completed_card["value"].configure(text=str(r.get("completed_goals",0)))
+
+            best=r.get("best_next_action")
+            if best:
+                self.goal_next_card["value"].configure(text=best.get("goal","Unknown"))
+                best_text=(f"Goal #{best.get('goal_id','?')}: {best.get('goal','Unknown')}\n"
+                           f"Priority: {best.get('priority','Unknown')}\n"
+                           f"Step #{best.get('step_number','?')}: {best.get('step','')}")
+            else:
+                self.goal_next_card["value"].configure(text="No Active Step")
+                best_text="No active goal step is currently available."
+            self._set_goal_intelligence_box(self.goal_best_box,best_text)
+
+            lines=[]
+            for g in r.get("goals",[]):
+                lines += [f"Goal #{g.get('id','?')}: {g.get('title','Untitled Goal')}",
+                          f"Priority: {g.get('priority','Medium')}",
+                          f"Status: {g.get('status','Unknown')}",
+                          f"Progress: {g.get('progress',0)}%",
+                          f"Steps: {g.get('completed_steps',0)}/{g.get('step_count',0)}"]
+                ns=g.get("next_step")
+                if ns: lines.append(f"Next Step: {ns.get('text','')}")
+                lines.append("")
+            self._set_goal_intelligence_box(self.goal_summary_box,
+                "\n".join(lines).rstrip() or "No goals stored.")
+
+            ri=["PLANNING RISKS"]+[f"- {x}" for x in r.get("risks",[])]
+            ri += ["","PLANNING INSIGHTS"]+[f"- {x}" for x in r.get("insights",[])]
+            self._set_goal_intelligence_box(self.goal_insights_box,"\n".join(ri))
+
+            recs=get_goal_recommendations()
+            self._set_goal_intelligence_box(self.goal_recommendations_box,
+                "\n".join(f"- {x}" for x in recs) or "- No additional goal recommendation is currently available.")
+            self.goal_refresh_label.configure(
+                text=f"{r.get('status','Unknown')} • Score {r.get('score',0)}/100 • {r.get('active_goals',0)} active goal(s)")
+        except Exception as error:
+            self.goal_refresh_label.configure(text=f"Goal Intelligence error: {error}")
 
     def create_decision_intelligence_page(self):
         page = ctk.CTkFrame(self.page_container)
