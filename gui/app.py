@@ -53,6 +53,12 @@ from core.disk_intelligence import (
     get_disk_partitions,
     get_storage_health,
 )
+from core.decision_intelligence import (
+    get_decision_intelligence,
+    get_ranked_decisions,
+    get_best_next_action,
+    get_decision_recommendations,
+)
 from core.context_intelligence import (
     resolve_context,
     get_context_system_status,
@@ -534,7 +540,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 80 • Context Intelligence",
+            text="JERVIS X\nStep 81 • Decision Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -601,6 +607,7 @@ class JervisApp(ctk.CTk):
         self.create_productivity_intelligence_page()
         self.create_personal_assistant_intelligence_page()
         self.create_context_intelligence_page()
+        self.create_decision_intelligence_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -13258,6 +13265,201 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.context_refresh_label.configure(
                 text=f"Context analysis error: {error}"
+            )
+
+    def create_decision_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Decision Intelligence"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(6, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART DECISION INTELLIGENCE",
+            font=("Arial", 28, "bold"),
+        ).grid(row=0, column=0, columnspan=4, padx=30, pady=(30, 8), sticky="w")
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Combine JERVIS intelligence signals into ranked, confidence-based "
+                "decisions without automatically executing system changes."
+            ),
+            font=("Arial", 14),
+            wraplength=1050,
+            justify="left",
+        ).grid(row=1, column=0, columnspan=4, padx=30, pady=(0, 15), sticky="w")
+
+        self.decision_score_card = self.create_info_card(page, "READINESS SCORE", "--")
+        self.decision_score_card["frame"].grid(row=2, column=0, padx=(30, 6), pady=8, sticky="nsew")
+
+        self.decision_status_card = self.create_info_card(page, "DECISION STATUS", "--")
+        self.decision_status_card["frame"].grid(row=2, column=1, padx=6, pady=8, sticky="nsew")
+
+        self.decision_confidence_card = self.create_info_card(page, "AVG CONFIDENCE", "--")
+        self.decision_confidence_card["frame"].grid(row=2, column=2, padx=6, pady=8, sticky="nsew")
+
+        self.decision_total_card = self.create_info_card(page, "TOTAL DECISIONS", "--")
+        self.decision_total_card["frame"].grid(row=2, column=3, padx=(6, 30), pady=8, sticky="nsew")
+
+        self.decision_critical_card = self.create_info_card(page, "CRITICAL", "--")
+        self.decision_critical_card["frame"].grid(row=3, column=0, padx=(30, 6), pady=8, sticky="nsew")
+
+        self.decision_high_card = self.create_info_card(page, "HIGH", "--")
+        self.decision_high_card["frame"].grid(row=3, column=1, padx=6, pady=8, sticky="nsew")
+
+        self.decision_medium_card = self.create_info_card(page, "MEDIUM", "--")
+        self.decision_medium_card["frame"].grid(row=3, column=2, padx=6, pady=8, sticky="nsew")
+
+        self.decision_readiness_card = self.create_info_card(page, "READINESS", "--")
+        self.decision_readiness_card["frame"].grid(row=3, column=3, padx=(6, 30), pady=8, sticky="nsew")
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(row=4, column=0, columnspan=4, padx=30, pady=(8, 12), sticky="ew")
+        controls.grid_columnconfigure(0, weight=1)
+
+        self.decision_refresh_label = ctk.CTkLabel(
+            controls, text="Ready", font=("Arial", 13)
+        )
+        self.decision_refresh_label.grid(row=0, column=0, padx=15, pady=12, sticky="w")
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Decisions",
+            width=160,
+            height=42,
+            command=self.gui_refresh_decision_intelligence,
+        ).grid(row=0, column=1, padx=15, pady=12)
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Safety: Decision Intelligence ranks and recommends actions only. "
+                "It does not automatically execute system or productivity actions."
+            ),
+            font=("Arial", 13, "bold"),
+            wraplength=1050,
+            justify="left",
+        ).grid(row=5, column=0, columnspan=4, padx=30, pady=(0, 12), sticky="w")
+
+        content = ctk.CTkFrame(page)
+        content.grid(row=6, column=0, columnspan=4, padx=30, pady=(0, 20), sticky="nsew")
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure((1, 3), weight=1)
+
+        ctk.CTkLabel(content, text="BEST NEXT ACTION", font=("Arial", 17, "bold")).grid(
+            row=0, column=0, padx=15, pady=(15, 8), sticky="w"
+        )
+        ctk.CTkLabel(content, text="RANKED DECISIONS", font=("Arial", 17, "bold")).grid(
+            row=0, column=1, padx=15, pady=(15, 8), sticky="w"
+        )
+
+        self.decision_best_box = ctk.CTkTextbox(content, font=("Consolas", 12))
+        self.decision_best_box.grid(row=1, column=0, padx=(15, 7), pady=(0, 12), sticky="nsew")
+
+        self.decision_ranked_box = ctk.CTkTextbox(content, font=("Consolas", 12))
+        self.decision_ranked_box.grid(row=1, column=1, padx=(7, 15), pady=(0, 12), sticky="nsew")
+
+        ctk.CTkLabel(content, text="ALTERNATIVE ACTIONS", font=("Arial", 17, "bold")).grid(
+            row=2, column=0, padx=15, pady=(5, 8), sticky="w"
+        )
+        ctk.CTkLabel(content, text="DECISION RECOMMENDATIONS", font=("Arial", 17, "bold")).grid(
+            row=2, column=1, padx=15, pady=(5, 8), sticky="w"
+        )
+
+        self.decision_alternatives_box = ctk.CTkTextbox(content, font=("Consolas", 12))
+        self.decision_alternatives_box.grid(row=3, column=0, padx=(15, 7), pady=(0, 15), sticky="nsew")
+
+        self.decision_recommendations_box = ctk.CTkTextbox(content, font=("Consolas", 12))
+        self.decision_recommendations_box.grid(row=3, column=1, padx=(7, 15), pady=(0, 15), sticky="nsew")
+
+        for box in (
+            self.decision_best_box,
+            self.decision_ranked_box,
+            self.decision_alternatives_box,
+            self.decision_recommendations_box,
+        ):
+            box.configure(state="disabled")
+
+        self.gui_refresh_decision_intelligence()
+
+    def _set_decision_intelligence_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_decision_intelligence(self):
+        try:
+            result = get_decision_intelligence()
+
+            self.decision_score_card["value"].configure(text=f"{result.get('score', 0)}/100")
+            self.decision_status_card["value"].configure(text=result.get("status", "Unknown"))
+            self.decision_confidence_card["value"].configure(
+                text=f"{result.get('average_confidence', 0)}%"
+            )
+            self.decision_total_card["value"].configure(text=str(result.get("total_decisions", 0)))
+            self.decision_critical_card["value"].configure(text=str(result.get("critical_decisions", 0)))
+            self.decision_high_card["value"].configure(text=str(result.get("high_decisions", 0)))
+            self.decision_medium_card["value"].configure(text=str(result.get("medium_decisions", 0)))
+            self.decision_readiness_card["value"].configure(text=result.get("readiness", "Unknown"))
+
+            best = get_best_next_action()
+            best_text = (
+                f"Decision #{best.get('rank', 1)} - {best.get('title', 'Unknown')}\n"
+                f"Priority: {best.get('priority', 'Unknown')}\n"
+                f"Reason: {best.get('reason', '')}\n"
+                f"Impact: {best.get('impact', '')}\n"
+                f"Confidence: {best.get('confidence', 0)}%\n"
+                f"Action: {best.get('action', '')}\n"
+                f"Source: {best.get('source', 'Unknown')}"
+            )
+            self._set_decision_intelligence_box(self.decision_best_box, best_text)
+
+            ranked = get_ranked_decisions(limit=10)
+            ranked_lines = []
+            for item in ranked:
+                ranked_lines.extend([
+                    f"#{item.get('rank', '?')} {item.get('title', 'Unknown')}",
+                    f"Priority: {item.get('priority', 'Unknown')}",
+                    f"Confidence: {item.get('confidence', 0)}%",
+                    f"Action: {item.get('action', '')}",
+                    "",
+                ])
+            self._set_decision_intelligence_box(
+                self.decision_ranked_box,
+                "\n".join(ranked_lines).rstrip() or "No ranked decisions available.",
+            )
+
+            alternatives = result.get("alternative_actions", [])
+            alternative_lines = [
+                f"#{item.get('rank', '?')} {item.get('title', 'Unknown')} "
+                f"({item.get('priority', 'Unknown')})\n- {item.get('action', '')}"
+                for item in alternatives
+            ]
+            self._set_decision_intelligence_box(
+                self.decision_alternatives_box,
+                "\n\n".join(alternative_lines) or "No alternative action is currently required.",
+            )
+
+            recommendations = get_decision_recommendations()
+            self._set_decision_intelligence_box(
+                self.decision_recommendations_box,
+                "\n".join(f"- {item}" for item in recommendations)
+                or "- No additional recommendation is currently available.",
+            )
+
+            self.decision_refresh_label.configure(
+                text=(
+                    f"{result.get('status', 'Unknown')} • "
+                    f"Score {result.get('score', 0)}/100 • "
+                    f"{result.get('total_decisions', 0)} ranked decision(s)"
+                )
+            )
+
+        except Exception as error:
+            self.decision_refresh_label.configure(
+                text=f"Decision Intelligence error: {error}"
             )
 
     def create_disk_intelligence_page(self):
