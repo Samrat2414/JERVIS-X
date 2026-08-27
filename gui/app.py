@@ -53,6 +53,10 @@ from core.disk_intelligence import (
     get_disk_partitions,
     get_storage_health,
 )
+from core.career_intelligence import (
+    get_career_intelligence,
+    get_career_recommendations,
+)
 from core.learning_intelligence import (
     get_learning_intelligence,
     get_learning_recommendations,
@@ -548,7 +552,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 83 • Learning Intelligence",
+            text="JERVIS X\nStep 84 • Career Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -618,6 +622,7 @@ class JervisApp(ctk.CTk):
         self.create_decision_intelligence_page()
         self.create_goal_intelligence_page()
         self.create_learning_intelligence_page()
+        self.create_career_intelligence_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -13275,6 +13280,270 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.context_refresh_label.configure(
                 text=f"Context analysis error: {error}"
+            )
+
+    def create_career_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Career Intelligence"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(6, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART CAREER & JOB INTELLIGENCE",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0, column=0, columnspan=4,
+            padx=30, pady=(30, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Analyze job readiness, target-role skill gaps, portfolio readiness, "
+                "resume readiness and the best next career action."
+            ),
+            font=("Arial", 14),
+            wraplength=1050,
+            justify="left",
+        ).grid(
+            row=1, column=0, columnspan=4,
+            padx=30, pady=(0, 15), sticky="w",
+        )
+
+        cards = [
+            ("career_score_card", "JOB READINESS"),
+            ("career_status_card", "CAREER STATUS"),
+            ("career_role_card", "TARGET ROLE"),
+            ("career_skill_card", "SKILL READINESS"),
+            ("career_project_card", "PROJECT READINESS"),
+            ("career_resume_card", "RESUME READINESS"),
+            ("career_application_card", "APPLICATION READY"),
+            ("career_action_card", "BEST NEXT ACTION"),
+        ]
+
+        for index, (attribute, title) in enumerate(cards):
+            card = self.create_info_card(page, title, "--")
+            setattr(self, attribute, card)
+            row = 2 + index // 4
+            column = index % 4
+            left = 30 if column == 0 else 6
+            right = 30 if column == 3 else 6
+            card["frame"].grid(
+                row=row,
+                column=column,
+                padx=(left, right),
+                pady=8,
+                sticky="nsew",
+            )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=4, column=0, columnspan=4,
+            padx=30, pady=(8, 12), sticky="ew",
+        )
+        controls.grid_columnconfigure(0, weight=1)
+
+        self.career_refresh_label = ctk.CTkLabel(
+            controls, text="Ready", font=("Arial", 13)
+        )
+        self.career_refresh_label.grid(
+            row=0, column=0, padx=15, pady=12, sticky="w"
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Career Intelligence",
+            width=220,
+            height=42,
+            command=self.gui_refresh_career_intelligence,
+        ).grid(row=0, column=1, padx=15, pady=12)
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Career Intelligence provides local planning guidance only; "
+                "it does not automatically submit job applications."
+            ),
+            font=("Arial", 13, "bold"),
+            wraplength=1050,
+            justify="left",
+        ).grid(
+            row=5, column=0, columnspan=4,
+            padx=30, pady=(0, 12), sticky="w",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=6, column=0, columnspan=4,
+            padx=30, pady=(0, 20), sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure((1, 3), weight=1)
+
+        headings = [
+            ("BEST NEXT CAREER ACTION", 0, 0),
+            ("SKILLS: STRONG / GAPS / MISSING", 0, 1),
+            ("CAREER RISKS & INSIGHTS", 2, 0),
+            ("CAREER RECOMMENDATIONS", 2, 1),
+        ]
+        for title, row, column in headings:
+            ctk.CTkLabel(
+                content, text=title, font=("Arial", 17, "bold")
+            ).grid(
+                row=row, column=column,
+                padx=15, pady=(15 if row == 0 else 5, 8),
+                sticky="w",
+            )
+
+        self.career_action_box = ctk.CTkTextbox(content, font=("Consolas", 12))
+        self.career_action_box.grid(
+            row=1, column=0, padx=(15, 7), pady=(0, 12), sticky="nsew"
+        )
+
+        self.career_skills_box = ctk.CTkTextbox(content, font=("Consolas", 12))
+        self.career_skills_box.grid(
+            row=1, column=1, padx=(7, 15), pady=(0, 12), sticky="nsew"
+        )
+
+        self.career_insights_box = ctk.CTkTextbox(content, font=("Consolas", 12))
+        self.career_insights_box.grid(
+            row=3, column=0, padx=(15, 7), pady=(0, 15), sticky="nsew"
+        )
+
+        self.career_recommendations_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.career_recommendations_box.grid(
+            row=3, column=1, padx=(7, 15), pady=(0, 15), sticky="nsew"
+        )
+
+        for box in (
+            self.career_action_box,
+            self.career_skills_box,
+            self.career_insights_box,
+            self.career_recommendations_box,
+        ):
+            box.configure(state="disabled")
+
+        self.gui_refresh_career_intelligence()
+
+    def _set_career_intelligence_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_career_intelligence(self):
+        try:
+            result = get_career_intelligence()
+
+            self.career_score_card["value"].configure(
+                text=f"{result.get('score', 0)}/100"
+            )
+            self.career_status_card["value"].configure(
+                text=result.get("status", "Unknown")
+            )
+            self.career_role_card["value"].configure(
+                text=result.get("target_role", "Not Set")
+            )
+            self.career_skill_card["value"].configure(
+                text=f"{result.get('skill_readiness', 0)}%"
+            )
+            self.career_project_card["value"].configure(
+                text=f"{result.get('project_readiness', 0)}%"
+            )
+            self.career_resume_card["value"].configure(
+                text=f"{result.get('resume_readiness', 0)}%"
+            )
+            self.career_application_card["value"].configure(
+                text=f"{result.get('application_readiness', 0)}%"
+            )
+
+            action = result.get("best_next_action") or {}
+            self.career_action_card["value"].configure(
+                text=action.get("action", "No Action")
+            )
+
+            action_text = (
+                f"Action: {action.get('action', 'No action available')}\n"
+                f"Priority: {action.get('priority', 'Unknown')}\n"
+                f"Reason: {action.get('reason', 'No reason available.')}"
+            )
+            self._set_career_intelligence_box(
+                self.career_action_box, action_text
+            )
+
+            skill_lines = ["STRONG SKILLS"]
+            strong = result.get("strong_skills", [])
+            if strong:
+                for item in strong:
+                    skill_lines.append(
+                        f"- {item.get('skill')}: {item.get('current', 0)}% "
+                        f"(target {item.get('required', 0)}%)"
+                    )
+            else:
+                skill_lines.append("- None detected yet.")
+
+            skill_lines.extend(["", "SKILL GAPS"])
+            gaps = result.get("skill_gaps", [])
+            if gaps:
+                for item in gaps:
+                    skill_lines.append(
+                        f"- {item.get('skill')}: {item.get('current', 0)}% "
+                        f"-> {item.get('required', 0)}% "
+                        f"(gap {item.get('gap', 0)}%)"
+                    )
+            else:
+                skill_lines.append("- No tracked skill gap detected.")
+
+            skill_lines.extend(["", "MISSING SKILLS"])
+            missing = result.get("missing_skills", [])
+            if missing:
+                for item in missing:
+                    skill_lines.append(
+                        f"- {item.get('skill')}: required "
+                        f"{item.get('required', 0)}%"
+                    )
+            else:
+                skill_lines.append("- No missing required skill detected.")
+
+            self._set_career_intelligence_box(
+                self.career_skills_box,
+                "\n".join(skill_lines),
+            )
+
+            insight_lines = ["CAREER RISKS"]
+            insight_lines.extend(
+                f"- {item}" for item in result.get("risks", [])
+            )
+            insight_lines.extend(["", "CAREER INSIGHTS"])
+            insight_lines.extend(
+                f"- {item}" for item in result.get("insights", [])
+            )
+            self._set_career_intelligence_box(
+                self.career_insights_box,
+                "\n".join(insight_lines),
+            )
+
+            recommendations = get_career_recommendations()
+            self._set_career_intelligence_box(
+                self.career_recommendations_box,
+                "\n".join(f"- {item}" for item in recommendations)
+                or "- No additional career recommendation is currently available.",
+            )
+
+            self.career_refresh_label.configure(
+                text=(
+                    f"{result.get('status', 'Unknown')} • "
+                    f"Score {result.get('score', 0)}/100 • "
+                    f"Target: {result.get('target_role', 'Not Set')}"
+                )
+            )
+
+        except Exception as error:
+            self.career_refresh_label.configure(
+                text=f"Career Intelligence error: {error}"
             )
 
     def create_learning_intelligence_page(self):
