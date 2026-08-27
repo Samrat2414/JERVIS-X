@@ -39,6 +39,14 @@ from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
 )
+from core.goal_intelligence import (
+    create_goal,
+    add_goal_step,
+    complete_goal_step,
+    get_goal_intelligence,
+    get_goal_recommendations,
+    get_goal_intelligence_report,
+)
 from core.decision_intelligence import (
     get_decision_intelligence,
     get_decision_intelligence_report,
@@ -298,6 +306,184 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 82: Smart Goal & Planning Intelligence
+    if command in [
+        "goal intelligence",
+        "smart goal intelligence",
+        "goal planning intelligence",
+        "planning intelligence",
+        "goal intelligence report",
+        "goal report",
+    ]:
+        return get_goal_intelligence_report()
+
+    if command in [
+        "goal score",
+        "planning score",
+        "goal intelligence score",
+        "goal status",
+        "planning status",
+    ]:
+        result = get_goal_intelligence()
+
+        return (
+            "JERVIS GOAL & PLANNING INTELLIGENCE SCORE\n\n"
+            f"Score: {result['score']}/100\n"
+            f"Status: {result['status']}\n"
+            f"Total Goals: {result['total_goals']}\n"
+            f"Active Goals: {result['active_goals']}\n"
+            f"Completed Goals: {result['completed_goals']}\n"
+            f"Average Progress: {result['average_progress']}%"
+        )
+
+    if command in [
+        "best goal action",
+        "goal next action",
+        "best planning action",
+        "what is my next goal action",
+    ]:
+        result = get_goal_intelligence()
+        best = result.get("best_next_action")
+
+        if not best:
+            return (
+                "JERVIS BEST GOAL ACTION\n\n"
+                "No active goal step is currently available."
+            )
+
+        return (
+            "JERVIS BEST GOAL ACTION\n\n"
+            f"Goal: {best.get('goal', 'Unknown')}\n"
+            f"Priority: {best.get('priority', 'Unknown')}\n"
+            f"Step #{best.get('step_number', '?')}: "
+            f"{best.get('step', '')}"
+        )
+
+    if command in [
+        "goal recommendations",
+        "planning recommendations",
+        "goal advice",
+        "planning advice",
+    ]:
+        recommendations = get_goal_recommendations()
+
+        if not recommendations:
+            recommendations = [
+                "No additional goal recommendation is currently available."
+            ]
+
+        return (
+            "JERVIS GOAL & PLANNING RECOMMENDATIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in recommendations
+            )
+            + "\n\nSafety: Goal Intelligence tracks and recommends planning actions only."
+        )
+
+    if command.startswith("create goal "):
+        payload = original_command[len("create goal "):].strip()
+
+        if not payload:
+            return (
+                "Usage: create goal <title> | <step 1> | <step 2> | ..."
+            )
+
+        parts = [
+            item.strip()
+            for item in payload.split("|")
+            if item.strip()
+        ]
+
+        title = parts[0]
+        steps = parts[1:]
+
+        result = create_goal(
+            title,
+            steps=steps,
+            priority="Medium",
+        )
+
+        return result.get(
+            "message",
+            "Goal creation finished.",
+        )
+
+    if command.startswith("create high priority goal "):
+        payload = original_command[
+            len("create high priority goal "):
+        ].strip()
+
+        parts = [
+            item.strip()
+            for item in payload.split("|")
+            if item.strip()
+        ]
+
+        if not parts:
+            return (
+                "Usage: create high priority goal "
+                "<title> | <step 1> | <step 2> | ..."
+            )
+
+        result = create_goal(
+            parts[0],
+            steps=parts[1:],
+            priority="High",
+        )
+
+        return result.get(
+            "message",
+            "Goal creation finished.",
+        )
+
+    if command.startswith("add goal step "):
+        payload = original_command[
+            len("add goal step "):
+        ].strip()
+
+        parts = payload.split(
+            " ",
+            1,
+        )
+
+        if len(parts) != 2:
+            return (
+                "Usage: add goal step <goal_id> <step text>"
+            )
+
+        result = add_goal_step(
+            parts[0],
+            parts[1],
+        )
+
+        return result.get(
+            "message",
+            "Goal step update finished.",
+        )
+
+    if command.startswith("complete goal step "):
+        payload = original_command[
+            len("complete goal step "):
+        ].strip()
+
+        parts = payload.split()
+
+        if len(parts) != 2:
+            return (
+                "Usage: complete goal step <goal_id> <step_number>"
+            )
+
+        result = complete_goal_step(
+            parts[0],
+            parts[1],
+        )
+
+        return result.get(
+            "message",
+            "Goal step completion finished.",
+        )
 
     # Step 81: Smart Decision Intelligence
     if command in [
