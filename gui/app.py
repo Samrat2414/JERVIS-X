@@ -53,6 +53,10 @@ from core.disk_intelligence import (
     get_disk_partitions,
     get_storage_health,
 )
+from core.learning_intelligence import (
+    get_learning_intelligence,
+    get_learning_recommendations,
+)
 from core.goal_intelligence import (
     get_goal_intelligence,
     get_goal_recommendations,
@@ -544,7 +548,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 82 • Goal Intelligence",
+            text="JERVIS X\nStep 83 • Learning Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -613,6 +617,7 @@ class JervisApp(ctk.CTk):
         self.create_context_intelligence_page()
         self.create_decision_intelligence_page()
         self.create_goal_intelligence_page()
+        self.create_learning_intelligence_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -13270,6 +13275,337 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.context_refresh_label.configure(
                 text=f"Context analysis error: {error}"
+            )
+
+    def create_learning_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Learning Intelligence"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(6, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART LEARNING & SKILL INTELLIGENCE",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0, column=0, columnspan=4,
+            padx=30, pady=(30, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Track skill progress, identify weak areas, rank learning priorities "
+                "and recommend the best next skill to improve."
+            ),
+            font=("Arial", 14),
+            wraplength=1050,
+            justify="left",
+        ).grid(
+            row=1, column=0, columnspan=4,
+            padx=30, pady=(0, 15), sticky="w",
+        )
+
+        self.learning_score_card = self.create_info_card(
+            page, "LEARNING SCORE", "--"
+        )
+        self.learning_score_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.learning_status_card = self.create_info_card(
+            page, "LEARNING STATUS", "--"
+        )
+        self.learning_status_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.learning_total_card = self.create_info_card(
+            page, "TOTAL SKILLS", "--"
+        )
+        self.learning_total_card["frame"].grid(
+            row=2, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.learning_progress_card = self.create_info_card(
+            page, "AVG PROGRESS", "--"
+        )
+        self.learning_progress_card["frame"].grid(
+            row=2, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        self.learning_weak_card = self.create_info_card(
+            page, "WEAK SKILLS", "--"
+        )
+        self.learning_weak_card["frame"].grid(
+            row=3, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.learning_target_card = self.create_info_card(
+            page, "TARGETS REACHED", "--"
+        )
+        self.learning_target_card["frame"].grid(
+            row=3, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.learning_avg_score_card = self.create_info_card(
+            page, "AVG SKILL SCORE", "--"
+        )
+        self.learning_avg_score_card["frame"].grid(
+            row=3, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.learning_next_card = self.create_info_card(
+            page, "BEST NEXT SKILL", "--"
+        )
+        self.learning_next_card["frame"].grid(
+            row=3, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=4, column=0, columnspan=4,
+            padx=30, pady=(8, 12), sticky="ew",
+        )
+        controls.grid_columnconfigure(0, weight=1)
+
+        self.learning_refresh_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.learning_refresh_label.grid(
+            row=0, column=0, padx=15, pady=12, sticky="w"
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Learning Intelligence",
+            width=220,
+            height=42,
+            command=self.gui_refresh_learning_intelligence,
+        ).grid(
+            row=0, column=1, padx=15, pady=12
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Privacy: Learning Intelligence uses locally stored JERVIS skill "
+                "tracking data only."
+            ),
+            font=("Arial", 13, "bold"),
+            wraplength=1050,
+            justify="left",
+        ).grid(
+            row=5, column=0, columnspan=4,
+            padx=30, pady=(0, 12), sticky="w",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=6, column=0, columnspan=4,
+            padx=30, pady=(0, 20), sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure((1, 3), weight=1)
+
+        ctk.CTkLabel(
+            content,
+            text="BEST NEXT SKILL",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=0, padx=15, pady=(15, 8), sticky="w"
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="SKILL SUMMARY",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=1, padx=15, pady=(15, 8), sticky="w"
+        )
+
+        self.learning_best_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.learning_best_box.grid(
+            row=1, column=0, padx=(15, 7), pady=(0, 12), sticky="nsew"
+        )
+
+        self.learning_summary_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.learning_summary_box.grid(
+            row=1, column=1, padx=(7, 15), pady=(0, 12), sticky="nsew"
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="LEARNING RISKS & INSIGHTS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=2, column=0, padx=15, pady=(5, 8), sticky="w"
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="LEARNING RECOMMENDATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=2, column=1, padx=15, pady=(5, 8), sticky="w"
+        )
+
+        self.learning_insights_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.learning_insights_box.grid(
+            row=3, column=0, padx=(15, 7), pady=(0, 15), sticky="nsew"
+        )
+
+        self.learning_recommendations_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.learning_recommendations_box.grid(
+            row=3, column=1, padx=(7, 15), pady=(0, 15), sticky="nsew"
+        )
+
+        for box in (
+            self.learning_best_box,
+            self.learning_summary_box,
+            self.learning_insights_box,
+            self.learning_recommendations_box,
+        ):
+            box.configure(state="disabled")
+
+        self.gui_refresh_learning_intelligence()
+
+    def _set_learning_intelligence_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_learning_intelligence(self):
+        try:
+            result = get_learning_intelligence()
+
+            self.learning_score_card["value"].configure(
+                text=f"{result.get('score', 0)}/100"
+            )
+            self.learning_status_card["value"].configure(
+                text=result.get("status", "Unknown")
+            )
+            self.learning_total_card["value"].configure(
+                text=str(result.get("total_skills", 0))
+            )
+            self.learning_progress_card["value"].configure(
+                text=f"{result.get('average_progress', 0)}%"
+            )
+            self.learning_weak_card["value"].configure(
+                text=str(result.get("weak_skills", 0))
+            )
+            self.learning_target_card["value"].configure(
+                text=str(result.get("target_reached", 0))
+            )
+            self.learning_avg_score_card["value"].configure(
+                text=str(result.get("average_skill_score", 0))
+            )
+
+            best = result.get("best_next_skill")
+
+            if best:
+                self.learning_next_card["value"].configure(
+                    text=best.get("name", "Unknown")
+                )
+
+                best_text = (
+                    f"Skill #{best.get('id', '?')}: "
+                    f"{best.get('name', 'Unknown')}\n"
+                    f"Priority: {best.get('priority', 'Unknown')}\n"
+                    f"Level: {best.get('level', 'Unknown')}\n"
+                    f"Progress: {best.get('progress', 0)}%\n"
+                    f"Target: {best.get('target_progress', 100)}%\n"
+                    f"Learning Gap: {best.get('gap', 0)}%\n"
+                    f"State: {best.get('state', 'Unknown')}"
+                )
+            else:
+                self.learning_next_card["value"].configure(
+                    text="No Active Target"
+                )
+                best_text = (
+                    "No active learning target is currently available."
+                )
+
+            self._set_learning_intelligence_box(
+                self.learning_best_box,
+                best_text,
+            )
+
+            summary_lines = []
+
+            for skill in result.get("skills", []):
+                summary_lines.extend(
+                    [
+                        f"Skill #{skill.get('id', '?')}: "
+                        f"{skill.get('name', 'Unnamed Skill')}",
+                        f"Level: {skill.get('level', 'Unknown')}",
+                        f"Progress: {skill.get('progress', 0)}%",
+                        f"Target: {skill.get('target_progress', 100)}%",
+                        f"Gap: {skill.get('gap', 0)}%",
+                        f"Priority: {skill.get('priority', 'Unknown')}",
+                        f"State: {skill.get('state', 'Unknown')}",
+                        f"Score: {skill.get('score', 0)}",
+                        "",
+                    ]
+                )
+
+            self._set_learning_intelligence_box(
+                self.learning_summary_box,
+                "\n".join(summary_lines).rstrip()
+                or "No skills stored.",
+            )
+
+            risk_insight_lines = ["LEARNING RISKS"]
+            risk_insight_lines.extend(
+                f"- {item}"
+                for item in result.get("risks", [])
+            )
+            risk_insight_lines.extend(
+                ["", "LEARNING INSIGHTS"]
+            )
+            risk_insight_lines.extend(
+                f"- {item}"
+                for item in result.get("insights", [])
+            )
+
+            self._set_learning_intelligence_box(
+                self.learning_insights_box,
+                "\n".join(risk_insight_lines),
+            )
+
+            recommendations = get_learning_recommendations()
+
+            self._set_learning_intelligence_box(
+                self.learning_recommendations_box,
+                "\n".join(
+                    f"- {item}"
+                    for item in recommendations
+                )
+                or "- No additional learning recommendation is currently available.",
+            )
+
+            self.learning_refresh_label.configure(
+                text=(
+                    f"{result.get('status', 'Unknown')} • "
+                    f"Score {result.get('score', 0)}/100 • "
+                    f"{result.get('total_skills', 0)} skill(s)"
+                )
+            )
+
+        except Exception as error:
+            self.learning_refresh_label.configure(
+                text=f"Learning Intelligence error: {error}"
             )
 
     def create_goal_intelligence_page(self):
