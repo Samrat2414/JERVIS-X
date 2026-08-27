@@ -53,6 +53,11 @@ from core.disk_intelligence import (
     get_disk_partitions,
     get_storage_health,
 )
+from core.context_intelligence import (
+    resolve_context,
+    get_context_system_status,
+    get_context_recommendations,
+)
 from core.personal_assistant_intelligence import (
     get_personal_assistant_intelligence,
     get_personal_assistant_recommendations,
@@ -529,7 +534,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 79 • Personal Assistant Intelligence",
+            text="JERVIS X\nStep 80 • Context Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -595,6 +600,7 @@ class JervisApp(ctk.CTk):
         self.create_memory_intelligence_page()
         self.create_productivity_intelligence_page()
         self.create_personal_assistant_intelligence_page()
+        self.create_context_intelligence_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -12925,6 +12931,333 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.assistant_refresh_label.configure(
                 text=f"Assistant Intelligence error: {error}"
+            )
+
+    def create_context_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Context Intelligence"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(7, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART CONTEXT & CONVERSATION INTELLIGENCE",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0, column=0, columnspan=4,
+            padx=30, pady=(30, 8), sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Analyze conversation continuity, detect follow-up commands, "
+                "resolve recent topics and measure context confidence."
+            ),
+            font=("Arial", 14),
+            wraplength=1000,
+            justify="left",
+        ).grid(
+            row=1, column=0, columnspan=4,
+            padx=30, pady=(0, 15), sticky="w",
+        )
+
+        self.context_score_card = self.create_info_card(
+            page, "CONTEXT SCORE", "--"
+        )
+        self.context_score_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.context_status_card = self.create_info_card(
+            page, "STATUS", "--"
+        )
+        self.context_status_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.context_ready_card = self.create_info_card(
+            page, "CONTEXT READY", "--"
+        )
+        self.context_ready_card["frame"].grid(
+            row=2, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.context_entries_card = self.create_info_card(
+            page, "RECENT ENTRIES", "--"
+        )
+        self.context_entries_card["frame"].grid(
+            row=2, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        self.context_meaningful_card = self.create_info_card(
+            page, "MEANINGFUL CONTEXTS", "--"
+        )
+        self.context_meaningful_card["frame"].grid(
+            row=3, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.context_followup_card = self.create_info_card(
+            page, "FOLLOW-UP", "--"
+        )
+        self.context_followup_card["frame"].grid(
+            row=3, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.context_topic_card = self.create_info_card(
+            page, "RESOLVED TOPIC", "--"
+        )
+        self.context_topic_card["frame"].grid(
+            row=3, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.context_confidence_card = self.create_info_card(
+            page, "CONFIDENCE", "--"
+        )
+        self.context_confidence_card["frame"].grid(
+            row=3, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=4, column=0, columnspan=4,
+            padx=30, pady=(8, 12), sticky="ew",
+        )
+        controls.grid_columnconfigure(0, weight=1)
+
+        self.context_analysis_entry = ctk.CTkEntry(
+            controls,
+            placeholder_text=(
+                "Enter a command to analyze, e.g. "
+                "what are the recommendations"
+            ),
+            height=42,
+        )
+        self.context_analysis_entry.grid(
+            row=0, column=0, padx=(15, 6), pady=12, sticky="ew"
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Analyze Context",
+            width=150,
+            height=42,
+            command=self.gui_analyze_context_intelligence,
+        ).grid(
+            row=0, column=1, padx=6, pady=12
+        )
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh",
+            width=110,
+            height=42,
+            command=self.gui_refresh_context_intelligence,
+        ).grid(
+            row=0, column=2, padx=(6, 15), pady=12
+        )
+
+        self.context_refresh_label = ctk.CTkLabel(
+            page,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.context_refresh_label.grid(
+            row=5, column=0, columnspan=4,
+            padx=30, pady=(0, 8), sticky="w"
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Safety: Context Intelligence analyzes conversation continuity "
+                "only. Ambiguous follow-ups should be clarified rather than guessed."
+            ),
+            font=("Arial", 13, "bold"),
+            wraplength=1000,
+            justify="left",
+        ).grid(
+            row=6, column=0, columnspan=4,
+            padx=30, pady=(0, 12), sticky="w",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=7, column=0, columnspan=4,
+            padx=30, pady=(0, 20), sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure((1, 3), weight=1)
+
+        ctk.CTkLabel(
+            content,
+            text="CONTEXT RESOLUTION",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=0, padx=15, pady=(15, 8), sticky="w")
+
+        ctk.CTkLabel(
+            content,
+            text="PREVIOUS CONTEXT",
+            font=("Arial", 17, "bold"),
+        ).grid(row=0, column=1, padx=15, pady=(15, 8), sticky="w")
+
+        self.context_resolution_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.context_resolution_box.grid(
+            row=1, column=0, padx=(15, 7),
+            pady=(0, 12), sticky="nsew",
+        )
+
+        self.context_previous_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.context_previous_box.grid(
+            row=1, column=1, padx=(7, 15),
+            pady=(0, 12), sticky="nsew",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="RECOMMENDED CONTEXT ACTION",
+            font=("Arial", 17, "bold"),
+        ).grid(row=2, column=0, padx=15, pady=(5, 8), sticky="w")
+
+        ctk.CTkLabel(
+            content,
+            text="CONTEXT RECOMMENDATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(row=2, column=1, padx=15, pady=(5, 8), sticky="w")
+
+        self.context_action_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.context_action_box.grid(
+            row=3, column=0, padx=(15, 7),
+            pady=(0, 15), sticky="nsew",
+        )
+
+        self.context_recommendations_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.context_recommendations_box.grid(
+            row=3, column=1, padx=(7, 15),
+            pady=(0, 15), sticky="nsew",
+        )
+
+        for box in (
+            self.context_resolution_box,
+            self.context_previous_box,
+            self.context_action_box,
+            self.context_recommendations_box,
+        ):
+            box.configure(state="disabled")
+
+        self.gui_refresh_context_intelligence()
+
+    def _set_context_intelligence_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_context_intelligence(self):
+        try:
+            status = get_context_system_status()
+
+            self.context_score_card["value"].configure(
+                text=f"{status.get('score', 0)}/100"
+            )
+            self.context_status_card["value"].configure(
+                text=status.get("status", "Unknown")
+            )
+            self.context_ready_card["value"].configure(
+                text="Yes" if status.get("context_ready") else "No"
+            )
+            self.context_entries_card["value"].configure(
+                text=str(status.get("recent_entries", 0))
+            )
+            self.context_meaningful_card["value"].configure(
+                text=str(status.get("meaningful_contexts", 0))
+            )
+
+            recommendations = get_context_recommendations()
+            self._set_context_intelligence_box(
+                self.context_recommendations_box,
+                "\n".join(f"- {item}" for item in recommendations),
+            )
+
+            self.context_refresh_label.configure(
+                text=(
+                    f"{status.get('status', 'Unknown')} • "
+                    f"Score {status.get('score', 0)}/100 • "
+                    f"{status.get('meaningful_contexts', 0)} meaningful "
+                    f"context(s)"
+                )
+            )
+
+        except Exception as error:
+            self.context_refresh_label.configure(
+                text=f"Context Intelligence error: {error}"
+            )
+
+    def gui_analyze_context_intelligence(self):
+        try:
+            command = self.context_analysis_entry.get().strip()
+
+            if not command:
+                command = "what are the recommendations"
+
+            result = resolve_context(command)
+
+            self.context_followup_card["value"].configure(
+                text="Yes" if result.get("is_follow_up") else "No"
+            )
+            self.context_topic_card["value"].configure(
+                text=result.get("topic", "unknown")
+            )
+            self.context_confidence_card["value"].configure(
+                text=f"{result.get('confidence', 0)}%"
+            )
+
+            resolution_text = (
+                f"Command: {result.get('command', command)}\n"
+                f"Topic: {result.get('topic', 'unknown')}\n"
+                f"Source: {result.get('context_source', 'None')}\n"
+                f"Status: "
+                f"{'Resolved' if result.get('resolved') else 'Needs Clarification'}"
+            )
+
+            previous_text = (
+                result.get("previous_command")
+                or "No previous meaningful command available."
+            )
+
+            action_text = (
+                "- " + result.get(
+                    "recommended_action",
+                    "No context action is currently available.",
+                )
+            )
+
+            self._set_context_intelligence_box(
+                self.context_resolution_box,
+                resolution_text,
+            )
+            self._set_context_intelligence_box(
+                self.context_previous_box,
+                previous_text,
+            )
+            self._set_context_intelligence_box(
+                self.context_action_box,
+                action_text,
+            )
+
+            self.gui_refresh_context_intelligence()
+
+        except Exception as error:
+            self.context_refresh_label.configure(
+                text=f"Context analysis error: {error}"
             )
 
     def create_disk_intelligence_page(self):
