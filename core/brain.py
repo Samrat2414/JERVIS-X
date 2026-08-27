@@ -39,6 +39,15 @@ from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
 )
+from core.learning_intelligence import (
+    add_skill,
+    update_skill_progress,
+    update_skill_level,
+    get_learning_intelligence,
+    get_learning_recommendations,
+    get_best_next_skill,
+    get_learning_intelligence_report,
+)
 from core.goal_intelligence import (
     create_goal,
     add_goal_step,
@@ -306,6 +315,163 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 83: Smart Learning & Skill Intelligence
+    if command in [
+        "learning intelligence",
+        "skill intelligence",
+        "smart learning intelligence",
+        "learning intelligence report",
+        "skill intelligence report",
+        "learning report",
+        "skill report",
+    ]:
+        return get_learning_intelligence_report()
+
+    if command in [
+        "learning score",
+        "skill score",
+        "learning intelligence score",
+        "learning status",
+        "skill status",
+    ]:
+        result = get_learning_intelligence()
+
+        return (
+            "JERVIS LEARNING & SKILL INTELLIGENCE SCORE\n\n"
+            f"Score: {result['score']}/100\n"
+            f"Status: {result['status']}\n"
+            f"Total Skills: {result['total_skills']}\n"
+            f"Weak Skills: {result['weak_skills']}\n"
+            f"Targets Reached: {result['target_reached']}\n"
+            f"Average Progress: {result['average_progress']}%\n"
+            f"Average Skill Score: {result['average_skill_score']}"
+        )
+
+    if command in [
+        "best next skill",
+        "next skill",
+        "what should i learn next",
+        "what skill should i learn next",
+        "best learning priority",
+    ]:
+        best = get_best_next_skill()
+
+        if not best:
+            return (
+                "JERVIS BEST NEXT SKILL\n\n"
+                "No active learning target is currently available."
+            )
+
+        return (
+            "JERVIS BEST NEXT SKILL\n\n"
+            f"Skill: {best.get('name', 'Unknown')}\n"
+            f"Priority: {best.get('priority', 'Unknown')}\n"
+            f"Level: {best.get('level', 'Unknown')}\n"
+            f"Progress: {best.get('progress', 0)}%\n"
+            f"Target: {best.get('target_progress', 100)}%\n"
+            f"Learning Gap: {best.get('gap', 0)}%\n"
+            f"State: {best.get('state', 'Unknown')}"
+        )
+
+    if command in [
+        "learning recommendations",
+        "skill recommendations",
+        "learning advice",
+        "skill advice",
+    ]:
+        recommendations = get_learning_recommendations()
+
+        if not recommendations:
+            recommendations = [
+                "No additional learning recommendation is currently available."
+            ]
+
+        return (
+            "JERVIS LEARNING & SKILL RECOMMENDATIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in recommendations
+            )
+            + "\n\nPrivacy: Learning Intelligence uses locally stored JERVIS skill data."
+        )
+
+    if command.startswith("add skill "):
+        payload = original_command[len("add skill "):].strip()
+
+        if not payload:
+            return (
+                "Usage: add skill <name> | <level> | <progress> | <target>"
+            )
+
+        parts = [
+            item.strip()
+            for item in payload.split("|")
+        ]
+
+        name = parts[0] if parts else ""
+        level = parts[1] if len(parts) > 1 and parts[1] else "Beginner"
+        progress = parts[2] if len(parts) > 2 and parts[2] else 0
+        target = parts[3] if len(parts) > 3 and parts[3] else 100
+
+        result = add_skill(
+            name,
+            level,
+            progress,
+            target,
+        )
+
+        return result.get(
+            "message",
+            "Skill creation finished.",
+        )
+
+    if command.startswith("update skill progress "):
+        payload = original_command[
+            len("update skill progress "):
+        ].strip()
+
+        parts = payload.split()
+
+        if len(parts) != 2:
+            return (
+                "Usage: update skill progress <skill_id> <progress>"
+            )
+
+        result = update_skill_progress(
+            parts[0],
+            parts[1],
+        )
+
+        return result.get(
+            "message",
+            "Skill progress update finished.",
+        )
+
+    if command.startswith("update skill level "):
+        payload = original_command[
+            len("update skill level "):
+        ].strip()
+
+        parts = payload.split(
+            " ",
+            1,
+        )
+
+        if len(parts) != 2:
+            return (
+                "Usage: update skill level <skill_id> <level>"
+            )
+
+        result = update_skill_level(
+            parts[0],
+            parts[1],
+        )
+
+        return result.get(
+            "message",
+            "Skill level update finished.",
+        )
 
     # Step 82: Smart Goal & Planning Intelligence
     if command in [
