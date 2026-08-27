@@ -53,6 +53,10 @@ from core.disk_intelligence import (
     get_disk_partitions,
     get_storage_health,
 )
+from core.personal_assistant_intelligence import (
+    get_personal_assistant_intelligence,
+    get_personal_assistant_recommendations,
+)
 from core.productivity_intelligence import (
     get_productivity_intelligence,
     get_productivity_recommendations,
@@ -525,7 +529,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 78 • Productivity Intelligence",
+            text="JERVIS X\nStep 79 • Personal Assistant Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -590,6 +594,7 @@ class JervisApp(ctk.CTk):
         self.create_intent_intelligence_page()
         self.create_memory_intelligence_page()
         self.create_productivity_intelligence_page()
+        self.create_personal_assistant_intelligence_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -12519,6 +12524,407 @@ class JervisApp(ctk.CTk):
         except Exception as error:
             self.productivity_refresh_label.configure(
                 text=f"Productivity Intelligence error: {error}"
+            )
+
+    def create_personal_assistant_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Assistant Intelligence"] = page
+        page.grid_columnconfigure((0, 1, 2, 3), weight=1)
+        page.grid_rowconfigure(7, weight=1)
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS SMART PERSONAL ASSISTANT INTELLIGENCE",
+            font=("Arial", 28, "bold"),
+        ).grid(
+            row=0,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(30, 8),
+            sticky="w",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Unified assistant intelligence combining system health, alerts, "
+                "productivity and memory to identify priorities and recommend "
+                "what to do next."
+            ),
+            font=("Arial", 14),
+            wraplength=1000,
+            justify="left",
+        ).grid(
+            row=1,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(0, 15),
+            sticky="w",
+        )
+
+        self.assistant_score_card = self.create_info_card(
+            page, "ASSISTANT SCORE", "--"
+        )
+        self.assistant_score_card["frame"].grid(
+            row=2, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.assistant_status_card = self.create_info_card(
+            page, "OVERALL STATUS", "--"
+        )
+        self.assistant_status_card["frame"].grid(
+            row=2, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.assistant_system_card = self.create_info_card(
+            page, "SYSTEM HEALTH", "--"
+        )
+        self.assistant_system_card["frame"].grid(
+            row=2, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.assistant_alert_score_card = self.create_info_card(
+            page, "ALERT INTELLIGENCE", "--"
+        )
+        self.assistant_alert_score_card["frame"].grid(
+            row=2, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        self.assistant_productivity_card = self.create_info_card(
+            page, "PRODUCTIVITY", "--"
+        )
+        self.assistant_productivity_card["frame"].grid(
+            row=3, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.assistant_memory_card = self.create_info_card(
+            page, "MEMORY HEALTH", "--"
+        )
+        self.assistant_memory_card["frame"].grid(
+            row=3, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.assistant_active_alerts_card = self.create_info_card(
+            page, "ACTIVE ALERTS", "--"
+        )
+        self.assistant_active_alerts_card["frame"].grid(
+            row=3, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.assistant_critical_alerts_card = self.create_info_card(
+            page, "CRITICAL ALERTS", "--"
+        )
+        self.assistant_critical_alerts_card["frame"].grid(
+            row=3, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        self.assistant_pending_tasks_card = self.create_info_card(
+            page, "PENDING TASKS", "--"
+        )
+        self.assistant_pending_tasks_card["frame"].grid(
+            row=4, column=0, padx=(30, 6), pady=8, sticky="nsew"
+        )
+
+        self.assistant_reminders_card = self.create_info_card(
+            page, "ACTIVE REMINDERS", "--"
+        )
+        self.assistant_reminders_card["frame"].grid(
+            row=4, column=1, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.assistant_memory_items_card = self.create_info_card(
+            page, "MEMORY ITEMS", "--"
+        )
+        self.assistant_memory_items_card["frame"].grid(
+            row=4, column=2, padx=6, pady=8, sticky="nsew"
+        )
+
+        self.assistant_recall_card = self.create_info_card(
+            page, "RECALL READY", "--"
+        )
+        self.assistant_recall_card["frame"].grid(
+            row=4, column=3, padx=(6, 30), pady=8, sticky="nsew"
+        )
+
+        controls = ctk.CTkFrame(page)
+        controls.grid(
+            row=5,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(8, 12),
+            sticky="ew",
+        )
+        controls.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            controls,
+            text="Refresh Assistant Intelligence",
+            width=225,
+            height=42,
+            command=self.gui_refresh_personal_assistant_intelligence,
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 6),
+            pady=12,
+        )
+
+        self.assistant_refresh_label = ctk.CTkLabel(
+            controls,
+            text="Ready",
+            font=("Arial", 13),
+        )
+        self.assistant_refresh_label.grid(
+            row=0,
+            column=1,
+            padx=(10, 15),
+            pady=12,
+            sticky="e",
+        )
+
+        ctk.CTkLabel(
+            page,
+            text=(
+                "Safety: Personal Assistant Intelligence recommends actions only. "
+                "It does not automatically make system changes or execute "
+                "productivity actions."
+            ),
+            font=("Arial", 13, "bold"),
+            wraplength=1000,
+            justify="left",
+        ).grid(
+            row=6,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(0, 12),
+            sticky="w",
+        )
+
+        content = ctk.CTkFrame(page)
+        content.grid(
+            row=7,
+            column=0,
+            columnspan=4,
+            padx=30,
+            pady=(0, 20),
+            sticky="nsew",
+        )
+        content.grid_columnconfigure((0, 1), weight=1)
+        content.grid_rowconfigure((1, 3), weight=1)
+
+        ctk.CTkLabel(
+            content,
+            text="IMMEDIATE PRIORITIES",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=0, padx=15, pady=(15, 8), sticky="w"
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="WHAT TO DO NEXT",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=0, column=1, padx=15, pady=(15, 8), sticky="w"
+        )
+
+        self.assistant_priorities_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.assistant_priorities_box.grid(
+            row=1,
+            column=0,
+            padx=(15, 7),
+            pady=(0, 12),
+            sticky="nsew",
+        )
+
+        self.assistant_next_actions_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.assistant_next_actions_box.grid(
+            row=1,
+            column=1,
+            padx=(7, 15),
+            pady=(0, 12),
+            sticky="nsew",
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="ASSISTANT INSIGHTS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=2, column=0, padx=15, pady=(5, 8), sticky="w"
+        )
+
+        ctk.CTkLabel(
+            content,
+            text="SMART RECOMMENDATIONS",
+            font=("Arial", 17, "bold"),
+        ).grid(
+            row=2, column=1, padx=15, pady=(5, 8), sticky="w"
+        )
+
+        self.assistant_insights_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.assistant_insights_box.grid(
+            row=3,
+            column=0,
+            padx=(15, 7),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+
+        self.assistant_recommendations_box = ctk.CTkTextbox(
+            content, font=("Consolas", 12)
+        )
+        self.assistant_recommendations_box.grid(
+            row=3,
+            column=1,
+            padx=(7, 15),
+            pady=(0, 15),
+            sticky="nsew",
+        )
+
+        for box in (
+            self.assistant_priorities_box,
+            self.assistant_next_actions_box,
+            self.assistant_insights_box,
+            self.assistant_recommendations_box,
+        ):
+            box.configure(state="disabled")
+
+        self.gui_refresh_personal_assistant_intelligence()
+
+    def _set_personal_assistant_intelligence_box(self, box, text):
+        box.configure(state="normal")
+        box.delete("1.0", "end")
+        box.insert("end", str(text))
+        box.configure(state="disabled")
+
+    def gui_refresh_personal_assistant_intelligence(self):
+        try:
+            result = get_personal_assistant_intelligence()
+            recommendations = get_personal_assistant_recommendations()
+
+            priorities = result.get("priorities", [])
+            next_actions = result.get("next_actions", [])
+            insights = result.get("insights", [])
+
+            self.assistant_score_card["value"].configure(
+                text=f"{result.get('score', 0)}/100"
+            )
+            self.assistant_status_card["value"].configure(
+                text=result.get("status", "Unknown")
+            )
+            self.assistant_system_card["value"].configure(
+                text=(
+                    f"{result.get('system_score', 0)}/100 "
+                    f"{result.get('system_status', '')}"
+                ).strip()
+            )
+            self.assistant_alert_score_card["value"].configure(
+                text=(
+                    f"{result.get('alert_score', 0)}/100 "
+                    f"{result.get('alert_status', '')}"
+                ).strip()
+            )
+            self.assistant_productivity_card["value"].configure(
+                text=(
+                    f"{result.get('productivity_score', 0)}/100 "
+                    f"{result.get('productivity_status', '')}"
+                ).strip()
+            )
+            self.assistant_memory_card["value"].configure(
+                text=(
+                    f"{result.get('memory_score', 0)}/100 "
+                    f"{result.get('memory_status', '')}"
+                ).strip()
+            )
+            self.assistant_active_alerts_card["value"].configure(
+                text=str(result.get("active_alerts", 0))
+            )
+            self.assistant_critical_alerts_card["value"].configure(
+                text=str(result.get("critical_alerts", 0))
+            )
+            self.assistant_pending_tasks_card["value"].configure(
+                text=str(result.get("pending_tasks", 0))
+            )
+            self.assistant_reminders_card["value"].configure(
+                text=str(result.get("active_reminders", 0))
+            )
+            self.assistant_memory_items_card["value"].configure(
+                text=str(result.get("stored_memory", 0))
+            )
+            self.assistant_recall_card["value"].configure(
+                text="Yes" if result.get("recall_ready") else "No"
+            )
+
+            priorities_text = (
+                "\n".join(
+                    f"{number}. {item}"
+                    for number, item in enumerate(priorities, start=1)
+                )
+                if priorities
+                else "No urgent assistant priority detected."
+            )
+
+            next_actions_text = (
+                "\n".join(
+                    f"{number}. {item}"
+                    for number, item in enumerate(next_actions, start=1)
+                )
+                if next_actions
+                else "No next action is currently required."
+            )
+
+            insights_text = (
+                "\n".join(f"- {item}" for item in insights)
+                if insights
+                else "- No assistant insight is currently available."
+            )
+
+            recommendations_text = (
+                "\n".join(f"- {item}" for item in recommendations)
+                if recommendations
+                else "- No assistant recommendation is currently available."
+            )
+
+            self._set_personal_assistant_intelligence_box(
+                self.assistant_priorities_box,
+                priorities_text,
+            )
+            self._set_personal_assistant_intelligence_box(
+                self.assistant_next_actions_box,
+                next_actions_text,
+            )
+            self._set_personal_assistant_intelligence_box(
+                self.assistant_insights_box,
+                insights_text,
+            )
+            self._set_personal_assistant_intelligence_box(
+                self.assistant_recommendations_box,
+                recommendations_text,
+            )
+
+            self.assistant_refresh_label.configure(
+                text=(
+                    f"{result.get('status', 'Unknown')} • "
+                    f"Score {result.get('score', 0)}/100 • "
+                    f"{result.get('critical_alerts', 0)} critical alert(s) • "
+                    f"{result.get('pending_tasks', 0)} pending task(s)"
+                )
+            )
+
+        except Exception as error:
+            self.assistant_refresh_label.configure(
+                text=f"Assistant Intelligence error: {error}"
             )
 
     def create_disk_intelligence_page(self):
