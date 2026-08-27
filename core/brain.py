@@ -39,6 +39,12 @@ from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
 )
+from core.context_intelligence import (
+    resolve_context,
+    get_context_system_status,
+    get_context_recommendations,
+    get_context_intelligence_report,
+)
 from core.personal_assistant_intelligence import (
     get_personal_assistant_intelligence,
     get_personal_assistant_report,
@@ -285,6 +291,152 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 80: Smart Context & Conversation Intelligence
+    if command in [
+        "context intelligence",
+        "conversation intelligence",
+        "context intelligence report",
+        "smart context intelligence",
+    ]:
+        return get_context_intelligence_report()
+
+    if command in [
+        "context score",
+        "context status",
+        "context intelligence score",
+    ]:
+        result = get_context_system_status()
+        return (
+            "JERVIS CONTEXT INTELLIGENCE SCORE\n\n"
+            f"Score: {result['score']}/100\n"
+            f"Status: {result['status']}\n"
+            f"Context Ready: {'Yes' if result['context_ready'] else 'No'}\n"
+            f"Recent Context Entries: {result['recent_entries']}\n"
+            f"Meaningful Contexts: {result['meaningful_contexts']}"
+        )
+
+    if command.startswith("analyze context "):
+        target = original_command[len("analyze context "):].strip()
+        return get_context_intelligence_report(target)
+
+    if command in [
+        "context recommendations",
+        "conversation recommendations",
+        "context intelligence recommendations",
+    ]:
+        recommendations = get_context_recommendations()
+        return (
+            "JERVIS CONTEXT RECOMMENDATIONS\n\n"
+            + "\n".join(f"- {item}" for item in recommendations)
+            + "\n\nSafety: Context Intelligence analyzes conversation "
+            "continuity only and does not execute commands."
+        )
+
+    # Resolve genuinely ambiguous follow-up commands from conversation history.
+    context_result = resolve_context(original_command)
+
+    if (
+        context_result.get("is_follow_up")
+        and context_result.get("resolved")
+        and context_result.get("context_source") == "Conversation History"
+        and context_result.get("confidence", 0) >= 70
+    ):
+        topic = context_result.get("topic", "unknown")
+
+        recommendation_followups = {
+            "what are the recommendations",
+            "what are recommendations",
+            "show recommendations",
+            "what should i improve",
+        }
+
+        score_followups = {
+            "show score",
+            "what is the score",
+        }
+
+        status_followups = {
+            "show status",
+            "what is the status",
+        }
+
+        detail_followups = {
+            "show details",
+            "give details",
+            "more details",
+            "tell me more",
+            "explain",
+            "what about it",
+            "what about this",
+        }
+
+        recommendation_routes = {
+            "system health": "system health",
+            "productivity": "productivity recommendations",
+            "memory": "memory recommendations",
+            "alerts": "alert intelligence",
+            "backup": "backup recommendations",
+            "automation": "automation recommendations",
+            "usage": "usage recommendations",
+            "intent": "intent recommendations",
+            "assistant": "assistant recommendations",
+            "network": "network recommendations",
+            "battery": "battery recommendations",
+            "security": "security recommendations",
+            "maintenance": "maintenance advisor",
+        }
+
+        score_routes = {
+            "system health": "system health",
+            "productivity": "productivity score",
+            "memory": "memory score",
+            "alerts": "alert intelligence",
+            "backup": "backup score",
+            "automation": "automation score",
+            "usage": "usage score",
+            "intent": "intent score",
+            "assistant": "assistant score",
+            "network": "network health",
+            "battery": "power efficiency",
+            "security": "security score",
+            "maintenance": "maintenance score",
+        }
+
+        detail_routes = {
+            "system health": "system health",
+            "productivity": "productivity intelligence",
+            "memory": "memory intelligence",
+            "alerts": "alert intelligence",
+            "backup": "backup intelligence",
+            "automation": "automation intelligence",
+            "usage": "usage intelligence",
+            "intent": "intent intelligence",
+            "assistant": "personal assistant intelligence",
+            "network": "network health",
+            "battery": "battery report",
+            "security": "security report",
+            "maintenance": "maintenance advisor",
+        }
+
+        routed_command = None
+
+        if command in recommendation_followups:
+            routed_command = recommendation_routes.get(topic)
+        elif command in score_followups or command in status_followups:
+            routed_command = score_routes.get(topic)
+        elif command in detail_followups:
+            routed_command = detail_routes.get(topic)
+
+        if routed_command and routed_command != command:
+            response = process_command(routed_command)
+            return (
+                f"JERVIS CONTEXT RESOLUTION\n\n"
+                f"Follow-up Topic: {topic}\n"
+                f"Context Confidence: {context_result['confidence']}%\n"
+                f"Previous Command: {context_result.get('previous_command', 'Unknown')}\n\n"
+                f"{response}"
+            )
 
     # Step 79: Smart Personal Assistant Intelligence
     if command in [
