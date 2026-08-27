@@ -39,6 +39,16 @@ from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
 )
+from core.career_intelligence import (
+    set_target_role,
+    set_project_readiness,
+    set_resume_readiness,
+    set_application_readiness,
+    get_career_intelligence,
+    get_career_recommendations,
+    get_best_career_action,
+    get_career_intelligence_report,
+)
 from core.learning_intelligence import (
     add_skill,
     update_skill_progress,
@@ -315,6 +325,114 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 84: Smart Career & Job Intelligence
+    if command in [
+        "career intelligence",
+        "job intelligence",
+        "career intelligence report",
+        "job intelligence report",
+        "career report",
+        "job readiness report",
+    ]:
+        return get_career_intelligence_report()
+
+    if command in [
+        "job readiness",
+        "job readiness score",
+        "career readiness",
+        "career readiness score",
+        "career score",
+    ]:
+        result = get_career_intelligence()
+
+        return (
+            "JERVIS CAREER & JOB READINESS\n\n"
+            f"Job Readiness Score: {result['score']}/100\n"
+            f"Career Status: {result['status']}\n"
+            f"Target Role: {result['target_role']}\n"
+            f"Skill Readiness: {result['skill_readiness']}%\n"
+            f"Project Readiness: {result['project_readiness']}%\n"
+            f"Resume Readiness: {result['resume_readiness']}%\n"
+            f"Application Readiness: {result['application_readiness']}%"
+        )
+
+    if command in [
+        "best career action",
+        "best next career action",
+        "what should i do to become job ready",
+        "what should i do for my career",
+        "career next action",
+    ]:
+        action = get_best_career_action()
+
+        if not action:
+            return "No career action is currently available."
+
+        return (
+            "JERVIS BEST NEXT CAREER ACTION\n\n"
+            f"Action: {action.get('action', 'Unknown')}\n"
+            f"Priority: {action.get('priority', 'Unknown')}\n"
+            f"Reason: {action.get('reason', 'No reason available.')}"
+        )
+
+    if command in [
+        "career recommendations",
+        "job recommendations",
+        "career advice",
+        "job readiness recommendations",
+    ]:
+        recommendations = get_career_recommendations()
+
+        if not recommendations:
+            recommendations = [
+                "No additional career recommendation is currently available."
+            ]
+
+        return (
+            "JERVIS CAREER RECOMMENDATIONS\n\n"
+            + "\n".join(
+                f"- {item}"
+                for item in recommendations
+            )
+            + "\n\nSafety: Career Intelligence provides planning recommendations only."
+        )
+
+    if command.startswith("set target role "):
+        role = original_command[len("set target role "):].strip()
+
+        if not role:
+            return "Usage: set target role <role>"
+
+        result = set_target_role(role)
+        return result.get("message", "Target role update finished.")
+
+    if command.startswith("set project readiness "):
+        value = original_command[len("set project readiness "):].strip()
+
+        if not value:
+            return "Usage: set project readiness <0-100>"
+
+        result = set_project_readiness(value)
+        return result.get("message", "Project readiness update finished.")
+
+    if command.startswith("set resume readiness "):
+        value = original_command[len("set resume readiness "):].strip()
+
+        if not value:
+            return "Usage: set resume readiness <0-100>"
+
+        result = set_resume_readiness(value)
+        return result.get("message", "Resume readiness update finished.")
+
+    if command.startswith("set application readiness "):
+        value = original_command[len("set application readiness "):].strip()
+
+        if not value:
+            return "Usage: set application readiness <0-100>"
+
+        result = set_application_readiness(value)
+        return result.get("message", "Application readiness update finished.")
 
     # Step 83: Smart Learning & Skill Intelligence
     if command in [
