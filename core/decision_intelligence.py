@@ -84,20 +84,21 @@ def _collect_decisions():
         default=0,
     )
 
-    ram = _number(
-        system,
-        "ram_usage",
-        "ram_percent",
-        "memory_percent",
-        default=0,
-    )
+    ram_data = system.get("ram", {})
+    if isinstance(ram_data, dict):
+        ram = _number(ram_data, "percent", default=0)
+    else:
+        ram = _number(
+            system, "ram_usage", "ram_percent", "memory_percent", default=0
+        )
 
-    disk = _number(
-        system,
-        "disk_usage",
-        "disk_percent",
-        default=0,
-    )
+    disk_data = system.get("disk", {})
+    if isinstance(disk_data, dict):
+        disk = _number(disk_data, "percent", default=0)
+    else:
+        disk = _number(
+            system, "disk_usage", "disk_percent", default=0
+        )
 
     critical_alerts = int(
         _number(
