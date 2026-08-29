@@ -5598,7 +5598,7 @@ class JervisApp(ctk.CTk):
         )
 
         self.system_monitor_page_active = True
-        self.gui_refresh_system_monitor()
+        # self.gui_refresh_system_monitor()  # Startup optimization
         self.after(3000, self.system_monitor_auto_refresh)
 
     def _set_system_monitor_processes(self, text):
@@ -6367,7 +6367,7 @@ class JervisApp(ctk.CTk):
         )
         self.process_details_box.configure(state="disabled")
 
-        self.gui_refresh_process_manager()
+        # self.gui_refresh_process_manager()  # Startup optimization
 
     def _set_process_text(self, box, text):
         box.configure(state="normal")
@@ -8614,7 +8614,7 @@ class JervisApp(ctk.CTk):
         )
         self.resource_recommendation_box.configure(state="disabled")
 
-        self.gui_refresh_resource_optimizer()
+        # self.gui_refresh_resource_optimizer()  # Startup optimization
 
     def _set_resource_box(self, box, text):
         box.configure(state="normal")
@@ -10075,7 +10075,7 @@ class JervisApp(ctk.CTk):
         )
         self.net_recommendations_box.configure(state="disabled")
 
-        self.gui_refresh_network_information()
+        # self.gui_refresh_network_information()  # Startup optimization
 
     def _set_network_box(self, box, text):
         box.configure(state="normal")
@@ -10354,7 +10354,7 @@ class JervisApp(ctk.CTk):
         ):
             box.configure(state="disabled")
 
-        self.gui_refresh_maintenance_advisor()
+        # self.gui_refresh_maintenance_advisor()  # Startup optimization
 
     def _set_maintenance_box(self, box, items, empty_message):
         box.configure(state="normal")
@@ -12828,7 +12828,7 @@ class JervisApp(ctk.CTk):
         ):
             box.configure(state="disabled")
 
-        self.gui_refresh_personal_assistant_intelligence()
+        # self.gui_refresh_personal_assistant_intelligence()  # Startup optimization
 
     def _set_personal_assistant_intelligence_box(self, box, text):
         box.configure(state="normal")
@@ -14112,7 +14112,7 @@ class JervisApp(ctk.CTk):
         ):
             box.configure(state="disabled")
 
-        self.gui_refresh_decision_intelligence()
+        # self.gui_refresh_decision_intelligence()  # Startup optimization
 
     def _set_decision_intelligence_box(self, box, text):
         box.configure(state="normal")
