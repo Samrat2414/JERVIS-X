@@ -57,6 +57,11 @@ from core.career_intelligence import (
     get_career_intelligence,
     get_career_recommendations,
 )
+from core.interview_intelligence import (
+    get_interview_intelligence,
+    get_interview_recommendations,
+    get_best_interview_action,
+)
 from core.learning_intelligence import (
     get_learning_intelligence,
     get_learning_recommendations,
@@ -623,6 +628,7 @@ class JervisApp(ctk.CTk):
         self.create_goal_intelligence_page()
         self.create_learning_intelligence_page()
         self.create_career_intelligence_page()
+        self.create_interview_intelligence_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -13281,6 +13287,123 @@ class JervisApp(ctk.CTk):
             self.context_refresh_label.configure(
                 text=f"Context analysis error: {error}"
             )
+
+    def create_interview_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Interview Intelligence"] = page
+
+        ctk.CTkLabel(
+            page,
+            text="Interview Intelligence",
+            font=("Arial", 24, "bold"),
+        ).pack(pady=30)
+
+        self.interview_score_label = ctk.CTkLabel(
+            page,
+            text="Readiness Score: --/100",
+            font=("Arial", 20, "bold"),
+        )
+        self.interview_score_label.pack(pady=15)
+
+        self.interview_status_label = ctk.CTkLabel(
+            page,
+            text="Interview Status: --",
+            font=("Arial", 18, "bold"),
+        )
+        self.interview_status_label.pack(pady=10)
+
+        self.interview_role_label = ctk.CTkLabel(
+            page,
+            text="Target Role: --",
+            font=("Arial", 18, "bold"),
+        )
+        self.interview_role_label.pack(pady=10)
+
+        self.interview_areas_label = ctk.CTkLabel(
+            page,
+            text=(
+                "Technical: --%    |    HR: --%    |    "
+                "Aptitude: --%    |    Communication: --%"
+            ),
+            font=("Arial", 16, "bold"),
+        )
+        self.interview_areas_label.pack(pady=15)
+
+        self.interview_stats_label = ctk.CTkLabel(
+            page,
+            text=(
+                "Questions Practiced: --    |    "
+                "Mock Interviews: --    |    "
+                "Average Mock Score: --%"
+            ),
+            font=("Arial", 16, "bold"),
+        )
+        self.interview_stats_label.pack(pady=15)
+
+        self.interview_action_label = ctk.CTkLabel(
+            page,
+            text="Best Next Interview Action: --",
+            font=("Arial", 16, "bold"),
+            wraplength=900,
+            justify="left",
+        )
+        self.interview_action_label.pack(pady=15)
+
+        ctk.CTkButton(
+            page,
+            text="Refresh Interview Intelligence",
+            command=self.gui_refresh_interview_intelligence,
+        ).pack(pady=15)
+
+
+    def gui_refresh_interview_intelligence(self):
+        try:
+            result = get_interview_intelligence()
+            best = get_best_interview_action()
+
+            self.interview_score_label.configure(
+                text=f"Readiness Score: {result.get('readiness_score', 0)}/100"
+            )
+
+            self.interview_status_label.configure(
+                text=f"Interview Status: {result.get('status', '--')}"
+            )
+
+            self.interview_role_label.configure(
+                text=f"Target Role: {result.get('target_role', '--')}"
+            )
+
+            areas = result.get("areas", {})
+            self.interview_areas_label.configure(
+                text=(
+                    f"Technical: {areas.get('Technical', 0)}%    |    "
+                    f"HR: {areas.get('HR', 0)}%    |    "
+                    f"Aptitude: {areas.get('Aptitude', 0)}%    |    "
+                    f"Communication: {areas.get('Communication', 0)}%"
+                )
+            )
+
+            self.interview_stats_label.configure(
+                text=(
+                    f"Questions Practiced: {result.get('questions_practiced', 0)}    |    "
+                    f"Mock Interviews: {result.get('mock_interviews', 0)}    |    "
+                    f"Average Mock Score: {result.get('average_mock_score', 0)}%"
+                )
+            )
+
+            self.interview_action_label.configure(
+                text=(
+                    f"Best Next Interview Action: {best.get('action', '--')}\n"
+                    f"Priority: {best.get('priority', '--')}\n"
+                    f"Reason: {best.get('reason', '--')}"
+                )
+            )
+
+        except Exception as error:
+            self.interview_action_label.configure(
+                text=f"Interview Intelligence error: {error}"
+            )
+
 
     def create_career_intelligence_page(self):
         page = ctk.CTkFrame(self.page_container)
