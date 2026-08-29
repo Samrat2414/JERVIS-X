@@ -39,6 +39,15 @@ from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
 )
+from core.interview_intelligence import (
+    set_interview_area,
+    add_practice_questions,
+    add_mock_interview,
+    get_interview_intelligence,
+    get_interview_recommendations,
+    get_best_interview_action,
+    get_interview_intelligence_report,
+)
 from core.career_intelligence import (
     set_target_role,
     set_project_readiness,
@@ -325,6 +334,81 @@ def process_command(command):
     log_command(original_command)
     record_command(original_command)
 
+
+    # Step 85: Smart Interview Preparation Intelligence
+    if command in ["interview intelligence", "interview intelligence report",
+                   "interview report", "interview preparation report"]:
+        return get_interview_intelligence_report()
+
+    if command in ["interview readiness", "interview readiness score",
+                   "interview preparation", "interview status"]:
+        result = get_interview_intelligence()
+        areas = result.get("areas", {})
+        return (
+            "JERVIS INTERVIEW READINESS\\n\\n"
+            f"Interview Readiness Score: {result.get('score', 0)}/100\\n"
+            f"Interview Status: {result.get('status', 'Unknown')}\\n"
+            f"Target Role: {result.get('target_role', 'Not Set')}\\n"
+            f"Technical: {areas.get('Technical', 0)}%\\n"
+            f"HR: {areas.get('HR', 0)}%\\n"
+            f"Aptitude: {areas.get('Aptitude', 0)}%\\n"
+            f"Communication: {areas.get('Communication', 0)}%\\n"
+            f"Questions Practiced: {result.get('questions_practiced', 0)}\\n"
+            f"Mock Interviews: {result.get('mock_interviews', 0)}\\n"
+            f"Average Mock Score: {result.get('mock_average', 0)}%"
+        )
+
+    if command in ["best interview action", "best next interview action",
+                   "what should i practice for interview",
+                   "what should i improve for interview", "interview next action"]:
+        action = get_best_interview_action() or {}
+        return (
+            "JERVIS BEST NEXT INTERVIEW ACTION\\n\\n"
+            f"Action: {action.get('action', 'No action available')}\\n"
+            f"Priority: {action.get('priority', 'Unknown')}\\n"
+            f"Reason: {action.get('reason', 'No reason available.')}"
+        )
+
+    if command in ["interview recommendations", "interview recommendation",
+                   "interview advice", "interview preparation recommendations"]:
+        recommendations = get_interview_recommendations() or [
+            "No additional interview recommendation is currently available."
+        ]
+        return (
+            "JERVIS INTERVIEW RECOMMENDATIONS\\n\\n"
+            + "\\n".join(f"- {item}" for item in recommendations)
+        )
+
+    interview_area_prefixes = {
+        "set technical interview readiness ": "Technical",
+        "set hr interview readiness ": "HR",
+        "set aptitude interview readiness ": "Aptitude",
+        "set communication interview readiness ": "Communication",
+    }
+    for prefix, area in interview_area_prefixes.items():
+        if command.startswith(prefix):
+            value = original_command[len(prefix):].strip()
+            if not value:
+                return f"Usage: {prefix}<0-100>"
+            return set_interview_area(area, value).get(
+                "message", "Interview readiness update finished."
+            )
+
+    if command.startswith("add ") and command.endswith(" practice questions"):
+        value = original_command[len("add "):-len(" practice questions")].strip()
+        if not value:
+            return "Usage: add <number> practice questions"
+        return add_practice_questions(value).get(
+            "message", "Practice question update finished."
+        )
+
+    if command.startswith("add mock interview "):
+        value = original_command[len("add mock interview "):].strip()
+        if not value:
+            return "Usage: add mock interview <score>"
+        return add_mock_interview(value).get(
+            "message", "Mock interview update finished."
+        )
 
     # Step 84: Smart Career & Job Intelligence
     if command in [
