@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
 from core.resource_optimizer import (
@@ -38,6 +38,16 @@ from core.battery_intelligence import (
 from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
+)
+from core.portfolio_intelligence import (
+    set_portfolio_target_role,
+    set_portfolio_metric,
+    add_portfolio_project,
+    add_portfolio_skill,
+    get_portfolio_intelligence,
+    get_portfolio_recommendations,
+    get_best_portfolio_action,
+    get_portfolio_intelligence_report,
 )
 from core.resume_intelligence import (
     set_resume_target_role,
@@ -2768,9 +2778,9 @@ def process_command(command):
 
     # Step 40: Translation System
     # Step 40: Arrow-style translation
-    # Example: Hello Guru → Bengali
-    if "→" in original_command:
-        source_text, target_language = original_command.rsplit("→", 1)
+    # Example: Hello Guru â†’ Bengali
+    if "â†’" in original_command:
+        source_text, target_language = original_command.rsplit("â†’", 1)
         source_text = source_text.strip()
         target_language = target_language.strip()
 
@@ -3769,5 +3779,64 @@ def process_command(command):
 
         return "Use: set resume experience 70"
 
+    # Step 87: Smart Portfolio & GitHub Intelligence
+    if command in [
+        "portfolio intelligence",
+        "portfolio intelligence report",
+        "portfolio report",
+        "github intelligence",
+    ]:
+        return get_portfolio_intelligence_report()
+
+    if command in [
+        "portfolio score",
+        "github portfolio score",
+        "portfolio readiness",
+    ]:
+        info = get_portfolio_intelligence()
+        return (
+            f"Portfolio Score: {info['portfolio_score']}/100\n"
+            f"Status: {info['status']}\n"
+            f"Target Role: {info['target_role']}\n"
+            f"Projects: {info['project_count']}\n"
+            f"Skills: {info['skill_count']}"
+        )
+
+    if command in [
+        "portfolio recommendations",
+        "portfolio recommendation",
+        "github recommendations",
+        "portfolio improvements",
+    ]:
+        recommendations = get_portfolio_recommendations()
+        return "Portfolio Recommendations:\n- " + "\n- ".join(recommendations)
+
+    if command in [
+        "best portfolio action",
+        "best github action",
+        "next portfolio action",
+        "what should i improve in my portfolio",
+    ]:
+        best = get_best_portfolio_action()
+        return (
+            f"Best Portfolio Action: {best['action']}\n"
+            f"Priority: {best['priority']}\n"
+            f"Reason: {best['reason']}"
+        )
+
+    if command.startswith("add portfolio project "):
+        project = original_command[len("add portfolio project "):].strip()
+        return add_portfolio_project(project)
+
+    if command.startswith("add portfolio skill "):
+        skill = original_command[len("add portfolio skill "):].strip()
+        return add_portfolio_skill(skill)
+
     # AI fallback
     return ask_ai(original_command)
+
+
+
+
+
+
