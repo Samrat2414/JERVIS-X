@@ -57,6 +57,11 @@ from core.career_intelligence import (
     get_career_intelligence,
     get_career_recommendations,
 )
+from core.portfolio_intelligence import (
+    get_portfolio_intelligence,
+    get_portfolio_recommendations,
+    get_best_portfolio_action,
+)
 from core.resume_intelligence import (
     get_resume_intelligence,
     get_resume_recommendations,
@@ -635,6 +640,7 @@ class JervisApp(ctk.CTk):
         self.create_career_intelligence_page()
         self.create_interview_intelligence_page()
         self.create_resume_intelligence_page()
+        self.create_portfolio_intelligence_page()
         self.create_disk_intelligence_page()
         self.create_battery_power_page()
         self.create_system_health_page()
@@ -13550,6 +13556,156 @@ class JervisApp(ctk.CTk):
                 text=f"Resume Intelligence error: {error}"
             )
 
+    def create_portfolio_intelligence_page(self):
+        page = ctk.CTkFrame(self.page_container)
+        self.pages["Portfolio Intelligence"] = page
+
+        ctk.CTkLabel(
+            page,
+            text="JERVIS PORTFOLIO & GITHUB INTELLIGENCE",
+            font=("Arial", 28, "bold"),
+        ).pack(pady=(30, 8))
+
+        ctk.CTkLabel(
+            page,
+            text="Analyze GitHub, projects, skills, documentation and portfolio readiness.",
+            font=("Arial", 14),
+        ).pack(pady=(0, 20))
+
+        self.portfolio_score_label = ctk.CTkLabel(
+            page, text="Portfolio Score: --/100",
+            font=("Arial", 22, "bold"),
+        )
+        self.portfolio_score_label.pack(pady=6)
+
+        self.portfolio_status_label = ctk.CTkLabel(
+            page, text="Status: --", font=("Arial", 16)
+        )
+        self.portfolio_status_label.pack(pady=4)
+
+        self.portfolio_role_label = ctk.CTkLabel(
+            page, text="Target Role: --", font=("Arial", 16)
+        )
+        self.portfolio_role_label.pack(pady=4)
+
+        self.portfolio_metrics_label = ctk.CTkLabel(
+            page,
+            text="GitHub: -- | README: -- | Documentation: --",
+            font=("Arial", 14),
+        )
+        self.portfolio_metrics_label.pack(pady=6)
+
+        self.portfolio_quality_label = ctk.CTkLabel(
+            page,
+            text="Code Quality: -- | Project Relevance: --",
+            font=("Arial", 14),
+        )
+        self.portfolio_quality_label.pack(pady=6)
+
+        self.portfolio_projects_label = ctk.CTkLabel(
+            page, text="Projects: --", font=("Arial", 14)
+        )
+        self.portfolio_projects_label.pack(pady=5)
+
+        self.portfolio_skills_label = ctk.CTkLabel(
+            page, text="Skills: --", font=("Arial", 14)
+        )
+        self.portfolio_skills_label.pack(pady=5)
+
+        self.portfolio_action_label = ctk.CTkLabel(
+            page,
+            text="Best Portfolio Action: --",
+            font=("Arial", 14, "bold"),
+            wraplength=900,
+            justify="left",
+        )
+        self.portfolio_action_label.pack(padx=30, pady=10)
+
+        self.portfolio_recommendations_label = ctk.CTkLabel(
+            page,
+            text="Recommendations: --",
+            font=("Arial", 14),
+            wraplength=900,
+            justify="left",
+        )
+        self.portfolio_recommendations_label.pack(padx=30, pady=10)
+
+        ctk.CTkButton(
+            page,
+            text="Refresh Portfolio Intelligence",
+            command=self.gui_refresh_portfolio_intelligence,
+        ).pack(pady=15)
+
+
+    def gui_refresh_portfolio_intelligence(self):
+        try:
+            result = get_portfolio_intelligence()
+            best = get_best_portfolio_action()
+            recommendations = get_portfolio_recommendations()
+
+            self.portfolio_score_label.configure(
+                text=f"Portfolio Score: {result.get('portfolio_score', 0)}/100"
+            )
+
+            self.portfolio_status_label.configure(
+                text=f"Status: {result.get('status', '--')}"
+            )
+
+            self.portfolio_role_label.configure(
+                text=f"Target Role: {result.get('target_role', '--')}"
+            )
+
+            self.portfolio_metrics_label.configure(
+                text=(
+                    f"GitHub: {result.get('github_score', 0)}/100    |    "
+                    f"README: {result.get('readme_score', 0)}/100    |    "
+                    f"Documentation: {result.get('documentation_score', 0)}/100"
+                )
+            )
+
+            self.portfolio_quality_label.configure(
+                text=(
+                    f"Code Quality: {result.get('code_quality_score', 0)}/100    |    "
+                    f"Project Relevance: {result.get('project_relevance_score', 0)}/100"
+                )
+            )
+
+            projects = result.get("projects", [])
+            self.portfolio_projects_label.configure(
+                text=(
+                    f"Projects ({result.get('project_count', 0)}): "
+                    f"{', '.join(projects) if projects else '--'}"
+                )
+            )
+
+            skills = result.get("skills", [])
+            self.portfolio_skills_label.configure(
+                text=(
+                    f"Skills ({result.get('skill_count', 0)}): "
+                    f"{', '.join(skills) if skills else '--'}"
+                )
+            )
+
+            self.portfolio_action_label.configure(
+                text=(
+                    f"Best Portfolio Action: {best.get('action', '--')}\n"
+                    f"Priority: {best.get('priority', '--')}\n"
+                    f"Reason: {best.get('reason', '--')}"
+                )
+            )
+
+            recommendation_text = "\n".join(
+                f"• {item}" for item in recommendations
+            )
+            self.portfolio_recommendations_label.configure(
+                text=f"Recommendations:\n{recommendation_text or '--'}"
+            )
+
+        except Exception as error:
+            self.portfolio_action_label.configure(
+                text=f"Portfolio Intelligence error: {error}"
+            )
+
     def create_career_intelligence_page(self):
         page = ctk.CTkFrame(self.page_container)
         self.pages["Career Intelligence"] = page
@@ -17320,4 +17476,7 @@ def run_gui():
 
 if __name__ == "__main__":
     run_gui()
+
+
+
 
