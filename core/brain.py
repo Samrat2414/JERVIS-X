@@ -39,6 +39,18 @@ from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
 )
+from core.resume_intelligence import (
+    set_resume_target_role,
+    set_resume_section,
+    set_keyword_coverage,
+    add_resume_skill,
+    add_missing_keyword,
+    get_resume_intelligence,
+    get_resume_recommendations,
+    get_best_resume_action,
+    get_resume_intelligence_report,
+)
+
 from core.interview_intelligence import (
     set_interview_area,
     add_practice_questions,
@@ -3683,6 +3695,79 @@ def process_command(command):
             return open_website(target)
 
         return open_application(target)
+
+    # Step 86: Smart Resume & ATS Intelligence
+    if command in [
+        "resume intelligence",
+        "resume intelligence report",
+        "resume report",
+        "ats report",
+    ]:
+        return get_resume_intelligence_report()
+
+    if command in [
+        "ats score",
+        "resume ats score",
+        "resume score",
+        "resume readiness",
+    ]:
+        info = get_resume_intelligence()
+        return (
+            f"ATS Score: {info['ats_score']}/100\n"
+            f"Status: {info['status']}\n"
+            f"Target Role: {info['target_role']}\n"
+            f"Keyword Coverage: {info['keyword_coverage']}%"
+        )
+
+    if command in [
+        "resume recommendations",
+        "resume recommendation",
+        "ats recommendations",
+        "resume improvements",
+    ]:
+        recommendations = get_resume_recommendations()
+        return "Resume Recommendations:\n- " + "\n- ".join(recommendations)
+
+    if command in [
+        "best resume action",
+        "best ats action",
+        "next resume action",
+        "what should i improve in my resume",
+    ]:
+        best = get_best_resume_action()
+        return (
+            f"Best Resume Action: {best['action']}\n"
+            f"Priority: {best['priority']}\n"
+            f"Reason: {best['reason']}"
+        )
+
+    if command.startswith("add resume skill "):
+        skill = original_command[len("add resume skill "):].strip()
+        return add_resume_skill(skill)
+
+    if command.startswith("set keyword coverage "):
+        value = command.replace("set keyword coverage ", "", 1).strip()
+
+        try:
+            score = float(value)
+            return set_keyword_coverage(score)
+        except ValueError:
+            return "Please provide a valid keyword coverage score."
+
+    if command.startswith("set resume "):
+        parts = command.split()
+
+        if len(parts) == 4:
+            section = parts[2]
+            value = parts[3]
+
+            try:
+                score = float(value)
+                return set_resume_section(section, score)
+            except ValueError:
+                return "Please provide a valid resume section score."
+
+        return "Use: set resume experience 70"
 
     # AI fallback
     return ask_ai(original_command)
