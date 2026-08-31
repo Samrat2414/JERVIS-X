@@ -4338,5 +4338,8 @@ def process_command(command):
     ]:
         return get_application_follow_up_reminders()
 
+    if command in ["version", "jervis version", "jervis x version", "about jervis"]:
+        return "JERVIS-X Version 1.3.0 - Advanced Personal AI Virtual Assistant"
+
     # AI fallback
     return ask_ai(original_command)
