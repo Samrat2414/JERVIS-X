@@ -1,4 +1,4 @@
-name: Windows Build
+﻿name: Windows Build
 
 on:
   workflow_dispatch:
@@ -12,10 +12,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
@@ -28,7 +28,7 @@ jobs:
         run: powershell -ExecutionPolicy Bypass -File .\scripts\build_windows.ps1
 
       - name: Upload Windows package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: JERVIS-X-Windows-${{ github.ref_name }}
           path: |
