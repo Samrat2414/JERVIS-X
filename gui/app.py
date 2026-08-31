@@ -308,7 +308,7 @@ class JervisApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("JERVIS X")
+        self.title("JERVIS X v1.3.0")
         self.geometry("1200x760")
         self.minsize(1020, 680)
 
