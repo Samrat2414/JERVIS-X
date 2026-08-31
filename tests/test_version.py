@@ -31,3 +31,15 @@ def test_command_line_version():
         text=True,
     )
     assert result.stdout.strip() == VERSION_TEXT
+
+
+def test_command_line_help():
+    result = subprocess.run(
+        [sys.executable, "main.py", "--help"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "Usage:" in result.stdout
+    assert "--version" in result.stdout
+    assert "Launch the JERVIS-X GUI" in result.stdout

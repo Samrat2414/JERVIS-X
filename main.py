@@ -1,13 +1,28 @@
 import sys
 import time
 
-from core.version import VERSION_TEXT
+from core.version import APP_TITLE, VERSION_TEXT
 
 
 STARTUP_TIMER = time.perf_counter()
 
+CLI_HELP = f"""{APP_TITLE}
+
+Usage:
+  python main.py [option]
+
+Options:
+  -h, --help       Show this help message
+  -V, --version    Show the JERVIS-X version
+  No option        Launch the JERVIS-X GUI
+"""
+
 
 def main():
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print(CLI_HELP)
+        return
+
     if "--version" in sys.argv or "-V" in sys.argv:
         print(VERSION_TEXT)
         return
