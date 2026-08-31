@@ -1,3 +1,6 @@
+import subprocess
+import sys
+
 from core.version import (
     APP_DISPLAY_NAME,
     APP_NAME,
@@ -19,3 +22,12 @@ def test_version_display_text():
         "JERVIS-X Version 1.3.0 - "
         "Advanced Personal AI Virtual Assistant"
     )
+
+def test_command_line_version():
+    result = subprocess.run(
+        [sys.executable, "main.py", "--version"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert result.stdout.strip() == VERSION_TEXT
