@@ -27,6 +27,11 @@ def main():
         print(VERSION_TEXT)
         return
 
+    if len(sys.argv) > 1:
+        print(f"Unknown option: {sys.argv[1]}\n")
+        print(CLI_HELP)
+        return 2
+
     from gui.app import run_gui
     from core.performance_monitor import record_startup_time
 
@@ -36,4 +41,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

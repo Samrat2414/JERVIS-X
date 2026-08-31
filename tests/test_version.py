@@ -43,3 +43,15 @@ def test_command_line_help():
     assert "Usage:" in result.stdout
     assert "--version" in result.stdout
     assert "Launch the JERVIS-X GUI" in result.stdout
+
+
+def test_unknown_command_line_option():
+    result = subprocess.run(
+        [sys.executable, "main.py", "--unknown"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 2
+    assert "Unknown option: --unknown" in result.stdout
+    assert "Usage:" in result.stdout
