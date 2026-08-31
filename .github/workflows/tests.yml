@@ -1,4 +1,4 @@
-name: Automated Tests
+﻿name: Automated Tests
 
 on:
   push:
@@ -23,4 +23,4 @@ jobs:
         run: python -m pip install -r requirements-dev.txt
 
       - name: Run automated tests
-        run: python -m pytest -q
+        run: python -m pytest -q --cov=core.job_application_intelligence --cov-report=term-missing
