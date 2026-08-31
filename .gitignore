@@ -47,3 +47,6 @@ core/brain_before_timeline_fix.py
 # Test Coverage
 .coverage
 htmlcov/
+
+# PyInstaller
+*.spec
