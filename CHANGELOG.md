@@ -1,4 +1,16 @@
 ﻿# Changelog
+## [1.3.2] - 2026-08-31
+
+### Added
+
+- Command-line system diagnostics option.
+- Expanded automated tests for job application intelligence.
+
+### Changed
+
+- Increased test coverage to 75%.
+- Raised minimum required coverage from 50% to 70%.
+
 
 All notable changes to JERVIS-X will be documented in this file.
 
@@ -61,4 +73,3 @@ All notable changes to JERVIS-X will be documented in this file.
 - GitHub Actions continuous integration
 - Automated test status badge
 - MIT License
-
