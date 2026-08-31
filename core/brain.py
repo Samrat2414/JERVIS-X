@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 
 from core.diagnostics import get_diagnostics_report
 from core.resource_optimizer import (
@@ -38,6 +38,58 @@ from core.battery_intelligence import (
 from core.disk_intelligence import (
     get_disk_summary,
     get_storage_health,
+)
+from core.job_application_intelligence import (
+    add_job_application,
+    get_job_applications,
+    get_job_application,
+    get_job_application_details,
+    search_job_applications,
+    filter_job_applications,
+    sort_job_applications,
+    export_job_applications_to_csv,
+    backup_job_applications,
+    list_job_application_backups,
+    restore_latest_job_application_backup,
+    delete_job_application,
+    add_application_note,
+    get_application_notes,
+    delete_application_note,
+    edit_application_note,
+    update_application_status,
+    get_application_status_timeline,
+    schedule_application_interview,
+    get_application_interview_reminders,
+    add_interview_preparation,
+    complete_interview_preparation,
+    get_interview_preparation,
+    set_application_interview_result,
+    get_application_interview_result,
+    add_job_offer,
+    get_job_offer,
+    update_job_offer_status,
+    add_joining_task,
+    complete_joining_task,
+    get_joining_checklist,
+    get_joining_countdown,
+    mark_application_joined,
+    add_onboarding_task,
+    complete_onboarding_task,
+    get_onboarding_plan,
+    add_career_goal,
+    complete_career_goal,
+    get_career_growth_plan,
+    update_interview_stage,
+    set_application_priority,
+    mark_application_follow_up,
+    set_application_follow_up_date,
+    get_application_follow_up_reminders,
+    get_application_statistics,
+    get_best_application_action,
+    get_application_recommendations,
+    get_job_application_intelligence,
+    get_job_application_report,
+    get_job_application_commands,
 )
 from core.portfolio_intelligence import (
     set_portfolio_target_role,
@@ -3132,7 +3184,10 @@ def process_command(command):
         query = original_command[len("search web for "):].strip()
         return search_web(query)
 
-    if command.startswith("search "):
+    if (
+        command.startswith("search ")
+        and not command.startswith("search applications ")
+    ):
         query = original_command[len("search "):].strip()
 
         if query.lower().startswith("youtube for "):
@@ -3227,12 +3282,18 @@ def process_command(command):
         return "I love working with you too!"
 
     # Time
-    if "time" in command:
+    if command in [
+        "time",
+        "current time",
+        "what is the time",
+        "what time is it",
+        "tell me the time",
+    ]:
         current_time = datetime.now().strftime("%I:%M %p")
         return f"The current time is {current_time}."
 
     # Date
-    if "date" in command or "today" in command:
+    if command in ["date", "today", "today date", "current date", "what is the date", "what is today's date"]:
         current_date = datetime.now().strftime("%d %B %Y")
         return f"Today's date is {current_date}."
 
@@ -3832,11 +3893,450 @@ def process_command(command):
         skill = original_command[len("add portfolio skill "):].strip()
         return add_portfolio_skill(skill)
 
+    # Step 88: Smart Job Application Intelligence
+    if command in [
+        "job application commands",
+        "application commands",
+        "job tracker help",
+    ]:
+        return get_job_application_commands()
+
+    if command in [
+        "job application intelligence",
+        "job application report",
+        "application intelligence",
+        "application tracker",
+    ]:
+        return get_job_application_report()
+
+    if command.startswith("add job application "):
+        details = original_command[len("add job application "):].strip()
+
+        if "|" not in details:
+            return "Use: add job application Company | Role"
+
+        company, role = [part.strip() for part in details.split("|", 1)]
+        return add_job_application(company, role)
+
+    if command.startswith("search applications "):
+        query = original_command[
+            len("search applications "):
+        ].strip()
+
+        return search_job_applications(query)
+
+    if command.startswith("filter applications "):
+        details = original_command[
+            len("filter applications "):
+        ].strip()
+
+        if "|" not in details:
+            return "Use: filter applications Status | Applied"
+
+        field, value = [
+            part.strip() for part in details.split("|", 1)
+        ]
+
+        return filter_job_applications(field, value)
+
+    if command.startswith("sort applications by "):
+        sort_by = original_command[
+            len("sort applications by "):
+        ].strip()
+
+        return sort_job_applications(sort_by)
+
+    if command in [
+        "export job applications",
+        "export applications",
+        "export applications to csv",
+    ]:
+        return export_job_applications_to_csv()
+
+    if command in [
+        "backup job applications",
+        "backup applications",
+    ]:
+        return backup_job_applications()
+
+    if command in [
+        "list application backups",
+        "show application backups",
+    ]:
+        return list_job_application_backups()
+
+    if command == "restore latest application backup":
+        return restore_latest_job_application_backup()
+
+    if command.startswith("delete job application "):
+        application_id = original_command[
+            len("delete job application "):
+        ].strip()
+
+        return delete_job_application(application_id)
+
+    if command.startswith("add application note "):
+        details = original_command[
+            len("add application note "):
+        ].strip()
+
+        if "|" not in details:
+            return "Use: add application note ID | Note"
+
+        application_id, note = [
+            part.strip() for part in details.split("|", 1)
+        ]
+
+        return add_application_note(application_id, note)
+
+    if command.startswith("view application notes "):
+        application_id = original_command[
+            len("view application notes "):
+        ].strip()
+
+        return get_application_notes(application_id)
+
+    if command.startswith("view application timeline "):
+        application_id = original_command[
+            len("view application timeline "):
+        ].strip()
+
+        return get_application_status_timeline(application_id)
+
+    if command.startswith("view application "):
+        application_id = original_command[
+            len("view application "):
+        ].strip()
+
+        return get_job_application_details(application_id)
+
+    if command.startswith("delete application note "):
+        details = original_command[
+            len("delete application note "):
+        ].strip()
+
+        if "|" not in details:
+            return "Use: delete application note ID | Note Number"
+
+        application_id, note_number = [
+            part.strip() for part in details.split("|", 1)
+        ]
+
+        return delete_application_note(
+            application_id,
+            note_number,
+        )
+
+    if command.startswith("edit application note "):
+        details = original_command[
+            len("edit application note "):
+        ].strip()
+        parts = [part.strip() for part in details.split("|", 2)]
+
+        if len(parts) != 3:
+            return "Use: edit application note ID | Note Number | Updated Note"
+
+        application_id, note_number, updated_note = parts
+
+        return edit_application_note(
+            application_id,
+            note_number,
+            updated_note,
+        )
+
+    if command.startswith("update application status "):
+        details = original_command[len("update application status "):].strip()
+
+        if "|" not in details:
+            return "Use: update application status ID | Status"
+
+        application_id, status = [
+            part.strip() for part in details.split("|", 1)
+        ]
+
+        return update_application_status(application_id, status)
+
+    if command.startswith("set application priority "):
+        details = original_command[
+            len("set application priority "):
+        ].strip()
+
+        if "|" not in details:
+            return "Use: set application priority ID | Priority"
+
+        application_id, priority = [
+            part.strip() for part in details.split("|", 1)
+        ]
+        return set_application_priority(application_id, priority)
+
+    if command.startswith("update interview stage "):
+        details = original_command[
+            len("update interview stage "):
+        ].strip()
+
+        if "|" not in details:
+            return "Use: update interview stage ID | Stage"
+
+        application_id, stage = [
+            part.strip() for part in details.split("|", 1)
+        ]
+        return update_interview_stage(application_id, stage)
+
+    if command.startswith("schedule application interview "):
+        details = original_command[
+            len("schedule application interview "):
+        ].strip()
+        parts = [part.strip() for part in details.split("|", 3)]
+
+        if len(parts) != 4:
+            return (
+                "Use: schedule application interview "
+                "ID | DD-MM-YYYY | HH:MM AM/PM | Mode"
+            )
+
+        return schedule_application_interview(*parts)
+
+    if command in [
+        "application interview reminders",
+        "interview reminders",
+        "upcoming application interviews",
+    ]:
+        return get_application_interview_reminders()
+
+    if command.startswith("add interview preparation "):
+        details = original_command[
+            len("add interview preparation "):
+        ].strip()
+
+        if "|" not in details:
+            return "Use: add interview preparation ID | Topic"
+
+        application_id, topic = [
+            part.strip() for part in details.split("|", 1)
+        ]
+        return add_interview_preparation(application_id, topic)
+
+    if command.startswith("complete interview preparation "):
+        details = original_command[
+            len("complete interview preparation "):
+        ].strip()
+
+        if "|" not in details:
+            return (
+                "Use: complete interview preparation "
+                "ID | Topic Number"
+            )
+
+        application_id, topic_number = [
+            part.strip() for part in details.split("|", 1)
+        ]
+        return complete_interview_preparation(
+            application_id,
+            topic_number,
+        )
+
+    if command.startswith("view interview preparation "):
+        application_id = original_command[
+            len("view interview preparation "):
+        ].strip()
+        return get_interview_preparation(application_id)
+
+    if command.startswith("set interview result "):
+        details = original_command[
+            len("set interview result "):
+        ].strip()
+        parts = [part.strip() for part in details.split("|", 2)]
+
+        if len(parts) != 3:
+            return "Use: set interview result ID | Result | Feedback"
+
+        return set_application_interview_result(*parts)
+
+    if command.startswith("view interview result "):
+        application_id = original_command[
+            len("view interview result "):
+        ].strip()
+        return get_application_interview_result(application_id)
+
+    if command.startswith("add job offer "):
+        details = original_command[
+            len("add job offer "):
+        ].strip()
+        parts = [part.strip() for part in details.split("|", 3)]
+
+        if len(parts) != 4:
+            return (
+                "Use: add job offer ID | Annual CTC | Location | "
+                "DD-MM-YYYY"
+            )
+
+        return add_job_offer(*parts)
+
+    if command.startswith("view job offer "):
+        application_id = original_command[
+            len("view job offer "):
+        ].strip()
+        return get_job_offer(application_id)
+
+    if command.startswith("update job offer status "):
+        details = original_command[
+            len("update job offer status "):
+        ].strip()
+
+        if "|" not in details:
+            return "Use: update job offer status ID | Status"
+
+        application_id, offer_status = [
+            part.strip() for part in details.split("|", 1)
+        ]
+        return update_job_offer_status(application_id, offer_status)
+
+    if command.startswith("add joining task "):
+        details = original_command[
+            len("add joining task "):
+        ].strip()
+
+        if "|" not in details:
+            return "Use: add joining task ID | Task"
+
+        application_id, task = [
+            part.strip() for part in details.split("|", 1)
+        ]
+        return add_joining_task(application_id, task)
+
+    if command.startswith("complete joining task "):
+        details = original_command[
+            len("complete joining task "):
+        ].strip()
+
+        if "|" not in details:
+            return "Use: complete joining task ID | Task Number"
+
+        application_id, task_number = [
+            part.strip() for part in details.split("|", 1)
+        ]
+        return complete_joining_task(application_id, task_number)
+
+    if command.startswith("view joining checklist "):
+        application_id = original_command[
+            len("view joining checklist "):
+        ].strip()
+        return get_joining_checklist(application_id)
+
+    if command.startswith("joining countdown "):
+        application_id = original_command[
+            len("joining countdown "):
+        ].strip()
+        return get_joining_countdown(application_id)
+
+    if command.startswith("mark application joined "):
+        application_id = original_command[
+            len("mark application joined "):
+        ].strip()
+        return mark_application_joined(application_id)
+
+    if command.startswith("add onboarding task "):
+        details = original_command[
+            len("add onboarding task "):
+        ].strip()
+
+        if "|" not in details:
+            return "Use: add onboarding task ID | Task"
+
+        application_id, task = [
+            part.strip() for part in details.split("|", 1)
+        ]
+        return add_onboarding_task(application_id, task)
+
+    if command.startswith("complete onboarding task "):
+        details = original_command[
+            len("complete onboarding task "):
+        ].strip()
+
+        if "|" not in details:
+            return "Use: complete onboarding task ID | Task Number"
+
+        application_id, task_number = [
+            part.strip() for part in details.split("|", 1)
+        ]
+        return complete_onboarding_task(application_id, task_number)
+
+    if command.startswith("view onboarding plan "):
+        application_id = original_command[
+            len("view onboarding plan "):
+        ].strip()
+        return get_onboarding_plan(application_id)
+
+    if command.startswith("create career goal "):
+        details = original_command[
+            len("create career goal "):
+        ].strip()
+
+        if "|" not in details:
+            return "Use: create career goal ID | Goal"
+
+        application_id, goal = [
+            part.strip() for part in details.split("|", 1)
+        ]
+        return add_career_goal(application_id, goal)
+
+    if command.startswith("complete career goal "):
+        details = original_command[
+            len("complete career goal "):
+        ].strip()
+
+        if "|" not in details:
+            return "Use: complete career goal ID | Goal Number"
+
+        application_id, goal_number = [
+            part.strip() for part in details.split("|", 1)
+        ]
+        return complete_career_goal(application_id, goal_number)
+
+    if command.startswith("view career growth plan "):
+        application_id = original_command[
+            len("view career growth plan "):
+        ].strip()
+        return get_career_growth_plan(application_id)
+
+    if command.startswith("complete application follow up "):
+        application_id = original_command[
+            len("complete application follow up "):
+        ].strip()
+
+        return mark_application_follow_up(application_id, False)
+
+    if command.startswith("mark application follow up "):
+        application_id = original_command[
+            len("mark application follow up "):
+        ].strip()
+
+        return mark_application_follow_up(application_id, True)
+
+    if command.startswith("set application follow up date "):
+        details = original_command[
+            len("set application follow up date "):
+        ].strip()
+
+        if "|" not in details:
+            return "Use: set application follow up date ID | DD-MM-YYYY"
+
+        application_id, follow_up_date = [
+            part.strip() for part in details.split("|", 1)
+        ]
+
+        return set_application_follow_up_date(
+            application_id,
+            follow_up_date,
+        )
+
+    if command in [
+        "application follow up reminders",
+        "application follow up reminder",
+        "follow up reminders",
+        "pending follow ups",
+    ]:
+        return get_application_follow_up_reminders()
+
     # AI fallback
     return ask_ai(original_command)
-
-
-
-
-
-
