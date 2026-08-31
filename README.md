@@ -204,4 +204,24 @@ Get-FileHash .\JERVIS-X-Windows.zip -Algorithm SHA256
 
 Download `JERVIS-X-Windows.zip.sha256` from the same release and confirm that both hashes match.
 
+## Command-Line Options
 
+Launch the JERVIS-X GUI:
+
+```powershell
+python main.py
+```
+
+Show command-line help:
+
+```powershell
+python main.py --help
+```
+
+Show the installed version:
+
+```powershell
+python main.py --version
+```
+
+Unknown options return a clear error message and exit code `2`.
