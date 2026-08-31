@@ -183,3 +183,13 @@ GitHub: [Samrat2414](https://github.com/Samrat2414)
 ## Disclaimer
 
 JERVIS X is a personal learning and portfolio project. Review commands before allowing the assistant to perform file, system, or network operations.
+
+## Windows Download
+
+Download the latest ready-to-run Windows version:
+
+[Download JERVIS-X v1.2.0](https://github.com/Samrat2414/JERVIS-X/releases/tag/v1.2.0)
+
+1. Download `JERVIS-X-Windows.zip`.
+2. Extract the ZIP file.
+3. Double-click `JERVIS-X.exe`.
