@@ -1,0 +1,58 @@
+name: Feature Request
+description: Suggest a new feature for JERVIS-X
+title: "[FEATURE] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for suggesting an improvement for JERVIS-X.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem would this feature solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Clearly describe the feature you want.
+    validations:
+      required: true
+
+  - type: textarea
+    id: example
+    attributes:
+      label: Example Command or Usage
+      description: Show how the feature could be used.
+      placeholder: "Example: JERVIS command → expected response"
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      options:
+        - AI and Chat
+        - Voice Assistant
+        - Job Application Intelligence
+        - ECE Engineering Tools
+        - PC Automation
+        - GUI
+        - Security
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Final Checks
+      options:
+        - label: I searched existing issues for the same feature.
+          required: true
+        - label: This request does not contain passwords or API keys.
+          required: true
