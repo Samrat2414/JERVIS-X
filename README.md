@@ -193,3 +193,18 @@ Download the latest ready-to-run Windows version:
 1. Download `JERVIS-X-Windows.zip`.
 2. Extract the ZIP file.
 3. Double-click `JERVIS-X.exe`.
+
+### Verify the Windows Download
+
+Run:
+
+```powershell
+Get-FileHash .\JERVIS-X-Windows.zip -Algorithm SHA256
+```
+
+Expected SHA-256:
+
+```text
+A0D1525E326ABFB3BEF6290689740616452173109BB6C71DCD936E5888AA0C6F
+```
+
