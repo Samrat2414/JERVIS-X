@@ -35,3 +35,11 @@ dist/
 *.egg-info/
 data/
 screenshots/
+
+# Generated Application Data
+exports/
+backups/
+
+# Temporary Recovery Files
+brain_latest.py
+core/brain_before_timeline_fix.py
