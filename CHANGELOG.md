@@ -2,6 +2,16 @@
 
 All notable changes to JERVIS-X will be documented in this file.
 
+## [1.3.1] - 2026-08-31
+
+### Added
+
+- Centralized application version information
+- Command-line version and help options
+- Unknown command-line option validation
+- Automated version and CLI tests
+- Version display in the GUI title
+
 ## [1.3.0] - 2026-08-31
 
 ### Added
