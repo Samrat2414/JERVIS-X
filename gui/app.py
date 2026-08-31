@@ -9,6 +9,7 @@ from tkinter import TclError, messagebox
 import pystray
 from PIL import Image, ImageDraw
 
+from core.version import APP_TITLE
 from core.router import route_command
 from core.reminders import (
     get_due_reminders,
@@ -308,7 +309,7 @@ class JervisApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("JERVIS X v1.3.0")
+        self.title(APP_TITLE)
         self.geometry("1200x760")
         self.minsize(1020, 680)
 

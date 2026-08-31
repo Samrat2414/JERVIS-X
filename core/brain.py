@@ -1,4 +1,5 @@
 from datetime import datetime
+from core.version import VERSION_TEXT
 
 from core.diagnostics import get_diagnostics_report
 from core.resource_optimizer import (
@@ -4339,7 +4340,7 @@ def process_command(command):
         return get_application_follow_up_reminders()
 
     if command in ["version", "jervis version", "jervis x version", "about jervis"]:
-        return "JERVIS-X Version 1.3.0 - Advanced Personal AI Virtual Assistant"
+        return VERSION_TEXT
 
     # AI fallback
     return ask_ai(original_command)
