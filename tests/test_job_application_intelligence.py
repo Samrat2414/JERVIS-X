@@ -38,6 +38,21 @@ from core.job_application_intelligence import (
     set_application_follow_up_date,
     set_application_interview_result,
     update_application_status,
+    delete_application_note,
+    delete_job_application,
+    edit_application_note,
+    filter_job_applications,
+    get_application_follow_up_reminders,
+    get_application_interview_reminders,
+    get_application_recommendations,
+    get_best_application_action,
+    get_job_application_commands,
+    get_job_application_intelligence,
+    get_job_application_report,
+    restore_latest_job_application_backup,
+    set_application_priority,
+    sort_job_applications,
+    update_interview_stage,
     update_job_offer_status,
 )
 
@@ -208,3 +223,95 @@ def test_export_backup_and_details():
     assert "Backed up 1 job application" in backup_result
     assert "job_applications_" in list_job_application_backups()
     assert "Test Company" in get_job_application_details(application_id)
+
+
+def test_filter_sort_priority_and_stage():
+    first_id = add_test_application()
+    second_result = add_job_application("Another Company", "Data Analyst")
+    assert "ID 2" in second_result
+
+    assert "High" in set_application_priority(first_id, "High")
+    assert "Under Review" in update_application_status(
+        first_id,
+        "Under Review",
+    )
+    assert "Technical Round" in update_interview_stage(
+        first_id,
+        "Technical Round",
+    )
+
+    assert "Test Company" in filter_job_applications(
+        "status",
+        "Under Review",
+    )
+    assert "Test Company" in filter_job_applications("priority", "High")
+    assert "Test Company" in sort_job_applications("priority")
+    assert "Another Company" in sort_job_applications("date")
+
+
+def test_edit_and_delete_application_note():
+    application_id = add_test_application()
+    add_application_note(application_id, "Initial note")
+
+    edited = edit_application_note(
+        application_id,
+        1,
+        "Updated interview note",
+    )
+    assert "Updated interview note" in edited
+    assert "Updated interview note" in get_application_notes(application_id)
+
+    deleted = delete_application_note(application_id, 1)
+    assert "deleted" in deleted.lower()
+    assert "No notes found" in get_application_notes(application_id)
+
+
+def test_follow_up_and_interview_reminders():
+    application_id = add_test_application()
+    follow_up_date = future_date(4)
+    interview_date = future_date(6)
+
+    mark_application_follow_up(application_id, True)
+    set_application_follow_up_date(application_id, follow_up_date)
+    schedule_application_interview(
+        application_id,
+        interview_date,
+        "10:30 AM",
+        "Online",
+    )
+
+    assert follow_up_date in get_application_follow_up_reminders()
+    assert interview_date in get_application_interview_reminders()
+    assert "completed" in mark_application_follow_up(
+        application_id,
+        False,
+    )
+    assert "No scheduled" in get_application_follow_up_reminders()
+
+
+def test_delete_and_restore_latest_backup():
+    application_id = add_test_application()
+    assert "Backed up" in backup_job_applications()
+    assert "deleted" in delete_job_application(application_id).lower()
+    assert get_job_applications() == []
+
+    restored = restore_latest_job_application_backup()
+    assert "restored" in restored.lower()
+    assert get_job_application(application_id)["company"] == "Test Company"
+
+
+def test_reports_recommendations_commands_and_validation():
+    application_id = add_test_application()
+
+    assert get_best_application_action()
+    assert get_application_recommendations()
+    assert get_job_application_intelligence()
+    assert "JERVIS Job Application Intelligence" in get_job_application_report()
+    assert "add job application" in get_job_application_commands()
+
+    assert set_application_priority("invalid", "High") == (
+        "Invalid application ID."
+    )
+    assert "not found" in delete_job_application(999).lower()
+    assert "not found" in get_application_status_timeline(999).lower()
+    assert get_job_application(application_id) is not None
