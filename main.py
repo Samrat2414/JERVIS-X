@@ -14,6 +14,7 @@ Usage:
 Options:
   -h, --help       Show this help message
   -V, --version    Show the JERVIS-X version
+  -d, --diagnostics Show the system diagnostics report
   No option        Launch the JERVIS-X GUI
 """
 
@@ -25,6 +26,12 @@ def main():
 
     if "--version" in sys.argv or "-V" in sys.argv:
         print(VERSION_TEXT)
+        return
+
+    if "--diagnostics" in sys.argv or "-d" in sys.argv:
+        from core.diagnostics import get_diagnostics_report
+
+        print(get_diagnostics_report())
         return
 
     if len(sys.argv) > 1:

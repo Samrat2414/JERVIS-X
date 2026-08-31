@@ -55,3 +55,14 @@ def test_unknown_command_line_option():
     assert result.returncode == 2
     assert "Unknown option: --unknown" in result.stdout
     assert "Usage:" in result.stdout
+
+
+def test_command_line_diagnostics():
+    result = subprocess.run(
+        [sys.executable, "main.py", "--diagnostics"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "JERVIS SELF-DIAGNOSTICS" in result.stdout
+    assert "Health Score:" in result.stdout
