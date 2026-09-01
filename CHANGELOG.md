@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Added GUI startup logging and unhandled exception capture.
+
 ## [1.4.0] - 2026-09-01
 
 ### Added

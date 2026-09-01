@@ -31,6 +31,7 @@ This roadmap outlines the planned development direction for JERVIS-X. Priorities
 - SHA-256 download verification
 - Command-line help, version, and diagnostics
 - JSON diagnostics output
+- Structured application startup and crash logging
 
 ## Planned
 
@@ -38,7 +39,6 @@ This roadmap outlines the planned development direction for JERVIS-X. Priorities
 
 - Improve command parsing and error messages
 - Add more automated tests
-- Add structured application logging
 - Improve packaged-app diagnostics
 - Add settings import and export
 - Improve accessibility and keyboard navigation

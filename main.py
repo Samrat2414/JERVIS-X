@@ -49,10 +49,17 @@ def main():
 
     from gui.app import run_gui
     from core.performance_monitor import record_startup_time
+    from core.logger import log_exception, log_info
 
     startup_seconds = time.perf_counter() - STARTUP_TIMER
     record_startup_time(startup_seconds)
-    run_gui()
+    log_info(f"{VERSION_TEXT} | GUI startup requested")
+
+    try:
+        run_gui()
+    except Exception:
+        log_exception("Unhandled error during GUI execution.")
+        raise
 
 
 if __name__ == "__main__":
