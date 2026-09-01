@@ -4,7 +4,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 import core.logger as logger_module
-from core.logger import logger
+from core.logger import logger, redact_sensitive_text
 
 
 def test_logger_uses_rotating_file_handler():
@@ -42,3 +42,18 @@ def test_command_line_log_path():
     log_path = Path(result.stdout.strip())
     assert log_path.name == "jervis.log"
     assert log_path.parent.name == "logs"
+
+
+def test_sensitive_command_data_is_redacted():
+    result = redact_sensitive_text(
+        "login password=secret token abc api_key=xyz"
+    )
+    assert "secret" not in result
+    assert "abc" not in result
+    assert "xyz" not in result
+    assert result.count("[REDACTED]") == 3
+
+
+def test_bearer_token_is_redacted():
+    result = redact_sensitive_text("Authorization Bearer token-value")
+    assert result == "Authorization Bearer [REDACTED]"

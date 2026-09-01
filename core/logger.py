@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -59,10 +60,24 @@ def log_error(message):
     logger.error(str(message))
 
 
+def redact_sensitive_text(message):
+    text = str(message)
+    text = re.sub(
+        r"(?i)\bbearer\s+\S+",
+        "Bearer [REDACTED]",
+        text,
+    )
+    return re.sub(
+        r"(?i)\b(password|passcode|token|api[ _-]?key|secret)\b\s*[:=]?\s*\S+",
+        lambda match: f"{match.group(1)} [REDACTED]",
+        text,
+    )
+
+
 def log_command(command):
     logger.info(
         "COMMAND | %s",
-        str(command),
+        redact_sensitive_text(command),
     )
 
 
