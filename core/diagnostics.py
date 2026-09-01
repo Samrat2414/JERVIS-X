@@ -1,5 +1,6 @@
 import importlib
 import socket
+import sys
 from pathlib import Path
 
 
@@ -29,6 +30,9 @@ DEPENDENCIES = [
 
 
 def check_required_files():
+    if getattr(sys, "frozen", False):
+        return []
+
     missing = []
 
     for file_name in REQUIRED_FILES:
@@ -41,6 +45,9 @@ def check_required_files():
 
 
 def check_required_folders():
+    if getattr(sys, "frozen", False):
+        return []
+
     missing = []
 
     for folder_name in REQUIRED_FOLDERS:

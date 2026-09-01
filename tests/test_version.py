@@ -13,13 +13,13 @@ from core.version import (
 def test_version_constants():
     assert APP_NAME == "JERVIS-X"
     assert APP_DISPLAY_NAME == "JERVIS X"
-    assert __version__ == "1.3.2"
+    assert __version__ == "1.3.3"
 
 
 def test_version_display_text():
-    assert APP_TITLE == "JERVIS X v1.3.2"
+    assert APP_TITLE == "JERVIS X v1.3.3"
     assert VERSION_TEXT == (
-        "JERVIS-X Version 1.3.2 - "
+        "JERVIS-X Version 1.3.3 - "
         "Advanced Personal AI Virtual Assistant"
     )
 

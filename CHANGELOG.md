@@ -1,4 +1,10 @@
-﻿# Changelog
+# Changelog
+
+## [1.3.3] - 2026-09-01
+
+### Fixed
+
+- Fixed false missing-file and missing-folder failures in packaged Windows EXE diagnostics.
 ## [1.3.2] - 2026-08-31
 
 ### Added
