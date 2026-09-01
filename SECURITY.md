@@ -6,8 +6,8 @@ JERVIS-X is currently under active development. Security updates are provided fo
 
 | Version | Supported |
 | ------- | --------- |
-| 1.0.x   | Yes       |
-| < 1.0   | No        |
+| 1.4.x   | Yes       |
+| <= 1.3  | No        |
 
 ## Reporting a Vulnerability
 
@@ -21,6 +21,15 @@ To report a vulnerability:
 4. Describe the issue and steps to reproduce it.
 
 Please do not include passwords, API keys, personal data, or other secrets.
+
+## Credential Protection
+
+JERVIS-X detects commands containing passwords, passcodes, API keys, secrets, tokens, and Bearer credentials.
+
+- Sensitive values are redacted from application logs.
+- Sensitive commands are blocked before conversation-history storage.
+- Sensitive commands are not sent to the AI fallback.
+- Users should never enter real credentials into the assistant.
 
 ## Security Recommendations
 
