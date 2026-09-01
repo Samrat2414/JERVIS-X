@@ -6,6 +6,10 @@
 
 - Added --show-settings to display current JERVIS settings as JSON.
 
+### Changed
+
+- Reorganized command-line documentation into a clear reference table.
+
 ## [1.6.1] - 2026-09-01
 
 ### Added

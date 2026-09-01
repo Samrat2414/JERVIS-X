@@ -214,53 +214,20 @@ Download `JERVIS-X-Windows.zip.sha256` from the same release and confirm that bo
 
 ## Command-Line Options
 
-Launch the JERVIS-X GUI:
-
-```powershell
-python main.py
-```
-
-Show command-line help:
-
-```powershell
-python main.py --help
-```
-
-Show the installed version:
-
-```powershell
-python main.py --version
-```
-
-Run system diagnostics:
-
-```powershell
-python main.py --diagnostics
-```
-
-Show diagnostics in JSON format:
-
-```powershell
-python main.py --diagnostics-json
-```
-
-Show the application log file location:
-
-```powershell
-python main.py --log-path
-```
+| Command | Purpose |
+| --- | --- |
+| `python main.py` | Launch the JERVIS-X GUI |
+| `python main.py --help` | Show command-line help |
+| `python main.py --version` | Show the installed version |
+| `python main.py --diagnostics` | Run system diagnostics |
+| `python main.py --diagnostics-json` | Show diagnostics as JSON |
+| `python main.py --log-path` | Show the application log path |
+| `python main.py --data-path` | Show the application data directory |
+| `python main.py --backup` | Create a local data backup |
+| `python main.py --list-backups` | List available backups |
+| `python main.py --latest-backup` | Show the newest backup |
+| `python main.py --export-settings` | Export settings as JSON |
+| `python main.py --import-settings FILE` | Import validated settings from JSON |
+| `python main.py --show-settings` | Show current settings as JSON |
 
 Unknown options return a clear error message and exit code `2`.
-
-Show the application data directory:
-
-python main.py --data-path
-
-## Command-Line Backup
-
-Run python main.py --backup to create a local JERVIS data backup.
-Run python main.py --list-backups to display all available backups.
-Run python main.py --latest-backup to display the newest available backup.
-Run python main.py --export-settings to export settings as JSON.
-Run python main.py --import-settings FILE to import validated settings from JSON.
-Run python main.py --show-settings to display current settings as JSON.
