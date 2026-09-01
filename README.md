@@ -2,6 +2,7 @@
 
 [![Automated Tests](https://github.com/Samrat2414/JERVIS-X/actions/workflows/tests.yml/badge.svg)](https://github.com/Samrat2414/JERVIS-X/actions/workflows/tests.yml)
 [![CodeQL Security Scan](https://github.com/Samrat2414/JERVIS-X/actions/workflows/codeql.yml/badge.svg)](https://github.com/Samrat2414/JERVIS-X/actions/workflows/codeql.yml)
+[![Windows Build](https://github.com/Samrat2414/JERVIS-X/actions/workflows/windows-build.yml/badge.svg)](https://github.com/Samrat2414/JERVIS-X/actions/workflows/windows-build.yml)
 
 
 JERVIS X is a modular Python personal AI assistant that combines voice interaction, desktop utilities, engineering calculations, system monitoring, and end-to-end job application intelligence.
