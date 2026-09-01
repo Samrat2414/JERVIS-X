@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added --export-settings to export JERVIS settings from the command line.
+
 ## [1.6.0] - 2026-09-01
 ### Added
 

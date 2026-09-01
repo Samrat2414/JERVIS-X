@@ -114,3 +114,18 @@ def test_command_line_latest_backup():
     )
 
     assert result.stdout.strip()
+
+
+def test_command_line_export_settings(tmp_path):
+    main_file = Path(__file__).resolve().parents[1] / "main.py"
+
+    result = subprocess.run(
+        [sys.executable, str(main_file), "--export-settings"],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "Settings exported to" in result.stdout
+    assert (tmp_path / "exports" / "jervis_settings.json").exists()

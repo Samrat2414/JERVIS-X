@@ -21,6 +21,7 @@ Options:
   --backup          Create a backup of local JERVIS data
   --list-backups    List available JERVIS data backups
   --latest-backup   Show the latest JERVIS data backup
+  --export-settings Export JERVIS settings to JSON
   No option        Launch the JERVIS-X GUI
 """
 
@@ -65,6 +66,12 @@ def main():
 
         latest_backup = get_latest_backup()
         print(latest_backup or "No backups found.")
+        return
+
+    if "--export-settings" in sys.argv:
+        from core.settings import export_settings
+
+        print(export_settings())
         return
 
     if "--data-path" in sys.argv:
