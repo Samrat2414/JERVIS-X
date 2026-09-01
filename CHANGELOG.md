@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-09-01
+
 ### Security
 
 - Redact passwords, passcodes, API keys, secrets, tokens, and Bearer credentials from command logs.
