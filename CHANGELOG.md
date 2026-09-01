@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.5.2] - 2026-09-01
+
 ### Changed
 
 - Store packaged Windows job applications and backups permanently under `%LOCALAPPDATA%\JERVIS-X`.
