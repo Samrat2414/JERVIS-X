@@ -243,4 +243,10 @@ Show diagnostics in JSON format:
 python main.py --diagnostics-json
 ```
 
+Show the application log file location:
+
+```powershell
+python main.py --log-path
+```
+
 Unknown options return a clear error message and exit code `2`.

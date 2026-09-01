@@ -16,6 +16,7 @@ Options:
   -V, --version    Show the JERVIS-X version
   -d, --diagnostics Show the system diagnostics report
   --diagnostics-json Show diagnostics in JSON format
+  --log-path        Show the application log file path
   No option        Launch the JERVIS-X GUI
 """
 
@@ -40,6 +41,12 @@ def main():
         from core.diagnostics import get_diagnostics_report
 
         print(get_diagnostics_report())
+        return
+
+    if "--log-path" in sys.argv:
+        from core.logger import get_log_file
+
+        print(get_log_file())
         return
 
     if len(sys.argv) > 1:

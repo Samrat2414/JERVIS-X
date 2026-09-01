@@ -7,6 +7,7 @@
 - Added GUI startup logging and unhandled exception capture.
 - Added automatic 2 MB log rotation with three backup files.
 - Store packaged Windows logs permanently under `%LOCALAPPDATA%\JERVIS-X\logs`.
+- Added `--log-path` to display the active application log file.
 
 ## [1.4.0] - 2026-09-01
 
