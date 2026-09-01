@@ -76,3 +76,15 @@ def test_command_line_data_path():
     data_path = Path(result.stdout.strip())
     assert data_path.is_absolute()
     assert data_path.name == "data"
+def test_command_line_backup(tmp_path):
+    main_file = Path(__file__).resolve().parents[1] / "main.py"
+
+    result = subprocess.run(
+        [sys.executable, str(main_file), "--backup"],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "Backup created successfully" in result.stdout

@@ -4,6 +4,7 @@
 ### Added
 
 - Added --data-path to display the active application data directory.
+- Added --backup to create a local JERVIS data backup from the command line.
 ## [1.5.2] - 2026-09-01
 
 ### Changed

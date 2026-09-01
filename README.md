@@ -255,3 +255,7 @@ Unknown options return a clear error message and exit code `2`.
 Show the application data directory:
 
 python main.py --data-path
+
+## Command-Line Backup
+
+Run python main.py --backup to create a local JERVIS data backup.

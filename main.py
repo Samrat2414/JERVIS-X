@@ -44,6 +44,13 @@ def main():
         print(get_diagnostics_report())
         return
 
+    if "--backup" in sys.argv:
+        from core.backup_manager import create_backup_text
+
+        print(create_backup_text())
+        return
+
+
     if "--data-path" in sys.argv:
         from core.settings import get_settings_data_directory
 
