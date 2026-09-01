@@ -5,6 +5,7 @@
 ### Added
 
 - Added --export-settings to export JERVIS settings from the command line.
+- Added --import-settings FILE with missing-path validation.
 
 ## [1.6.0] - 2026-09-01
 ### Added

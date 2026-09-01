@@ -262,3 +262,4 @@ Run python main.py --backup to create a local JERVIS data backup.
 Run python main.py --list-backups to display all available backups.
 Run python main.py --latest-backup to display the newest available backup.
 Run python main.py --export-settings to export settings as JSON.
+Run python main.py --import-settings FILE to import validated settings from JSON.

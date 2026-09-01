@@ -129,3 +129,33 @@ def test_command_line_export_settings(tmp_path):
 
     assert "Settings exported to" in result.stdout
     assert (tmp_path / "exports" / "jervis_settings.json").exists()
+
+
+def test_command_line_import_settings(tmp_path):
+    main_file = Path(__file__).resolve().parents[1] / "main.py"
+    settings_file = tmp_path / "settings.json"
+    settings_file.write_text('{"voice_enabled": false}', encoding="utf-8")
+
+    result = subprocess.run(
+        [sys.executable, str(main_file), "--import-settings", str(settings_file)],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "Settings imported from" in result.stdout
+
+
+def test_command_line_import_settings_requires_path():
+    main_file = Path(__file__).resolve().parents[1] / "main.py"
+
+    result = subprocess.run(
+        [sys.executable, str(main_file), "--import-settings"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 2
+    assert "Missing settings file path." in result.stdout
