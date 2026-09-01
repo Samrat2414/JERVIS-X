@@ -159,3 +159,19 @@ def test_command_line_import_settings_requires_path():
 
     assert result.returncode == 2
     assert "Missing settings file path." in result.stdout
+
+
+def test_command_line_show_settings(tmp_path):
+    main_file = Path(__file__).resolve().parents[1] / "main.py"
+
+    result = subprocess.run(
+        [sys.executable, str(main_file), "--show-settings"],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    displayed_settings = json.loads(result.stdout)
+    assert isinstance(displayed_settings, dict)
+    assert "voice_enabled" in displayed_settings

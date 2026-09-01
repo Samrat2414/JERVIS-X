@@ -23,6 +23,7 @@ Options:
   --latest-backup   Show the latest JERVIS data backup
   --export-settings Export JERVIS settings to JSON
   --import-settings FILE  Import JERVIS settings from JSON
+  --show-settings   Show current JERVIS settings as JSON
   No option        Launch the JERVIS-X GUI
 """
 
@@ -84,6 +85,13 @@ def main():
         from core.settings import import_settings
 
         print(import_settings(sys.argv[option_index + 1]))
+        return
+
+    if "--show-settings" in sys.argv:
+        import json
+        from core.settings import get_all_settings
+
+        print(json.dumps(get_all_settings(), indent=2, ensure_ascii=False))
         return
 
     if "--data-path" in sys.argv:
