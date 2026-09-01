@@ -76,3 +76,60 @@ def reset_settings():
 
     except OSError as error:
         return f"I could not reset settings: {error}"
+
+def export_settings(file_path=None):
+    target = (
+        Path(file_path)
+        if file_path
+        else Path("exports") / "jervis_settings.json"
+    )
+
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(
+            json.dumps(
+                get_all_settings(),
+                indent=4,
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+        return f"Settings exported to {target}."
+
+    except OSError as error:
+        return f"I could not export settings: {error}"
+
+
+def import_settings(file_path):
+    source = Path(file_path)
+
+    if not source.exists():
+        return "Settings import file not found."
+
+    try:
+        data = json.loads(source.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return "Settings import file is invalid."
+
+    if not isinstance(data, dict):
+        return "Settings import file is invalid."
+
+    settings = DEFAULT_SETTINGS.copy()
+
+    for key, default_value in DEFAULT_SETTINGS.items():
+        if key not in data:
+            continue
+
+        value = data[key]
+
+        if not isinstance(value, type(default_value)):
+            return f"Invalid value for setting: {key}"
+
+        settings[key] = value
+
+    try:
+        _save_settings(settings)
+        return f"Settings imported from {source}."
+
+    except OSError as error:
+        return f"I could not import settings: {error}"

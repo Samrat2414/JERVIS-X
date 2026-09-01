@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added validated settings export and import commands.
+
 ## [1.4.3] - 2026-09-01
 
 ### Security

@@ -1,5 +1,6 @@
 from datetime import datetime
 from core.version import VERSION_TEXT
+from core.settings import export_settings, import_settings
 
 from core.diagnostics import get_diagnostics_report
 from core.resource_optimizer import (
@@ -4351,6 +4352,18 @@ def process_command(command):
 
     if command in ["version", "jervis version", "jervis x version", "about jervis"]:
         return VERSION_TEXT
+
+    if command == "export settings":
+        return export_settings()
+
+    if command == "import settings":
+        return "Use: import settings FILE_PATH"
+
+    if command.startswith("import settings "):
+        file_path = original_command[
+            len("import settings "):
+        ].strip()
+        return import_settings(file_path)
 
     # AI fallback
     return ask_ai(original_command)
