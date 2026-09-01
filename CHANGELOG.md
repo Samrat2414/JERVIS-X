@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.6.2] - 2026-09-01
+
 ### Added
 
 - Added --show-settings to display current JERVIS settings as JSON.
