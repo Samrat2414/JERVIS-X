@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-09-01
+
 ### Changed
 
 - Added GUI startup logging and unhandled exception capture.
