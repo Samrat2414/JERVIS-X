@@ -259,3 +259,4 @@ python main.py --data-path
 ## Command-Line Backup
 
 Run python main.py --backup to create a local JERVIS data backup.
+Run python main.py --list-backups to display all available backups.

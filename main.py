@@ -18,6 +18,8 @@ Options:
   --diagnostics-json Show diagnostics in JSON format
   --log-path        Show the application log file path
   --data-path       Show the application data directory
+  --backup          Create a backup of local JERVIS data
+  --list-backups    List available JERVIS data backups
   No option        Launch the JERVIS-X GUI
 """
 
@@ -50,6 +52,12 @@ def main():
         print(create_backup_text())
         return
 
+
+    if "--list-backups" in sys.argv:
+        from core.backup_manager import list_backups
+
+        print(list_backups())
+        return
 
     if "--data-path" in sys.argv:
         from core.settings import get_settings_data_directory

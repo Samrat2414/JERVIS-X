@@ -88,3 +88,17 @@ def test_command_line_backup(tmp_path):
     )
 
     assert "Backup created successfully" in result.stdout
+    
+def test_command_line_list_backups():
+    main_file = Path(__file__).resolve().parents[1] / "main.py"
+
+    result = subprocess.run(
+        [sys.executable, str(main_file), "--list-backups"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    output = result.stdout.strip()
+    assert output
+    assert "No backups found." in output or "jervis_backup_" in output
