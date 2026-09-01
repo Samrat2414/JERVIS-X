@@ -1,11 +1,23 @@
 import logging
+import os
+import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from datetime import datetime
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-LOG_DIR = PROJECT_ROOT / "logs"
+
+def get_log_directory():
+    if getattr(sys, "frozen", False):
+        local_app_data = os.getenv("LOCALAPPDATA")
+        base_dir = Path(local_app_data) if local_app_data else Path.home()
+        return base_dir / "JERVIS-X" / "logs"
+
+    return PROJECT_ROOT / "logs"
+
+
+LOG_DIR = get_log_directory()
 LOG_FILE = LOG_DIR / "jervis.log"
 
 LOG_DIR.mkdir(
