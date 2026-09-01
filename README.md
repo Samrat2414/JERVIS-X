@@ -209,10 +209,6 @@ Get-FileHash .\JERVIS-X-Windows.zip -Algorithm SHA256
 Download `JERVIS-X-Windows.zip.sha256` from the same release and confirm that both hashes match.
 
 ## Command-Line Options
-Run system diagnostics:
-
-```powershell
-python main.py --diagnostics
 
 Launch the JERVIS-X GUI:
 
@@ -230,6 +226,18 @@ Show the installed version:
 
 ```powershell
 python main.py --version
+```
+
+Run system diagnostics:
+
+```powershell
+python main.py --diagnostics
+```
+
+Show diagnostics in JSON format:
+
+```powershell
+python main.py --diagnostics-json
 ```
 
 Unknown options return a clear error message and exit code `2`.

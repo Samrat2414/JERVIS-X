@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.4.0] - 2026-09-01
+
+### Added
+
+- Added JSON-formatted command-line diagnostics with `--diagnostics-json`.
+- Added automated testing for JSON diagnostics output.
+
+### Changed
+
+- Improved README command-line documentation and code-block formatting.
+
 ## [1.3.3] - 2026-09-01
 
 ### Fixed

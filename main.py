@@ -15,6 +15,7 @@ Options:
   -h, --help       Show this help message
   -V, --version    Show the JERVIS-X version
   -d, --diagnostics Show the system diagnostics report
+  --diagnostics-json Show diagnostics in JSON format
   No option        Launch the JERVIS-X GUI
 """
 
@@ -26,6 +27,13 @@ def main():
 
     if "--version" in sys.argv or "-V" in sys.argv:
         print(VERSION_TEXT)
+        return
+
+    if "--diagnostics-json" in sys.argv:
+        import json
+        from core.diagnostics import run_diagnostics
+
+        print(json.dumps(run_diagnostics(), indent=2))
         return
 
     if "--diagnostics" in sys.argv or "-d" in sys.argv:

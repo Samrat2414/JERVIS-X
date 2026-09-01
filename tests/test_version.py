@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 
@@ -66,3 +67,16 @@ def test_command_line_diagnostics():
     )
     assert "JERVIS SELF-DIAGNOSTICS" in result.stdout
     assert "Health Score:" in result.stdout
+
+
+def test_command_line_diagnostics_json():
+    result = subprocess.run(
+        [sys.executable, "main.py", "--diagnostics-json"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    data = json.loads(result.stdout)
+    assert data["total"] == 5
+    assert len(data["checks"]) == 5
+    assert "healthy" in data
