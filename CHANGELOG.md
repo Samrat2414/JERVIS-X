@@ -5,6 +5,7 @@
 ### Changed
 
 - Added GUI startup logging and unhandled exception capture.
+- Added automatic 2 MB log rotation with three backup files.
 
 ## [1.4.0] - 2026-09-01
 
