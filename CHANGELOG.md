@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Store packaged Windows settings permanently under `%LOCALAPPDATA%\JERVIS-X\data`.
+
 ## [1.5.0] - 2026-09-01
 
 ### Added

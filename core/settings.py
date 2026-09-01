@@ -1,8 +1,19 @@
 import json
+import os
+import sys
 from pathlib import Path
 
 
-DATA_DIR = Path("data")
+def get_settings_data_directory():
+    if getattr(sys, "frozen", False):
+        local_app_data = os.getenv("LOCALAPPDATA")
+        base_dir = Path(local_app_data) if local_app_data else Path.home()
+        return base_dir / "JERVIS-X" / "data"
+
+    return Path("data")
+
+
+DATA_DIR = get_settings_data_directory()
 SETTINGS_FILE = DATA_DIR / "settings.json"
 
 DEFAULT_SETTINGS = {

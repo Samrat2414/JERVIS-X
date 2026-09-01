@@ -48,3 +48,16 @@ def test_import_rejects_invalid_setting_type(tmp_path):
     assert settings.import_settings(source) == (
         "Invalid value for setting: voice_enabled"
     )
+
+def test_packaged_settings_data_directory(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        settings.sys,
+        "frozen",
+        True,
+        raising=False,
+    )
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+
+    assert settings.get_settings_data_directory() == (
+        tmp_path / "JERVIS-X" / "data"
+    )
