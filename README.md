@@ -11,6 +11,7 @@ JERVIS X is a modular Python personal AI assistant that combines voice interacti
 
 [Read the system architecture](ARCHITECTURE.md).
 [View the development roadmap](ROADMAP.md).
+[Read the security policy](SECURITY.md).
 
 The project is designed as a practical portfolio application for Python development, automation, data handling, and AI-assisted workflows.
 
