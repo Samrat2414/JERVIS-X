@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-09-01
+
 ### Added
 
 - Added validated settings export and import commands.
