@@ -17,6 +17,7 @@ Options:
   -d, --diagnostics Show the system diagnostics report
   --diagnostics-json Show diagnostics in JSON format
   --log-path        Show the application log file path
+  --data-path       Show the application data directory
   No option        Launch the JERVIS-X GUI
 """
 
@@ -41,6 +42,12 @@ def main():
         from core.diagnostics import get_diagnostics_report
 
         print(get_diagnostics_report())
+        return
+
+    if "--data-path" in sys.argv:
+        from core.settings import get_settings_data_directory
+
+        print(get_settings_data_directory().resolve())
         return
 
     if "--log-path" in sys.argv:

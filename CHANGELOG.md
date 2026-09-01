@@ -1,7 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+### Added
 
+- Added --data-path to display the active application data directory.
 ## [1.5.2] - 2026-09-01
 
 ### Changed

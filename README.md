@@ -251,3 +251,7 @@ python main.py --log-path
 ```
 
 Unknown options return a clear error message and exit code `2`.
+
+Show the application data directory:
+
+python main.py --data-path

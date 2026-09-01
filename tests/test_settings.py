@@ -1,4 +1,7 @@
 import json
+import subprocess
+import sys
+from pathlib import Path
 
 import pytest
 
@@ -61,3 +64,15 @@ def test_packaged_settings_data_directory(tmp_path, monkeypatch):
     assert settings.get_settings_data_directory() == (
         tmp_path / "JERVIS-X" / "data"
     )
+
+
+def test_command_line_data_path():
+    result = subprocess.run(
+        [sys.executable, "main.py", "--data-path"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    data_path = Path(result.stdout.strip())
+    assert data_path.is_absolute()
+    assert data_path.name == "data"
