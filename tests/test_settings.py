@@ -102,3 +102,15 @@ def test_command_line_list_backups():
     output = result.stdout.strip()
     assert output
     assert "No backups found." in output or "jervis_backup_" in output
+
+def test_command_line_latest_backup():
+    main_file = Path(__file__).resolve().parents[1] / "main.py"
+
+    result = subprocess.run(
+        [sys.executable, str(main_file), "--latest-backup"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.stdout.strip()

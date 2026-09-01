@@ -20,6 +20,7 @@ Options:
   --data-path       Show the application data directory
   --backup          Create a backup of local JERVIS data
   --list-backups    List available JERVIS data backups
+  --latest-backup   Show the latest JERVIS data backup
   No option        Launch the JERVIS-X GUI
 """
 
@@ -57,6 +58,13 @@ def main():
         from core.backup_manager import list_backups
 
         print(list_backups())
+        return
+
+    if "--latest-backup" in sys.argv:
+        from core.backup_manager import get_latest_backup
+
+        latest_backup = get_latest_backup()
+        print(latest_backup or "No backups found.")
         return
 
     if "--data-path" in sys.argv:

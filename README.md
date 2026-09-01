@@ -260,3 +260,4 @@ python main.py --data-path
 
 Run python main.py --backup to create a local JERVIS data backup.
 Run python main.py --list-backups to display all available backups.
+Run python main.py --latest-backup to display the newest available backup.
