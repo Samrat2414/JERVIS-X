@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pytest
 
+import core.job_application_intelligence as job_intelligence
+
 from core.job_application_intelligence import (
     add_application_note,
     add_career_goal,
@@ -315,3 +317,17 @@ def test_reports_recommendations_commands_and_validation():
     assert "not found" in delete_job_application(999).lower()
     assert "not found" in get_application_status_timeline(999).lower()
     assert get_job_application(application_id) is not None
+
+
+def test_packaged_application_storage_root(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        job_intelligence.sys,
+        "frozen",
+        True,
+        raising=False,
+    )
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+
+    assert job_intelligence.get_application_storage_root() == (
+        tmp_path / "JERVIS-X"
+    )

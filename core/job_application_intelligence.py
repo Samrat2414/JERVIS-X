@@ -1,13 +1,25 @@
 import csv
 import json
+import os
+import sys
 from datetime import datetime
 from pathlib import Path
 
-DATA_DIR = Path("data")
+def get_application_storage_root():
+    if getattr(sys, "frozen", False):
+        local_app_data = os.getenv("LOCALAPPDATA")
+        base_dir = Path(local_app_data) if local_app_data else Path.home()
+        return base_dir / "JERVIS-X"
+
+    return Path(".")
+
+
+STORAGE_ROOT = get_application_storage_root()
+DATA_DIR = STORAGE_ROOT / "data"
 APPLICATION_FILE = DATA_DIR / "job_applications.json"
 EXPORT_DIR = Path("exports")
 APPLICATION_EXPORT_FILE = EXPORT_DIR / "job_applications.csv"
-BACKUP_DIR = Path("backups")
+BACKUP_DIR = STORAGE_ROOT / "backups"
 
 VALID_STATUSES = [
     "Applied",
