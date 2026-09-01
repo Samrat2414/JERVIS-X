@@ -144,3 +144,26 @@ def import_settings(file_path):
 
     except OSError as error:
         return f"I could not import settings: {error}"
+
+def validate_settings_file(file_path):
+    source = Path(file_path)
+
+    if not source.exists():
+        return "Settings validation file not found."
+
+    try:
+        data = json.loads(source.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return "Settings validation file is invalid."
+
+    if not isinstance(data, dict):
+        return "Settings validation file is invalid."
+
+    for key, default_value in DEFAULT_SETTINGS.items():
+        if key not in data:
+            continue
+
+        if not isinstance(data[key], type(default_value)):
+            return f"Invalid value for setting: {key}"
+
+    return f"Settings file is valid: {source}."

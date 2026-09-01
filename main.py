@@ -23,6 +23,7 @@ Options:
   --latest-backup   Show the latest JERVIS data backup
   --export-settings Export JERVIS settings to JSON
   --import-settings FILE  Import JERVIS settings from JSON
+  --validate-settings FILE  Validate settings without importing
   --show-settings   Show current JERVIS settings as JSON
   No option        Launch the JERVIS-X GUI
 """
@@ -85,6 +86,17 @@ def main():
         from core.settings import import_settings
 
         print(import_settings(sys.argv[option_index + 1]))
+        return
+
+    if "--validate-settings" in sys.argv:
+        option_index = sys.argv.index("--validate-settings")
+        if option_index + 1 >= len(sys.argv):
+            print("Missing settings file path.")
+            return 2
+
+        from core.settings import validate_settings_file
+
+        print(validate_settings_file(sys.argv[option_index + 1]))
         return
 
     if "--show-settings" in sys.argv:

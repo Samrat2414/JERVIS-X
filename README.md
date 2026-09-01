@@ -228,6 +228,7 @@ Download `JERVIS-X-Windows.zip.sha256` from the same release and confirm that bo
 | `python main.py --latest-backup` | Show the newest backup |
 | `python main.py --export-settings` | Export settings as JSON |
 | `python main.py --import-settings FILE` | Import validated settings from JSON |
+| `python main.py --validate-settings FILE` | Validate settings without importing |
 | `python main.py --show-settings` | Show current settings as JSON |
 
 Unknown options return a clear error message and exit code `2`.

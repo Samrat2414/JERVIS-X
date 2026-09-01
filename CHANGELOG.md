@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added --validate-settings FILE for read-only settings validation.
+
 ## [1.6.2] - 2026-09-01
 
 ### Added

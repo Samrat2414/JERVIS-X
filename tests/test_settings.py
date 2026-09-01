@@ -175,3 +175,49 @@ def test_command_line_show_settings(tmp_path):
     displayed_settings = json.loads(result.stdout)
     assert isinstance(displayed_settings, dict)
     assert "voice_enabled" in displayed_settings
+
+
+def test_command_line_validate_settings(tmp_path):
+    main_file = Path(__file__).resolve().parents[1] / "main.py"
+    settings_file = tmp_path / "settings.json"
+    settings_file.write_text('{"voice_enabled": true}', encoding="utf-8")
+
+    result = subprocess.run(
+        [sys.executable, str(main_file), "--validate-settings", str(settings_file)],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "Settings file is valid:" in result.stdout
+
+
+def test_command_line_validate_settings_rejects_invalid_file(tmp_path):
+    main_file = Path(__file__).resolve().parents[1] / "main.py"
+    settings_file = tmp_path / "invalid.json"
+    settings_file.write_text('{"voice_enabled": "yes"}', encoding="utf-8")
+
+    result = subprocess.run(
+        [sys.executable, str(main_file), "--validate-settings", str(settings_file)],
+        cwd=tmp_path,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "Invalid value for setting: voice_enabled" in result.stdout
+
+
+def test_command_line_validate_settings_requires_path():
+    main_file = Path(__file__).resolve().parents[1] / "main.py"
+
+    result = subprocess.run(
+        [sys.executable, str(main_file), "--validate-settings"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 2
+    assert "Missing settings file path." in result.stdout
