@@ -4,7 +4,11 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 import core.logger as logger_module
-from core.logger import logger, redact_sensitive_text
+from core.logger import (
+    contains_sensitive_data,
+    logger,
+    redact_sensitive_text,
+)
 
 
 def test_logger_uses_rotating_file_handler():
@@ -57,3 +61,12 @@ def test_sensitive_command_data_is_redacted():
 def test_bearer_token_is_redacted():
     result = redact_sensitive_text("Authorization Bearer token-value")
     assert result == "Authorization Bearer [REDACTED]"
+
+
+def test_sensitive_data_detector():
+    assert contains_sensitive_data("login password=secret") is True
+    assert contains_sensitive_data("Bearer abc123") is True
+
+
+def test_password_generator_command_is_allowed():
+    assert contains_sensitive_data("generate password 16") is False

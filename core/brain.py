@@ -258,6 +258,7 @@ from core.command_analytics import (
     reset_session,
 )
 from core.logger import (
+    contains_sensitive_data,
     log_command,
     log_action,
     log_error,
@@ -407,6 +408,15 @@ def process_command(command):
     command = original_command.lower()
 
     log_command(original_command)
+
+    if contains_sensitive_data(original_command):
+        return (
+            "JERVIS SECURITY\n\n"
+            "Sensitive information detected. The command was not "
+            "stored, processed, or sent to AI. Never enter real "
+            "passwords, API keys, secrets, or tokens."
+        )
+
     record_command(original_command)
 
 

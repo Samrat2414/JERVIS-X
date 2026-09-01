@@ -74,6 +74,19 @@ def redact_sensitive_text(message):
     )
 
 
+def contains_sensitive_data(message):
+    text = str(message).strip()
+    safe_prefixes = (
+        "generate password",
+        "create password",
+        "password generator",
+    )
+    if text.lower().startswith(safe_prefixes):
+        return False
+
+    return redact_sensitive_text(text) != text
+
+
 def log_command(command):
     logger.info(
         "COMMAND | %s",

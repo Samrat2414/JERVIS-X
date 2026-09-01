@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Security
+
+- Block commands containing sensitive credentials before conversation storage or AI fallback processing.
+
 ## [1.4.2] - 2026-09-01
 
 ### Security
