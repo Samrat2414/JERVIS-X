@@ -64,3 +64,12 @@ def test_command_line_verify_latest_backup():
     )
 
     assert result.stdout.strip()
+
+
+def test_packaged_backup_storage_root(tmp_path, monkeypatch):
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+
+    storage_root = backup_manager.get_backup_storage_root()
+
+    assert storage_root == tmp_path / "JERVIS-X"

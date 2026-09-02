@@ -232,4 +232,6 @@ Download `JERVIS-X-Windows.zip.sha256` from the same release and confirm that bo
 | `python main.py --validate-settings FILE` | Validate settings without importing |
 | `python main.py --show-settings` | Show current settings as JSON |
 
+Packaged Windows backups are stored under `%LOCALAPPDATA%\JERVIS-X\backups`.
+
 Unknown options return a clear error message and exit code `2`.

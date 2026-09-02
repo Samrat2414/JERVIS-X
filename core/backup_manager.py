@@ -1,13 +1,26 @@
 import hashlib
+import os
 import shutil
+import sys
 from datetime import datetime
 from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-DATA_DIR = PROJECT_ROOT / "data"
-BACKUP_DIR = PROJECT_ROOT / "backups"
+def get_backup_storage_root():
+    if getattr(sys, "frozen", False):
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        if local_app_data:
+            return Path(local_app_data) / "JERVIS-X"
+        return Path.home() / ".jervis-x"
+
+    return PROJECT_ROOT
+
+
+STORAGE_ROOT = get_backup_storage_root()
+DATA_DIR = STORAGE_ROOT / "data"
+BACKUP_DIR = STORAGE_ROOT / "backups"
 
 
 def create_backup():
