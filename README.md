@@ -235,3 +235,12 @@ Download `JERVIS-X-Windows.zip.sha256` from the same release and confirm that bo
 Packaged Windows backups are stored under `%LOCALAPPDATA%\JERVIS-X\backups`.
 
 Unknown options return a clear error message and exit code `2`.
+
+## Backup Chat Commands
+
+| Chat command | Purpose |
+| --- | --- |
+| `create backup` | Create a persistent local backup |
+| `list backups` | List available backups |
+| `latest backup` | Show the latest backup |
+| `verify latest backup` | Verify the latest backup with SHA-256 |

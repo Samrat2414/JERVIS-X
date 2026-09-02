@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added the verify latest backup GUI chat command.
+
 ## [1.7.1] - 2026-09-02
 
 ### Fixed
