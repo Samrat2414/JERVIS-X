@@ -22,6 +22,7 @@ Options:
   --list-backups    List available JERVIS data backups
   --latest-backup   Show the latest JERVIS data backup
   --verify-latest-backup  Verify latest backup integrity
+  --preview-restore  Preview latest backup restore without changing data
   --export-settings Export JERVIS settings to JSON
   --import-settings FILE  Import JERVIS settings from JSON
   --validate-settings FILE  Validate settings without importing
@@ -78,6 +79,11 @@ def main():
         print(verify_latest_backup_text())
         return
 
+    if "--preview-restore" in sys.argv:
+        from core.backup_manager import preview_restore
+
+        print(preview_restore())
+        return
     if "--export-settings" in sys.argv:
         from core.settings import export_settings
 

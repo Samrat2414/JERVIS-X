@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added --preview-restore for integrity-checked, read-only backup restore previews.
+
 ## [1.7.3] - 2026-09-02
 
 ### Fixed

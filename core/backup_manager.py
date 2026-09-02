@@ -158,7 +158,58 @@ def list_backups():
 
     return "\n".join(lines)
 
+def preview_restore(backup_path=None):
+    if backup_path is None:
+        backup_folder = get_latest_backup()
+    else:
+        backup_folder = Path(backup_path)
 
+        if not backup_folder.is_absolute():
+            backup_folder = BACKUP_DIR / backup_folder
+
+    if backup_folder is None or not backup_folder.is_dir():
+        return "No valid backup is available for restore preview."
+
+    backup_data = backup_folder / "data"
+
+    if not backup_data.is_dir():
+        return "This backup does not contain a data folder."
+
+    integrity_result = verify_backup_integrity(backup_folder)
+
+    if not integrity_result.startswith("Backup integrity verified:"):
+        return (
+            "Restore preview blocked because backup verification failed.\n"
+            + integrity_result
+        )
+
+    files = sorted(
+        file.relative_to(backup_data).as_posix()
+        for file in backup_data.rglob("*")
+        if file.is_file()
+    )
+
+    lines = [
+        "JERVIS BACKUP RESTORE PREVIEW",
+        "",
+        f"Backup: {backup_folder}",
+        f"Files to restore: {len(files)}",
+        f"Current data directory: {DATA_DIR}",
+        "",
+        "Files:",
+    ]
+
+    lines.extend(
+        f"- {file_name}"
+        for file_name in files
+    )
+
+    lines.extend([
+        "",
+        "Preview only: no files were changed.",
+    ])
+
+    return "\n".join(lines)
 def restore_backup(
     backup_path=None,
 ):

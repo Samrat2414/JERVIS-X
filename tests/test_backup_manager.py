@@ -93,3 +93,24 @@ def test_backup_verifier_rejects_path_traversal(isolated_backup):
     verification = backup_manager.verify_backup_integrity(result["path"])
 
     assert verification == "Backup checksum manifest is invalid."
+
+def test_restore_preview_is_read_only(isolated_backup):
+    data_dir, _ = isolated_backup
+    result = backup_manager.create_backup()
+    settings_file = data_dir / "settings.json"
+    original_content = settings_file.read_text(encoding="utf-8")
+
+    preview = backup_manager.preview_restore(result["path"])
+
+    assert "JERVIS BACKUP RESTORE PREVIEW" in preview
+    assert "Files to restore: 1" in preview
+    assert "Preview only: no files were changed." in preview
+    assert settings_file.read_text(encoding="utf-8") == original_content
+
+
+def test_command_line_restore_preview_route():
+    main_file = Path(__file__).resolve().parents[1] / "main.py"
+    main_source = main_file.read_text(encoding="utf-8")
+
+    assert '"--preview-restore" in sys.argv' in main_source
+    assert "print(preview_restore())" in main_source
