@@ -1,4 +1,12 @@
 # Changelog
+
+## [1.8.6] - 2026-09-02
+
+### Added
+
+- Added persistent backup restore history for successful and failed recovery attempts.
+- Added restore history details for safety backups, rollback status, and recovery errors.
+
 ## [1.8.5] - 2026-09-02
 
 ### Reliability
@@ -36,7 +44,7 @@
 
 ### Added
 
-- Added --preview-restore for integrity-checked, read-only backup restore previews.
+- Added `--preview-restore` for integrity-checked, read-only backup restore previews.
 
 ## [1.7.3] - 2026-09-02
 
@@ -65,19 +73,19 @@
 ### Security
 
 - Added SHA-256 checksum manifests to new data backups.
-- Added --verify-latest-backup to detect missing or modified backup files.
+- Added `--verify-latest-backup` to detect missing or modified backup files.
 
 ## [1.6.3] - 2026-09-01
 
 ### Added
 
-- Added --validate-settings FILE for read-only settings validation.
+- Added `--validate-settings FILE` for read-only settings validation.
 
 ## [1.6.2] - 2026-09-01
 
 ### Added
 
-- Added --show-settings to display current JERVIS settings as JSON.
+- Added `--show-settings` to display current JERVIS settings as JSON.
 
 ### Changed
 
@@ -87,16 +95,18 @@
 
 ### Added
 
-- Added --export-settings to export JERVIS settings from the command line.
-- Added --import-settings FILE with missing-path validation.
+- Added `--export-settings` to export JERVIS settings from the command line.
+- Added `--import-settings FILE` with missing-path validation.
 
 ## [1.6.0] - 2026-09-01
+
 ### Added
 
-- Added --data-path to display the active application data directory.
-- Added --backup to create a local JERVIS data backup from the command line.
-- Added --list-backups to display available JERVIS data backups.
-- Added --latest-backup to display the newest available backup.
+- Added `--data-path` to display the active application data directory.
+- Added `--backup` to create a local JERVIS data backup from the command line.
+- Added `--list-backups` to display available JERVIS data backups.
+- Added `--latest-backup` to display the newest available backup.
+
 ## [1.5.2] - 2026-09-01
 
 ### Changed
@@ -152,6 +162,7 @@
 ### Fixed
 
 - Fixed false missing-file and missing-folder failures in packaged Windows EXE diagnostics.
+
 ## [1.3.2] - 2026-08-31
 
 ### Added
@@ -163,7 +174,6 @@
 
 - Increased test coverage to 75%.
 - Raised minimum required coverage from 50% to 70%.
-
 
 All notable changes to JERVIS-X will be documented in this file.
 
