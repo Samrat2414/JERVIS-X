@@ -227,6 +227,7 @@ Download `JERVIS-X-Windows.zip.sha256` from the same release and confirm that bo
 | `python main.py --list-backups` | List available backups |
 | `python main.py --latest-backup` | Show the newest backup |
 | `python main.py --backup-status` | Show backup health and restore readiness |
+| `python main.py --cleanup-backups [--keep N]` | Clean up old backups (default: keep 5) |
 | `python main.py --verify-latest-backup` | Verify the newest backup using SHA-256 |
 | `python main.py --preview-restore` | Preview the latest restore without changing data |
 | `python main.py --export-settings` | Export settings as JSON |

@@ -1,10 +1,11 @@
-# Changelog
+﻿# Changelog
 
 ## [Unreleased]
 
 ### Added
 
 - Added backup health and restore-readiness reports through CLI and JERVIS chat.
+- Added automatic backup rotation with configurable `--keep N` retention policy.
 
 ## [1.8.3] - 2026-09-02
 
