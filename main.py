@@ -25,6 +25,7 @@ Options:
   --cleanup-backups [--keep N]  Clean up old backups (default: keep 5)
   --verify-latest-backup  Verify latest backup integrity
   --preview-restore  Preview latest backup restore without changing data
+  --restore-history  Show backup restore history
   --export-settings Export JERVIS settings to JSON
   --import-settings FILE  Import JERVIS settings from JSON
   --validate-settings FILE  Validate settings without importing
@@ -116,6 +117,12 @@ def main():
         from core.backup_manager import preview_restore
 
         print(preview_restore())
+        return
+
+    if "--restore-history" in sys.argv:
+        from core.backup_manager import get_restore_history_text
+
+        print(get_restore_history_text())
         return
 
     if "--export-settings" in sys.argv:
