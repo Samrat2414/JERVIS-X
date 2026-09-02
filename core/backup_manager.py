@@ -313,13 +313,34 @@ def restore_backup(
         }
 
     except Exception as error:
-        return {
+        rollback_error = None
+
+        try:
+            if DATA_DIR.exists():
+                shutil.rmtree(DATA_DIR)
+
+            if safety_backup and safety_backup.exists():
+                shutil.copytree(
+                    safety_backup,
+                    DATA_DIR,
+                )
+        except Exception as rollback_exception:
+            rollback_error = str(rollback_exception)
+
+        result = {
             "success": False,
             "error": (
                 f"I could not restore the backup: "
                 f"{error}"
             ),
         }
+
+        if rollback_error:
+            result["rollback_error"] = rollback_error
+        else:
+            result["rolled_back"] = bool(safety_backup)
+
+    return result
 
 
 def create_backup_text():

@@ -217,3 +217,47 @@ def test_cleanup_backups_deletes_old_backups(
 
     assert result["success"] is True
     assert result["deleted"] == 1
+
+def test_restore_rolls_back_when_copy_fails(
+    isolated_backup,
+    monkeypatch,
+):
+    data_dir, _ = isolated_backup
+
+    backup_result = backup_manager.create_backup()
+    current_file = data_dir / "settings.json"
+    current_file.write_text(
+        "current safe data",
+        encoding="utf-8",
+    )
+
+    original_copytree = backup_manager.shutil.copytree
+    call_count = {"value": 0}
+
+    def failing_copytree(src, dst, *args, **kwargs):
+        call_count["value"] += 1
+
+        if call_count["value"] == 2:
+            raise OSError("simulated restore failure")
+
+        return original_copytree(
+            src,
+            dst,
+            *args,
+            **kwargs,
+        )
+
+    monkeypatch.setattr(
+        backup_manager.shutil,
+        "copytree",
+        failing_copytree,
+    )
+
+    result = backup_manager.restore_backup(
+        backup_result["path"]
+    )
+
+    assert result["success"] is False
+    assert current_file.read_text(
+        encoding="utf-8"
+    ) == "current safe data"
