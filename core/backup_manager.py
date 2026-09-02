@@ -1,4 +1,6 @@
 import hashlib
+
+import json
 import os
 import shutil
 import sys
@@ -210,6 +212,32 @@ def preview_restore(backup_path=None):
     ])
 
     return "\n".join(lines)
+def _write_restore_history(entry):
+    history_file = BACKUP_DIR / "restore_history.json"
+
+    history = []
+
+    if history_file.is_file():
+        try:
+            history = json.loads(
+                history_file.read_text(
+                    encoding="utf-8"
+                )
+            )
+        except (json.JSONDecodeError, OSError):
+            history = []
+
+    history.append(entry)
+
+    history_file.write_text(
+        json.dumps(
+            history,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
 def restore_backup(
     backup_path=None,
 ):
@@ -266,6 +294,7 @@ def restore_backup(
                 + integrity_result
             ),
         }
+
     safety_backup = None
 
     try:
@@ -295,6 +324,19 @@ def restore_backup(
             backup_data,
             DATA_DIR,
         )
+
+        _write_restore_history({
+            "timestamp": datetime.now().isoformat(
+                timespec="seconds"
+            ),
+            "backup": str(backup_folder),
+            "success": True,
+            "safety_backup": (
+                str(safety_backup)
+                if safety_backup
+                else None
+            ),
+        })
 
         return {
             "success": True,
@@ -340,8 +382,28 @@ def restore_backup(
         else:
             result["rolled_back"] = bool(safety_backup)
 
-    return result
+        _write_restore_history({
+            "timestamp": datetime.now().isoformat(
+                timespec="seconds"
+            ),
+            "backup": str(backup_folder),
+            "success": False,
+            "safety_backup": (
+                str(safety_backup)
+                if safety_backup
+                else None
+            ),
+            "rolled_back": result.get(
+                "rolled_back",
+                False,
+            ),
+            "error": result["error"],
+            "rollback_error": result.get(
+                "rollback_error"
+            ),
+        })
 
+    return result
 
 def create_backup_text():
     result = create_backup()

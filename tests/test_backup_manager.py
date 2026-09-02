@@ -196,6 +196,7 @@ def test_cleanup_backups_does_nothing_when_under_limit(
     assert result["success"] is True
     assert result["deleted"] == 0
 
+
 def test_cleanup_backups_deletes_old_backups(
     isolated_backup,
 ):
@@ -217,6 +218,7 @@ def test_cleanup_backups_deletes_old_backups(
 
     assert result["success"] is True
     assert result["deleted"] == 1
+
 
 def test_restore_rolls_back_when_copy_fails(
     isolated_backup,
@@ -261,3 +263,57 @@ def test_restore_rolls_back_when_copy_fails(
     assert current_file.read_text(
         encoding="utf-8"
     ) == "current safe data"
+
+
+def test_restore_history_file_is_created(isolated_backup):
+    _, backup_dir = isolated_backup
+    backup_result = backup_manager.create_backup()
+
+    result = backup_manager.restore_backup(
+        backup_result["path"]
+    )
+
+    history_file = backup_dir / "restore_history.json"
+
+    assert result["success"] is True
+    assert history_file.is_file()
+
+
+def test_failed_restore_is_written_to_history(
+    isolated_backup,
+    monkeypatch,
+):
+    _, backup_dir = isolated_backup
+
+    backup_result = backup_manager.create_backup()
+
+    original_copytree = backup_manager.shutil.copytree
+    call_count = {"value": 0}
+
+    def failing_copytree(src, dst, *args, **kwargs):
+        call_count["value"] += 1
+
+        if call_count["value"] == 2:
+            raise OSError("simulated restore failure")
+
+        return original_copytree(
+            src,
+            dst,
+            *args,
+            **kwargs,
+        )
+
+    monkeypatch.setattr(
+        backup_manager.shutil,
+        "copytree",
+        failing_copytree,
+    )
+
+    result = backup_manager.restore_backup(
+        backup_result["path"]
+    )
+
+    history_file = backup_dir / "restore_history.json"
+
+    assert result["success"] is False
+    assert history_file.is_file()
