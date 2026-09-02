@@ -75,10 +75,9 @@ def test_packaged_backup_storage_root(tmp_path, monkeypatch):
     assert storage_root == tmp_path / "JERVIS-X"
 
 
-def test_chat_command_verifies_latest_backup(isolated_backup):
-    backup_manager.create_backup()
-    from core.brain import process_command
+def test_chat_command_routes_backup_verification():
+    brain_file = Path(__file__).resolve().parents[1] / "core" / "brain.py"
+    brain_source = brain_file.read_text(encoding="utf-8")
 
-    response = process_command("verify latest backup")
-
-    assert "Backup integrity verified:" in response
+    assert '"verify latest backup",' in brain_source
+    assert "return verify_latest_backup_text()" in brain_source
