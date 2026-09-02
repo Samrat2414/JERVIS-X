@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.7.3] - 2026-09-02
+
 ### Fixed
 
 - Made the backup chat-route regression test independent of optional desktop dependencies on Linux CI.
