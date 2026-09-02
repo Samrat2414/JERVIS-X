@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-09-02
+
 ### Added
 
 - Added --preview-restore for integrity-checked, read-only backup restore previews.
