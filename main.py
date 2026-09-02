@@ -21,6 +21,7 @@ Options:
   --backup          Create a backup of local JERVIS data
   --list-backups    List available JERVIS data backups
   --latest-backup   Show the latest JERVIS data backup
+  --verify-latest-backup  Verify latest backup integrity
   --export-settings Export JERVIS settings to JSON
   --import-settings FILE  Import JERVIS settings from JSON
   --validate-settings FILE  Validate settings without importing
@@ -69,6 +70,12 @@ def main():
 
         latest_backup = get_latest_backup()
         print(latest_backup or "No backups found.")
+        return
+
+    if "--verify-latest-backup" in sys.argv:
+        from core.backup_manager import verify_latest_backup_text
+
+        print(verify_latest_backup_text())
         return
 
     if "--export-settings" in sys.argv:

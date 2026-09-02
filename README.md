@@ -226,6 +226,7 @@ Download `JERVIS-X-Windows.zip.sha256` from the same release and confirm that bo
 | `python main.py --backup` | Create a local data backup |
 | `python main.py --list-backups` | List available backups |
 | `python main.py --latest-backup` | Show the newest backup |
+| `python main.py --verify-latest-backup` | Verify the newest backup using SHA-256 |
 | `python main.py --export-settings` | Export settings as JSON |
 | `python main.py --import-settings FILE` | Import validated settings from JSON |
 | `python main.py --validate-settings FILE` | Validate settings without importing |

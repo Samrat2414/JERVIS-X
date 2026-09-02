@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Security
+
+- Added SHA-256 checksum manifests to new data backups.
+- Added --verify-latest-backup to detect missing or modified backup files.
+
 ## [1.6.3] - 2026-09-01
 
 ### Added

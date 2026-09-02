@@ -1,3 +1,4 @@
+import hashlib
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -61,9 +62,13 @@ def create_backup():
                 "settings.json"
             )
 
+        manifest_file = _write_checksum_manifest(backup_folder)
+        copied_items.append("SHA256SUMS.txt")
+
         return {
             "success": True,
             "path": str(backup_folder),
+            "manifest": str(manifest_file),
             "items": copied_items,
             "message": (
                 f"Backup created successfully at "
@@ -265,3 +270,65 @@ if __name__ == "__main__":
     print(create_backup_text())
     print()
     print(list_backups())
+
+def _write_checksum_manifest(backup_folder):
+    checksum_lines = []
+
+    backup_files = sorted(
+        path
+        for path in backup_folder.rglob("*")
+        if path.is_file()
+    )
+
+    for file_path in backup_files:
+        digest = hashlib.sha256(file_path.read_bytes()).hexdigest()
+        relative_path = file_path.relative_to(backup_folder).as_posix()
+        checksum_lines.append(f"{digest}  {relative_path}")
+
+    manifest_file = backup_folder / "SHA256SUMS.txt"
+    manifest_file.write_text(
+        "\n".join(checksum_lines),
+        encoding="utf-8",
+    )
+
+    return manifest_file
+
+
+def verify_backup_integrity(backup_folder):
+    backup_folder = Path(backup_folder)
+    manifest_file = backup_folder / "SHA256SUMS.txt"
+
+    if not backup_folder.is_dir():
+        return "Backup folder not found."
+
+    if not manifest_file.is_file():
+        return "Backup checksum manifest not found."
+
+    try:
+        checksum_lines = manifest_file.read_text(encoding="utf-8").splitlines()
+
+        for checksum_line in checksum_lines:
+            expected_hash, relative_path = checksum_line.split("  ", 1)
+            file_path = backup_folder / relative_path
+
+            if not file_path.is_file():
+                return f"Backup file missing: {relative_path}"
+
+            actual_hash = hashlib.sha256(file_path.read_bytes()).hexdigest()
+
+            if actual_hash != expected_hash:
+                return f"Backup integrity check failed: {relative_path}"
+
+        return f"Backup integrity verified: {backup_folder}."
+
+    except (OSError, ValueError):
+        return "Backup checksum manifest is invalid."
+
+
+def verify_latest_backup_text():
+    latest_backup = get_latest_backup()
+
+    if latest_backup is None:
+        return "No backups found."
+
+    return verify_backup_integrity(latest_backup)
