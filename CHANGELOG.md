@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Security
+
+- Block data restoration when backup SHA-256 integrity verification fails.
+
 ## [1.8.1] - 2026-09-02
 
 ### Added

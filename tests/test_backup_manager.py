@@ -121,3 +121,20 @@ def test_chat_command_routes_restore_preview():
 
     assert '"preview restore",' in brain_source
     assert "return preview_restore()" in brain_source
+
+def test_restore_blocks_tampered_backup(isolated_backup):
+    data_dir, _ = isolated_backup
+    result = backup_manager.create_backup()
+    current_settings = data_dir / "settings.json"
+    current_settings.write_text("safe current data", encoding="utf-8")
+
+    backup_settings = Path(result["path"]) / "data" / "settings.json"
+    backup_settings.write_text("tampered backup data", encoding="utf-8")
+
+    restore_result = backup_manager.restore_backup(result["path"])
+
+    assert restore_result["success"] is False
+    assert restore_result["error"].startswith(
+        "Restore blocked because backup verification failed."
+    )
+    assert current_settings.read_text(encoding="utf-8") == "safe current data"

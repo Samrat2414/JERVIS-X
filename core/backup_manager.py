@@ -256,6 +256,16 @@ def restore_backup(
             ),
         }
 
+    integrity_result = verify_backup_integrity(backup_folder)
+
+    if not integrity_result.startswith("Backup integrity verified:"):
+        return {
+            "success": False,
+            "error": (
+                "Restore blocked because backup verification failed. "
+                + integrity_result
+            ),
+        }
     safety_backup = None
 
     try:
