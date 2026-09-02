@@ -22,6 +22,7 @@ Options:
   --list-backups    List available JERVIS data backups
   --latest-backup   Show the latest JERVIS data backup
   --backup-status   Show backup health and restore readiness
+  --cleanup-backups [--keep N]  Clean up old backups (default: keep 5)
   --verify-latest-backup  Verify latest backup integrity
   --preview-restore  Preview latest backup restore without changing data
   --export-settings Export JERVIS settings to JSON
@@ -60,7 +61,6 @@ def main():
         print(create_backup_text())
         return
 
-
     if "--list-backups" in sys.argv:
         from core.backup_manager import list_backups
 
@@ -79,6 +79,33 @@ def main():
 
         print(get_backup_status_report())
         return
+
+    if "--cleanup-backups" in sys.argv:
+        from core.backup_manager import cleanup_old_backups
+
+        keep = 5
+
+        if "--keep" in sys.argv:
+            keep_index = sys.argv.index("--keep")
+
+            if keep_index + 1 >= len(sys.argv):
+                print("Missing value for --keep.")
+                return 2
+
+            try:
+                keep = int(sys.argv[keep_index + 1])
+            except ValueError:
+                print("--keep must be a whole number.")
+                return 2
+
+            if keep < 1:
+                print("--keep must be at least 1.")
+                return 2
+
+        result = cleanup_old_backups(keep=keep)
+        print(result.get("message", result.get("error")))
+        return
+
     if "--verify-latest-backup" in sys.argv:
         from core.backup_manager import verify_latest_backup_text
 
@@ -90,6 +117,7 @@ def main():
 
         print(preview_restore())
         return
+
     if "--export-settings" in sys.argv:
         from core.settings import export_settings
 

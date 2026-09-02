@@ -82,6 +82,7 @@ def test_chat_command_routes_backup_verification():
     assert '"verify latest backup",' in brain_source
     assert "return verify_latest_backup_text()" in brain_source
 
+
 def test_backup_verifier_rejects_path_traversal(isolated_backup):
     result = backup_manager.create_backup()
     manifest_file = Path(result["path"]) / "SHA256SUMS.txt"
@@ -93,6 +94,7 @@ def test_backup_verifier_rejects_path_traversal(isolated_backup):
     verification = backup_manager.verify_backup_integrity(result["path"])
 
     assert verification == "Backup checksum manifest is invalid."
+
 
 def test_restore_preview_is_read_only(isolated_backup):
     data_dir, _ = isolated_backup
@@ -115,12 +117,14 @@ def test_command_line_restore_preview_route():
     assert '"--preview-restore" in sys.argv' in main_source
     assert "print(preview_restore())" in main_source
 
+
 def test_chat_command_routes_restore_preview():
     brain_file = Path(__file__).resolve().parents[1] / "core" / "brain.py"
     brain_source = brain_file.read_text(encoding="utf-8")
 
     assert '"preview restore",' in brain_source
     assert "return preview_restore()" in brain_source
+
 
 def test_restore_blocks_tampered_backup(isolated_backup):
     data_dir, _ = isolated_backup
@@ -139,6 +143,7 @@ def test_restore_blocks_tampered_backup(isolated_backup):
     )
     assert current_settings.read_text(encoding="utf-8") == "safe current data"
 
+
 def test_backup_verifier_rejects_unexpected_file(isolated_backup):
     result = backup_manager.create_backup()
     backup_folder = Path(result["path"])
@@ -148,6 +153,7 @@ def test_backup_verifier_rejects_unexpected_file(isolated_backup):
     verification = backup_manager.verify_backup_integrity(backup_folder)
 
     assert verification == "Backup contains unexpected file: data/unexpected.json"
+
 
 def test_backup_status_report(isolated_backup):
     backup_manager.create_backup()
@@ -178,3 +184,36 @@ def test_backup_status_command_routes():
     assert '"--backup-status" in sys.argv' in main_source
     assert '"restore readiness",' in brain_source
     assert "return get_backup_status_report()" in brain_source
+
+
+def test_cleanup_backups_does_nothing_when_under_limit(
+    isolated_backup,
+):
+    backup_manager.create_backup()
+
+    result = backup_manager.cleanup_old_backups(keep=5)
+
+    assert result["success"] is True
+    assert result["deleted"] == 0
+
+def test_cleanup_backups_deletes_old_backups(
+    isolated_backup,
+):
+    backup_dir = backup_manager.BACKUP_DIR
+
+    oldest = backup_dir / "jervis_backup_20260101_000000"
+    middle = backup_dir / "jervis_backup_20260102_000000"
+    newest = backup_dir / "jervis_backup_20260103_000000"
+
+    oldest.mkdir(parents=True)
+    middle.mkdir()
+    newest.mkdir()
+
+    oldest.touch()
+    middle.touch()
+    newest.touch()
+
+    result = backup_manager.cleanup_old_backups(keep=2)
+
+    assert result["success"] is True
+    assert result["deleted"] == 1

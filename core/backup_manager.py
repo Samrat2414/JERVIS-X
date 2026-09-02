@@ -455,3 +455,53 @@ def get_backup_status_report():
         f"Restore Ready: {'Yes' if healthy and backup_data.is_dir() else 'No'}\n"
         f"Details: {integrity_result}"
     )
+def cleanup_old_backups(keep=5):
+    try:
+        keep = int(keep)
+    except (TypeError, ValueError):
+        return {
+            "success": False,
+            "error": "Backup retention value must be a number.",
+        }
+
+    if keep < 1:
+        return {
+            "success": False,
+            "error": "Backup retention must keep at least 1 backup.",
+        }
+
+    backups = get_backups()
+
+    if len(backups) <= keep:
+        return {
+            "success": True,
+            "deleted": 0,
+            "kept": len(backups),
+            "message": "No old backups needed cleanup.",
+        }
+
+    old_backups = backups[keep:]
+    deleted = 0
+
+    for backup_folder in old_backups:
+        backup_root = BACKUP_DIR.resolve()
+        target = backup_folder.resolve()
+
+        if backup_root not in target.parents:
+            continue
+
+        if not target.name.startswith("jervis_backup_"):
+            continue
+
+        shutil.rmtree(target)
+        deleted += 1
+
+    return {
+        "success": True,
+        "deleted": deleted,
+        "kept": keep,
+        "message": (
+            f"Backup cleanup completed. "
+            f"Deleted {deleted} old backup(s)."
+        ),
+    }
