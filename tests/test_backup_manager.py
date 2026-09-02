@@ -375,3 +375,10 @@ def test_get_restore_history_text_respects_limit(
     assert "backup_3" in result
     assert "backup_2" in result
     assert "backup_1" not in result
+
+def test_command_line_restore_history_limit_route():
+    main_file = Path(__file__).resolve().parents[1] / "main.py"
+    main_source = main_file.read_text(encoding="utf-8")
+
+    assert '"--limit" in sys.argv' in main_source
+    assert "get_restore_history_text(limit=limit)" in main_source

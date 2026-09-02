@@ -122,7 +122,15 @@ def main():
     if "--restore-history" in sys.argv:
         from core.backup_manager import get_restore_history_text
 
-        print(get_restore_history_text())
+        limit = None
+
+        if "--limit" in sys.argv:
+            limit_index = sys.argv.index("--limit")
+
+            if limit_index + 1 < len(sys.argv):
+                limit = int(sys.argv[limit_index + 1])
+
+        print(get_restore_history_text(limit=limit))
         return
 
     if "--export-settings" in sys.argv:
