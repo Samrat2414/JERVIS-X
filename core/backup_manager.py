@@ -604,12 +604,14 @@ def cleanup_old_backups(keep=5):
             f"Deleted {deleted} old backup(s)."
         ),
     }
-def get_restore_history_text():
+def get_restore_history_text(limit=None):
     history = get_restore_history()
 
     if not history:
         return "No restore history found."
 
+    if limit is not None:
+        history = history[-limit:]
     lines = ["JERVIS BACKUP RESTORE HISTORY", ""]
 
     for number, entry in enumerate(

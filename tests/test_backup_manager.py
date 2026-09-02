@@ -352,3 +352,26 @@ def test_get_restore_history_text_shows_rollback_error(
     result = backup_manager.get_restore_history_text()
 
     assert "Rollback Error: Rollback failed" in result
+
+def test_get_restore_history_text_respects_limit(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    for number in range(1, 4):
+        backup_manager._write_restore_history({
+            "timestamp": f"2026-09-02T12:00:0{number}",
+            "backup": f"backup_{number}",
+            "success": True,
+            "safety_backup": None,
+            "rolled_back": False,
+            "error": None,
+            "rollback_error": None,
+        })
+
+    result = backup_manager.get_restore_history_text(limit=2)
+
+    assert "backup_3" in result
+    assert "backup_2" in result
+    assert "backup_1" not in result
