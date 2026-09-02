@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-09-02
+
 ### Security
 
 - Added SHA-256 checksum manifests to new data backups.
