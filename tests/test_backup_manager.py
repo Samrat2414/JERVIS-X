@@ -148,3 +148,33 @@ def test_backup_verifier_rejects_unexpected_file(isolated_backup):
     verification = backup_manager.verify_backup_integrity(backup_folder)
 
     assert verification == "Backup contains unexpected file: data/unexpected.json"
+
+def test_backup_status_report(isolated_backup):
+    backup_manager.create_backup()
+
+    report = backup_manager.get_backup_status_report()
+
+    assert "JERVIS BACKUP STATUS" in report
+    assert "Total Backups: 1" in report
+    assert "Files: 1" in report
+    assert "Integrity: PASS" in report
+    assert "Restore Ready: Yes" in report
+
+
+def test_backup_status_report_without_backups(isolated_backup):
+    report = backup_manager.get_backup_status_report()
+
+    assert "Total Backups: 0" in report
+    assert "Restore Ready: No" in report
+
+
+def test_backup_status_command_routes():
+    project_root = Path(__file__).resolve().parents[1]
+    main_source = (project_root / "main.py").read_text(encoding="utf-8")
+    brain_source = (project_root / "core" / "brain.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert '"--backup-status" in sys.argv' in main_source
+    assert '"restore readiness",' in brain_source
+    assert "return get_backup_status_report()" in brain_source

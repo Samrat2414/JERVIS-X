@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added backup health and restore-readiness reports through CLI and JERVIS chat.
+
 ## [1.8.3] - 2026-09-02
 
 ### Security

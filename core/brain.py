@@ -251,6 +251,7 @@ from core.backup_manager import (
     get_latest_backup,
     verify_latest_backup_text,
     preview_restore,
+    get_backup_status_report,
 )
 from core.command_analytics import (
     record_command,
@@ -2693,6 +2694,12 @@ def process_command(command):
             return "No backups found."
         return f"Latest backup: {latest.name}\n{latest}"
 
+    if command in [
+        "backup restore status",
+        "restore readiness",
+        "show restore readiness",
+    ]:
+        return get_backup_status_report()
     if command in [
         "verify latest backup",
         "verify backup",

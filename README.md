@@ -226,6 +226,7 @@ Download `JERVIS-X-Windows.zip.sha256` from the same release and confirm that bo
 | `python main.py --backup` | Create a local data backup |
 | `python main.py --list-backups` | List available backups |
 | `python main.py --latest-backup` | Show the newest backup |
+| `python main.py --backup-status` | Show backup health and restore readiness |
 | `python main.py --verify-latest-backup` | Verify the newest backup using SHA-256 |
 | `python main.py --preview-restore` | Preview the latest restore without changing data |
 | `python main.py --export-settings` | Export settings as JSON |
@@ -246,3 +247,4 @@ Unknown options return a clear error message and exit code `2`.
 | `latest backup` | Show the latest backup |
 | `verify latest backup` | Verify the latest backup with SHA-256 |
 | `preview restore` | Preview an integrity-checked restore without changing data |
+| `restore readiness` | Show backup integrity and restore readiness |

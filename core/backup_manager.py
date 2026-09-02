@@ -423,3 +423,35 @@ def verify_latest_backup_text():
         return "No backups found."
 
     return verify_backup_integrity(latest_backup)
+
+def get_backup_status_report():
+    backups = get_backups()
+
+    if not backups:
+        return (
+            "JERVIS BACKUP STATUS\n\n"
+            "Total Backups: 0\n"
+            "Status: No backups available\n"
+            "Restore Ready: No"
+        )
+
+    latest_backup = backups[0]
+    integrity_result = verify_backup_integrity(latest_backup)
+    healthy = integrity_result.startswith("Backup integrity verified:")
+    backup_data = latest_backup / "data"
+
+    file_count = (
+        sum(1 for file in backup_data.rglob("*") if file.is_file())
+        if backup_data.is_dir()
+        else 0
+    )
+
+    return (
+        "JERVIS BACKUP STATUS\n\n"
+        f"Total Backups: {len(backups)}\n"
+        f"Latest Backup: {latest_backup}\n"
+        f"Files: {file_count}\n"
+        f"Integrity: {'PASS' if healthy else 'FAIL'}\n"
+        f"Restore Ready: {'Yes' if healthy and backup_data.is_dir() else 'No'}\n"
+        f"Details: {integrity_result}"
+    )
