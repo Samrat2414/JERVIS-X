@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.8] - 2026-09-02
+
+### Added
+
+- Added rollback error details to backup restore history.
+- Added restore history result limiting.
+- Added --limit N support for the --restore-history CLI command.
 ## [1.8.7] - 2026-09-02
 
 ### Added
