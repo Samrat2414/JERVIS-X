@@ -6,6 +6,10 @@
 
 - Made the backup chat-route regression test independent of optional desktop dependencies on Linux CI.
 
+### Security
+
+- Reject checksum manifest paths that escape the selected backup directory.
+
 ## [1.7.2] - 2026-09-02
 
 ### Added

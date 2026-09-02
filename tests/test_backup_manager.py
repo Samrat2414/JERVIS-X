@@ -81,3 +81,15 @@ def test_chat_command_routes_backup_verification():
 
     assert '"verify latest backup",' in brain_source
     assert "return verify_latest_backup_text()" in brain_source
+
+def test_backup_verifier_rejects_path_traversal(isolated_backup):
+    result = backup_manager.create_backup()
+    manifest_file = Path(result["path"]) / "SHA256SUMS.txt"
+    manifest_file.write_text(
+        ("0" * 64) + "  ../outside.txt",
+        encoding="utf-8",
+    )
+
+    verification = backup_manager.verify_backup_integrity(result["path"])
+
+    assert verification == "Backup checksum manifest is invalid."

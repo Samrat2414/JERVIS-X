@@ -37,3 +37,8 @@ JERVIS-X detects commands containing passwords, passcodes, API keys, secrets, to
 - Never commit `.env` files or credentials.
 - Keep dependencies updated.
 - Run automated tests before each release.
+## Backup Integrity
+
+- New backups include a SHA-256 checksum manifest.
+- Backup verification detects missing or modified files.
+- Manifest paths outside the selected backup directory are rejected.

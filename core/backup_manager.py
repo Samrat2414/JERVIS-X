@@ -322,7 +322,11 @@ def verify_backup_integrity(backup_folder):
 
         for checksum_line in checksum_lines:
             expected_hash, relative_path = checksum_line.split("  ", 1)
-            file_path = backup_folder / relative_path
+            backup_root = backup_folder.resolve()
+            file_path = (backup_root / relative_path).resolve()
+
+            if backup_root not in file_path.parents:
+                return "Backup checksum manifest is invalid."
 
             if not file_path.is_file():
                 return f"Backup file missing: {relative_path}"
