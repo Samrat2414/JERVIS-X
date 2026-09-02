@@ -114,3 +114,10 @@ def test_command_line_restore_preview_route():
 
     assert '"--preview-restore" in sys.argv' in main_source
     assert "print(preview_restore())" in main_source
+
+def test_chat_command_routes_restore_preview():
+    brain_file = Path(__file__).resolve().parents[1] / "core" / "brain.py"
+    brain_source = brain_file.read_text(encoding="utf-8")
+
+    assert '"preview restore",' in brain_source
+    assert "return preview_restore()" in brain_source

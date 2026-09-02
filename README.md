@@ -245,3 +245,4 @@ Unknown options return a clear error message and exit code `2`.
 | `list backups` | List available backups |
 | `latest backup` | Show the latest backup |
 | `verify latest backup` | Verify the latest backup with SHA-256 |
+| `preview restore` | Preview an integrity-checked restore without changing data |

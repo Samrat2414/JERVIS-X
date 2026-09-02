@@ -250,6 +250,7 @@ from core.backup_manager import (
     list_backups,
     get_latest_backup,
     verify_latest_backup_text,
+    preview_restore,
 )
 from core.command_analytics import (
     record_command,
@@ -2699,6 +2700,12 @@ def process_command(command):
     ]:
         return verify_latest_backup_text()
 
+    if command in [
+        "preview restore",
+        "preview latest restore",
+        "restore preview",
+    ]:
+        return preview_restore()
     if command in ["restore latest backup", "restore backup"]:
         return (
             "Restore is blocked in Chat for safety. "
