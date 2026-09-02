@@ -604,3 +604,38 @@ def cleanup_old_backups(keep=5):
             f"Deleted {deleted} old backup(s)."
         ),
     }
+def get_restore_history_text():
+    history = get_restore_history()
+
+    if not history:
+        return "No restore history found."
+
+    lines = ["JERVIS BACKUP RESTORE HISTORY", ""]
+
+    for number, entry in enumerate(
+        reversed(history),
+        start=1,
+    ):
+        status = "SUCCESS" if entry.get("success") else "FAILED"
+
+        lines.extend([
+            f"{number}. {status}",
+            f"   Time: {entry.get('timestamp', 'Unknown')}",
+            f"   Backup: {entry.get('backup', 'Unknown')}",
+            f"   Safety Backup: {entry.get('safety_backup') or 'None'}",
+        ])
+
+        if not entry.get("success"):
+            lines.append(
+                f"   Rolled Back: "
+                f"{'Yes' if entry.get('rolled_back') else 'No'}"
+            )
+
+            if entry.get("error"):
+                lines.append(
+                    f"   Error: {entry['error']}"
+                )
+
+        lines.append("")
+
+    return "\n".join(lines).rstrip()

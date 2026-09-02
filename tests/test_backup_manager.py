@@ -325,3 +325,10 @@ def test_get_restore_history_returns_empty_list_when_missing(
     history = backup_manager.get_restore_history()
 
     assert history == []
+
+def test_get_restore_history_text_returns_message_when_empty(
+    isolated_backup,
+):
+    result = backup_manager.get_restore_history_text()
+
+    assert result == "No restore history found."
