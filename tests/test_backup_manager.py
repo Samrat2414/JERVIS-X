@@ -332,3 +332,23 @@ def test_get_restore_history_text_returns_message_when_empty(
     result = backup_manager.get_restore_history_text()
 
     assert result == "No restore history found."
+
+def test_get_restore_history_text_shows_rollback_error(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    backup_manager._write_restore_history({
+        "timestamp": "2026-09-02T12:00:00",
+        "backup": "backup_test",
+        "success": False,
+        "safety_backup": "pre_restore_test",
+        "rolled_back": False,
+        "error": "Restore failed",
+        "rollback_error": "Rollback failed",
+    })
+
+    result = backup_manager.get_restore_history_text()
+
+    assert "Rollback Error: Rollback failed" in result

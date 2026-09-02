@@ -636,6 +636,10 @@ def get_restore_history_text():
                     f"   Error: {entry['error']}"
                 )
 
+            if entry.get("rollback_error"):
+                lines.append(
+                    f"   Rollback Error: {entry['rollback_error']}"
+                )
         lines.append("")
 
     return "\n".join(lines).rstrip()
