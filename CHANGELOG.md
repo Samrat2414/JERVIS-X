@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.7] - 2026-09-02
+
+### Added
+
+- Added backup restore history reader and human-readable history viewer.
+- Added `--restore-history` CLI command to view backup recovery history.
+
 ## [1.8.6] - 2026-09-02
 
 ### Added
