@@ -1,4 +1,9 @@
 # Changelog
+## [1.8.5] - 2026-09-02
+
+### Reliability
+
+- Added automatic rollback when a backup restore operation fails.
 
 ## [Unreleased]
 
