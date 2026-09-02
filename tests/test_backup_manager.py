@@ -138,3 +138,13 @@ def test_restore_blocks_tampered_backup(isolated_backup):
         "Restore blocked because backup verification failed."
     )
     assert current_settings.read_text(encoding="utf-8") == "safe current data"
+
+def test_backup_verifier_rejects_unexpected_file(isolated_backup):
+    result = backup_manager.create_backup()
+    backup_folder = Path(result["path"])
+    unexpected_file = backup_folder / "data" / "unexpected.json"
+    unexpected_file.write_text("unexpected", encoding="utf-8")
+
+    verification = backup_manager.verify_backup_integrity(backup_folder)
+
+    assert verification == "Backup contains unexpected file: data/unexpected.json"

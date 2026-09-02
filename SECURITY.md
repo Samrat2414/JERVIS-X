@@ -40,6 +40,6 @@ JERVIS-X detects commands containing passwords, passcodes, API keys, secrets, to
 ## Backup Integrity
 
 - New backups include a SHA-256 checksum manifest.
-- Backup verification detects missing or modified files.
+- Backup verification detects missing, modified, or unexpected files.
 - Restore operations are blocked when backup integrity verification fails.
 - Manifest paths outside the selected backup directory are rejected.

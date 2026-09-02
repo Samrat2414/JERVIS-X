@@ -380,10 +380,12 @@ def verify_backup_integrity(backup_folder):
 
     try:
         checksum_lines = manifest_file.read_text(encoding="utf-8").splitlines()
+        backup_root = backup_folder.resolve()
+        manifest_paths = set()
 
         for checksum_line in checksum_lines:
             expected_hash, relative_path = checksum_line.split("  ", 1)
-            backup_root = backup_folder.resolve()
+            manifest_paths.add(Path(relative_path).as_posix())
             file_path = (backup_root / relative_path).resolve()
 
             if backup_root not in file_path.parents:
@@ -396,6 +398,17 @@ def verify_backup_integrity(backup_folder):
 
             if actual_hash != expected_hash:
                 return f"Backup integrity check failed: {relative_path}"
+
+        actual_paths = {
+            file.relative_to(backup_root).as_posix()
+            for file in backup_root.rglob("*")
+            if file.is_file() and file != manifest_file
+        }
+
+        unexpected_files = sorted(actual_paths - manifest_paths)
+
+        if unexpected_files:
+            return f"Backup contains unexpected file: {unexpected_files[0]}"
 
         return f"Backup integrity verified: {backup_folder}."
 
