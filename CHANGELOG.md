@@ -2,9 +2,11 @@
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-09-02
+
 ### Fixed
 
-- Store packaged Windows backups under %LOCALAPPDATA%\JERVIS-X\backups so persistent user data is backed up correctly.
+- Store packaged Windows backups under `%LOCALAPPDATA%\JERVIS-X\backups` so persistent user data is backed up correctly.
 
 ## [1.7.0] - 2026-09-02
 
