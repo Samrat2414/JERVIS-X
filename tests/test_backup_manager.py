@@ -317,3 +317,11 @@ def test_failed_restore_is_written_to_history(
 
     assert result["success"] is False
     assert history_file.is_file()
+
+
+def test_get_restore_history_returns_empty_list_when_missing(
+    isolated_backup,
+):
+    history = backup_manager.get_restore_history()
+
+    assert history == []

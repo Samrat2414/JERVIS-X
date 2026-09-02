@@ -238,6 +238,22 @@ def _write_restore_history(entry):
     )
 
 
+def get_restore_history():
+    history_file = BACKUP_DIR / "restore_history.json"
+
+    if not history_file.is_file():
+        return []
+
+    try:
+        return json.loads(
+            history_file.read_text(
+                encoding="utf-8"
+            )
+        )
+    except (json.JSONDecodeError, OSError):
+        return []
+
+
 def restore_backup(
     backup_path=None,
 ):
