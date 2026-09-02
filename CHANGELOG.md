@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.8.3] - 2026-09-02
+
 ### Security
 
 - Detect files present in a backup but missing from its SHA-256 manifest.
