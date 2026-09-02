@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-09-02
+
 ### Added
 
 - Added the preview restore JERVIS chat command.
