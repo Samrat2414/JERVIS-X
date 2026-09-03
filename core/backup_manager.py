@@ -798,6 +798,15 @@ def get_backup_integrity_audit():
         else 0
     )
 
+    if recovery_readiness_score >= 90:
+        recovery_risk_level = "LOW"
+    elif recovery_readiness_score >= 60:
+        recovery_risk_level = "MEDIUM"
+    elif recovery_readiness_score >= 1:
+        recovery_risk_level = "HIGH"
+    else:
+        recovery_risk_level = "CRITICAL"
+
     return {
         "total": total,
         "valid": valid,
@@ -810,6 +819,7 @@ def get_backup_integrity_audit():
         "first_failure_reason": first_failure_reason,
         "recovery_recommendation": recovery_recommendation,
         "recovery_readiness_score": recovery_readiness_score,
+        "recovery_risk_level": recovery_risk_level,
     }
 
 def get_backup_integrity_audit_text():
@@ -828,6 +838,7 @@ def get_backup_integrity_audit_text():
         f"First Failure Reason: {audit['first_failure_reason'] or 'None'}",
         f"Recovery Recommendation: {audit['recovery_recommendation']}",
         f"Recovery Readiness Score: {audit['recovery_readiness_score']}/100",
+        f"Recovery Risk Level: {audit['recovery_risk_level']}",
     ]
 
     if audit["details"]:

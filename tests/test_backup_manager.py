@@ -758,3 +758,83 @@ def test_get_backup_integrity_audit_recovery_readiness_score_zero(
     audit = backup_manager.get_backup_integrity_audit()
 
     assert audit["recovery_readiness_score"] == 0
+
+def test_get_backup_integrity_audit_recovery_risk_level_low(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_backup = backup_dir / "backup_20260903_200000"
+    valid_backup.mkdir()
+    (valid_backup / "data.txt").write_text(
+        "hello",
+        encoding="utf-8",
+    )
+    backup_manager._write_checksum_manifest(valid_backup)
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_risk_level"] == "LOW"
+
+def test_get_backup_integrity_audit_recovery_risk_level_critical(
+    isolated_backup,
+):
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_risk_level"] == "CRITICAL"
+
+def test_get_backup_integrity_audit_recovery_risk_level_medium(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_backup_1 = backup_dir / "backup_20260903_200000"
+    valid_backup_1.mkdir()
+    (valid_backup_1 / "data.txt").write_text(
+        "hello",
+        encoding="utf-8",
+    )
+    backup_manager._write_checksum_manifest(valid_backup_1)
+
+    valid_backup_2 = backup_dir / "backup_20260903_210000"
+    valid_backup_2.mkdir()
+    (valid_backup_2 / "data.txt").write_text(
+        "world",
+        encoding="utf-8",
+    )
+    backup_manager._write_checksum_manifest(valid_backup_2)
+
+    invalid_backup = backup_dir / "backup_20260903_220000"
+    invalid_backup.mkdir()
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_readiness_score"] == 67
+    assert audit["recovery_risk_level"] == "MEDIUM"
+
+def test_get_backup_integrity_audit_recovery_risk_level_high(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_backup = backup_dir / "backup_20260903_200000"
+    valid_backup.mkdir()
+    (valid_backup / "data.txt").write_text(
+        "hello",
+        encoding="utf-8",
+    )
+    backup_manager._write_checksum_manifest(valid_backup)
+
+    invalid_backup_1 = backup_dir / "backup_20260903_210000"
+    invalid_backup_1.mkdir()
+
+    invalid_backup_2 = backup_dir / "backup_20260903_220000"
+    invalid_backup_2.mkdir()
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_readiness_score"] == 33
+    assert audit["recovery_risk_level"] == "HIGH"
