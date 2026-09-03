@@ -559,3 +559,42 @@ def test_command_line_verify_backups_route():
 
     assert '"--verify-backups" in sys.argv' in main_source
     assert "get_backup_integrity_audit_text" in main_source
+
+def test_get_backup_integrity_audit_includes_details(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_backup = backup_dir / "backup_valid"
+    valid_backup.mkdir()
+    (valid_backup / "data.txt").write_text(
+        "hello",
+        encoding="utf-8",
+    )
+    backup_manager._write_checksum_manifest(valid_backup)
+
+    invalid_backup = backup_dir / "backup_invalid"
+    invalid_backup.mkdir()
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert len(audit["details"]) == 2
+    assert audit["details"][0]["backup"]
+    assert audit["details"][0]["status"] in {"VALID", "INVALID"}
+    assert audit["details"][0]["reason"]
+
+def test_get_backup_integrity_audit_text_includes_details(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    invalid_backup = backup_dir / "backup_invalid"
+    invalid_backup.mkdir()
+
+    result = backup_manager.get_backup_integrity_audit_text()
+
+    assert "Details:" in result
+    assert "backup_invalid: INVALID" in result
+    assert "Backup checksum manifest not found." in result

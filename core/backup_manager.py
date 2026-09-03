@@ -709,12 +709,20 @@ def get_backup_integrity_audit():
     ] if BACKUP_DIR.exists() else []
 
     valid = 0
+    details = []
 
     for backup_folder in backup_folders:
         result = verify_backup_integrity(backup_folder)
+        is_valid = result.startswith("Backup integrity verified:")
 
-        if result.startswith("Backup integrity verified:"):
+        if is_valid:
             valid += 1
+
+        details.append({
+            "backup": backup_folder.name,
+            "status": "VALID" if is_valid else "INVALID",
+            "reason": result,
+        })
 
     total = len(backup_folders)
     invalid = total - valid
@@ -739,12 +747,13 @@ def get_backup_integrity_audit():
         "invalid": invalid,
         "integrity_rate": integrity_rate,
         "status": status,
+        "details": details,
     }
 
 def get_backup_integrity_audit_text():
     audit = get_backup_integrity_audit()
 
-    return "\n".join([
+    lines = [
         "JERVIS BACKUP INTEGRITY AUDIT",
         "",
         f"Total Backups: {audit['total']}",
@@ -752,4 +761,17 @@ def get_backup_integrity_audit_text():
         f"Invalid: {audit['invalid']}",
         f"Integrity Rate: {audit['integrity_rate']}%",
         f"Status: {audit['status']}",
-    ])
+    ]
+
+    if audit["details"]:
+        lines.extend(["", "Details:"])
+
+        for detail in audit["details"]:
+            line = f"- {detail['backup']}: {detail['status']}"
+
+            if detail["status"] == "INVALID":
+                line += f" - {detail['reason']}"
+
+            lines.append(line)
+
+    return "\n".join(lines)
