@@ -731,6 +731,33 @@ def get_backup_integrity_audit():
         )
     )
 
+    latest_valid = max(
+        (
+            item["backup"]
+            for item in details
+            if item["status"] == "VALID"
+        ),
+        default=None,
+    )
+
+    latest_invalid = max(
+        (
+            item["backup"]
+            for item in details
+            if item["status"] == "INVALID"
+        ),
+        default=None,
+    )
+
+    first_failure_reason = next(
+        (
+            item["reason"]
+            for item in details
+            if item["status"] == "INVALID"
+        ),
+        None,
+    )
+
     total = len(backup_folders)
     invalid = total - valid
 
@@ -755,6 +782,9 @@ def get_backup_integrity_audit():
         "integrity_rate": integrity_rate,
         "status": status,
         "details": details,
+        "latest_valid": latest_valid,
+        "latest_invalid": latest_invalid,
+        "first_failure_reason": first_failure_reason,
     }
 
 def get_backup_integrity_audit_text():
@@ -768,6 +798,9 @@ def get_backup_integrity_audit_text():
         f"Invalid: {audit['invalid']}",
         f"Integrity Rate: {audit['integrity_rate']}%",
         f"Status: {audit['status']}",
+        f"Latest Valid: {audit['latest_valid'] or 'None'}",
+        f"Latest Invalid: {audit['latest_invalid'] or 'None'}",
+        f"First Failure Reason: {audit['first_failure_reason'] or 'None'}",
     ]
 
     if audit["details"]:

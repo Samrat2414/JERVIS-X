@@ -621,3 +621,26 @@ def test_get_backup_integrity_audit_details_invalid_first(
     assert len(audit["details"]) == 2
     assert audit["details"][0]["status"] == "INVALID"
     assert audit["details"][1]["status"] == "VALID"
+
+def test_get_backup_integrity_audit_includes_latest_summary(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_backup = backup_dir / "backup_20260903_100000"
+    valid_backup.mkdir()
+    (valid_backup / "data.txt").write_text(
+        "hello",
+        encoding="utf-8",
+    )
+    backup_manager._write_checksum_manifest(valid_backup)
+
+    invalid_backup = backup_dir / "backup_20260903_110000"
+    invalid_backup.mkdir()
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["latest_valid"] == "backup_20260903_100000"
+    assert audit["latest_invalid"] == "backup_20260903_110000"
+    assert audit["first_failure_reason"] == "Backup checksum manifest not found."
