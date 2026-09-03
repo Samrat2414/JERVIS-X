@@ -25,3 +25,8 @@ def test_classify_command_identifies_job_application_intelligence():
     result = classify_command("job application intelligence")
 
     assert result == "JOB_APPLICATION"
+
+def test_classify_command_identifies_resume_intelligence():
+    result = classify_command("resume intelligence")
+
+    assert result == "RESUME"

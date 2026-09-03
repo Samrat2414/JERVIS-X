@@ -13,6 +13,9 @@
     if "job application" in command:
         return "JOB_APPLICATION"
 
+    if "resume" in command:
+        return "RESUME"
+
     return "UNKNOWN"
 
 
