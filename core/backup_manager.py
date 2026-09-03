@@ -829,6 +829,17 @@ def get_backup_integrity_audit():
     else:
         recovery_confidence = "NONE"
 
+    if recovery_readiness_score >= 90:
+        recovery_action = "RESTORE READY"
+    elif recovery_readiness_score >= 75:
+        recovery_action = "VERIFY BEFORE RESTORE"
+    elif recovery_readiness_score >= 50:
+        recovery_action = "REPAIR BACKUPS"
+    elif recovery_readiness_score >= 1:
+        recovery_action = "CREATE NEW BACKUP"
+    else:
+        recovery_action = "NO RECOVERY AVAILABLE"
+
     return {
         "total": total,
         "valid": valid,
@@ -844,6 +855,7 @@ def get_backup_integrity_audit():
         "recovery_risk_level": recovery_risk_level,
         "recovery_health_grade": recovery_health_grade,
         "recovery_confidence": recovery_confidence,
+        "recovery_action": recovery_action,
     }
 
 def get_backup_integrity_audit_text():
@@ -865,6 +877,7 @@ def get_backup_integrity_audit_text():
         f"Recovery Risk Level: {audit['recovery_risk_level']}",
         f"Recovery Health Grade: {audit['recovery_health_grade']}",
         f"Recovery Confidence: {audit['recovery_confidence']}",
+        f"Recovery Action: {audit['recovery_action']}",
     ]
 
     if audit["details"]:

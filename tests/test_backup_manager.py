@@ -1034,3 +1034,97 @@ def test_get_backup_integrity_audit_recovery_confidence_low(
 
     assert audit["recovery_readiness_score"] == 40
     assert audit["recovery_confidence"] == "LOW"
+
+def test_get_backup_integrity_audit_recovery_action_restore_ready(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_backup = backup_dir / "backup_20260903_230200"
+    valid_backup.mkdir()
+    (valid_backup / "data.txt").write_text(
+        "hello",
+        encoding="utf-8",
+    )
+    backup_manager._write_checksum_manifest(valid_backup)
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_readiness_score"] == 100
+    assert audit["recovery_action"] == "RESTORE READY"
+def test_get_backup_integrity_audit_recovery_action_verify_before_restore(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    for index in range(4):
+        valid_backup = backup_dir / f"backup_valid_action_{index}"
+        valid_backup.mkdir()
+        (valid_backup / "data.txt").write_text(
+            "hello",
+            encoding="utf-8",
+        )
+        backup_manager._write_checksum_manifest(valid_backup)
+
+    invalid_backup = backup_dir / "backup_invalid_action"
+    invalid_backup.mkdir()
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_readiness_score"] == 80
+    assert audit["recovery_action"] == "VERIFY BEFORE RESTORE"
+def test_get_backup_integrity_audit_recovery_action_repair_backups(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    for index in range(3):
+        valid_backup = backup_dir / f"backup_valid_repair_{index}"
+        valid_backup.mkdir()
+        (valid_backup / "data.txt").write_text(
+            "hello",
+            encoding="utf-8",
+        )
+        backup_manager._write_checksum_manifest(valid_backup)
+
+    for index in range(2):
+        invalid_backup = backup_dir / f"backup_invalid_repair_{index}"
+        invalid_backup.mkdir()
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_readiness_score"] == 60
+    assert audit["recovery_action"] == "REPAIR BACKUPS"
+def test_get_backup_integrity_audit_recovery_action_create_new_backup(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    for index in range(2):
+        valid_backup = backup_dir / f"backup_valid_create_{index}"
+        valid_backup.mkdir()
+        (valid_backup / "data.txt").write_text(
+            "hello",
+            encoding="utf-8",
+        )
+        backup_manager._write_checksum_manifest(valid_backup)
+
+    for index in range(3):
+        invalid_backup = backup_dir / f"backup_invalid_create_{index}"
+        invalid_backup.mkdir()
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_readiness_score"] == 40
+    assert audit["recovery_action"] == "CREATE NEW BACKUP"
+def test_get_backup_integrity_audit_recovery_action_no_recovery_available(
+    isolated_backup,
+):
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_readiness_score"] == 0
+    assert audit["recovery_action"] == "NO RECOVERY AVAILABLE"
