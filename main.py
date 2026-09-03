@@ -24,6 +24,7 @@ Options:
   --backup-status   Show backup health and restore readiness
   --cleanup-backups [--keep N]  Clean up old backups (default: keep 5)
   --verify-latest-backup  Verify latest backup integrity
+  --verify-backups  Audit integrity of all backups
   --preview-restore  Preview latest backup restore without changing data
   --restore-history  Show backup restore history
   --restore-statistics  Show backup restore statistics
@@ -114,6 +115,11 @@ def main():
         print(verify_latest_backup_text())
         return
 
+    if "--verify-backups" in sys.argv:
+        from core.backup_manager import get_backup_integrity_audit_text
+
+        print(get_backup_integrity_audit_text())
+        return
     if "--preview-restore" in sys.argv:
         from core.backup_manager import preview_restore
 

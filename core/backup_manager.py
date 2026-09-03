@@ -700,3 +700,56 @@ def get_restore_history_statistics_text():
         f"Last Status: {stats['last_status']}",
         f"Last Restore: {stats['last_restore'] or 'None'}",
     ])
+
+def get_backup_integrity_audit():
+    backup_folders = [
+        path
+        for path in BACKUP_DIR.iterdir()
+        if path.is_dir()
+    ] if BACKUP_DIR.exists() else []
+
+    valid = 0
+
+    for backup_folder in backup_folders:
+        result = verify_backup_integrity(backup_folder)
+
+        if result.startswith("Backup integrity verified:"):
+            valid += 1
+
+    total = len(backup_folders)
+    invalid = total - valid
+
+    integrity_rate = (
+        round((valid / total) * 100, 2)
+        if total
+        else 0.0
+    )
+
+    status = (
+        "HEALTHY"
+        if total > 0 and invalid == 0
+        else "WARNING"
+        if total > 0
+        else "NO BACKUPS"
+    )
+
+    return {
+        "total": total,
+        "valid": valid,
+        "invalid": invalid,
+        "integrity_rate": integrity_rate,
+        "status": status,
+    }
+
+def get_backup_integrity_audit_text():
+    audit = get_backup_integrity_audit()
+
+    return "\n".join([
+        "JERVIS BACKUP INTEGRITY AUDIT",
+        "",
+        f"Total Backups: {audit['total']}",
+        f"Valid: {audit['valid']}",
+        f"Invalid: {audit['invalid']}",
+        f"Integrity Rate: {audit['integrity_rate']}%",
+        f"Status: {audit['status']}",
+    ])

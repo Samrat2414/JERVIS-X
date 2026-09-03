@@ -491,3 +491,71 @@ def test_command_line_restore_statistics_route():
 
     assert '"--restore-statistics" in sys.argv' in main_source
     assert "get_restore_history_statistics_text" in main_source
+
+def test_get_backup_integrity_audit_counts_valid_and_invalid(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_backup = backup_dir / "backup_valid"
+    valid_backup.mkdir()
+    (valid_backup / "data.txt").write_text(
+        "hello",
+        encoding="utf-8",
+    )
+    backup_manager._write_checksum_manifest(valid_backup)
+
+    invalid_backup = backup_dir / "backup_invalid"
+    invalid_backup.mkdir()
+    (invalid_backup / "data.txt").write_text(
+        "hello",
+        encoding="utf-8",
+    )
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["total"] == 2
+    assert audit["valid"] == 1
+    assert audit["invalid"] == 1
+
+def test_get_backup_integrity_audit_includes_rate_and_status(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_backup = backup_dir / "backup_valid"
+    valid_backup.mkdir()
+    (valid_backup / "data.txt").write_text(
+        "hello",
+        encoding="utf-8",
+    )
+    backup_manager._write_checksum_manifest(valid_backup)
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["integrity_rate"] == 100.0
+    assert audit["status"] == "HEALTHY"
+
+def test_get_backup_integrity_audit_text(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    result = backup_manager.get_backup_integrity_audit_text()
+
+    assert "JERVIS BACKUP INTEGRITY AUDIT" in result
+    assert "Total Backups: 0" in result
+    assert "Valid: 0" in result
+    assert "Invalid: 0" in result
+    assert "Integrity Rate: 0.0%" in result
+    assert "Status: NO BACKUPS" in result
+
+def test_command_line_verify_backups_route():
+    main_file = Path(__file__).resolve().parents[1] / "main.py"
+    main_source = main_file.read_text(encoding="utf-8")
+
+    assert '"--verify-backups" in sys.argv' in main_source
+    assert "get_backup_integrity_audit_text" in main_source
