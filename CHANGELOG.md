@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.0] - 2026-09-03
+
+### Added
+
+- Added backup integrity auditing across all stored backups.
+- Added aggregate valid/invalid counts, integrity rate, and health status.
+- Added `--verify-backups` CLI command.
+
 ## [1.8.9] - 2026-09-03
 
 ### Added
