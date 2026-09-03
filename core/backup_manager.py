@@ -724,6 +724,13 @@ def get_backup_integrity_audit():
             "reason": result,
         })
 
+    details.sort(
+        key=lambda item: (
+            item["status"] != "INVALID",
+            item["backup"],
+        )
+    )
+
     total = len(backup_folders)
     invalid = total - valid
 
