@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.9] - 2026-09-03
+
+### Added
+
+- Added backup restore statistics for total, successful, failed, and rolled-back restores.
+- Added restore success rate and latest restore status/time details.
+- Added `--restore-statistics` CLI command.
+
 ## [1.8.8] - 2026-09-02
 
 ### Added
