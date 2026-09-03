@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.1] - 2026-09-03
+
+### Added
+
+- Added per-backup integrity audit details.
+- Added VALID/INVALID status and failure reasons for backup integrity checks.
+
 ## [1.9.0] - 2026-09-03
 
 ### Added
