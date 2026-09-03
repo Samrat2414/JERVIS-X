@@ -1,3 +1,11 @@
+## [1.9.5] - 2026-09-03
+
+### Added
+
+- Added backup recovery readiness score.
+- Added 0–100 recovery readiness calculation based on valid backups.
+- Added readiness-score coverage for healthy, mixed, and no-backup states.
+- Added recovery readiness score to the human-readable integrity audit.
 # Changelog
 
 ## [1.9.4] - 2026-09-03
