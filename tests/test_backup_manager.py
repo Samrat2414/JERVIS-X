@@ -382,3 +382,112 @@ def test_command_line_restore_history_limit_route():
 
     assert '"--limit" in sys.argv' in main_source
     assert "get_restore_history_text(limit=limit)" in main_source
+
+def test_get_restore_history_statistics_returns_counts(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    backup_manager._write_restore_history({
+        "timestamp": "2026-09-03T09:00:00",
+        "backup": "backup_1",
+        "success": True,
+        "safety_backup": None,
+        "rolled_back": False,
+        "error": None,
+        "rollback_error": None,
+    })
+
+    backup_manager._write_restore_history({
+        "timestamp": "2026-09-03T09:05:00",
+        "backup": "backup_2",
+        "success": False,
+        "safety_backup": "pre_restore_2",
+        "rolled_back": True,
+        "error": "Restore failed",
+        "rollback_error": None,
+    })
+
+    stats = backup_manager.get_restore_history_statistics()
+
+    assert stats["total"] == 2
+    assert stats["successful"] == 1
+    assert stats["failed"] == 1
+    assert stats["rolled_back"] == 1
+
+def test_get_restore_history_statistics_includes_latest_details(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    backup_manager._write_restore_history({
+        "timestamp": "2026-09-03T09:10:00",
+        "backup": "backup_1",
+        "success": True,
+        "safety_backup": None,
+        "rolled_back": False,
+        "error": None,
+        "rollback_error": None,
+    })
+
+    backup_manager._write_restore_history({
+        "timestamp": "2026-09-03T09:20:00",
+        "backup": "backup_2",
+        "success": False,
+        "safety_backup": "pre_restore_2",
+        "rolled_back": True,
+        "error": "Restore failed",
+        "rollback_error": None,
+    })
+
+    stats = backup_manager.get_restore_history_statistics()
+
+    assert stats["success_rate"] == 50.0
+    assert stats["last_status"] == "FAILED"
+    assert stats["last_restore"] == "2026-09-03T09:20:00"
+
+def test_get_restore_history_statistics_handles_empty_history(
+    isolated_backup,
+):
+    stats = backup_manager.get_restore_history_statistics()
+
+    assert stats["total"] == 0
+    assert stats["successful"] == 0
+    assert stats["failed"] == 0
+    assert stats["rolled_back"] == 0
+    assert stats["success_rate"] == 0.0
+    assert stats["last_status"] == "NONE"
+    assert stats["last_restore"] is None
+
+def test_get_restore_history_statistics_text(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    backup_manager._write_restore_history({
+        "timestamp": "2026-09-03T09:30:00",
+        "backup": "backup_test",
+        "success": True,
+        "safety_backup": None,
+        "rolled_back": False,
+        "error": None,
+        "rollback_error": None,
+    })
+
+    result = backup_manager.get_restore_history_statistics_text()
+
+    assert "JERVIS BACKUP RESTORE STATISTICS" in result
+    assert "Total Attempts: 1" in result
+    assert "Successful: 1" in result
+    assert "Failed: 0" in result
+    assert "Success Rate: 100.0%" in result
+
+def test_command_line_restore_statistics_route():
+    main_file = Path(__file__).resolve().parents[1] / "main.py"
+    main_source = main_file.read_text(encoding="utf-8")
+
+    assert '"--restore-statistics" in sys.argv' in main_source
+    assert "get_restore_history_statistics_text" in main_source

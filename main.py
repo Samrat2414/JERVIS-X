@@ -26,6 +26,7 @@ Options:
   --verify-latest-backup  Verify latest backup integrity
   --preview-restore  Preview latest backup restore without changing data
   --restore-history  Show backup restore history
+  --restore-statistics  Show backup restore statistics
   --export-settings Export JERVIS settings to JSON
   --import-settings FILE  Import JERVIS settings from JSON
   --validate-settings FILE  Validate settings without importing
@@ -133,6 +134,11 @@ def main():
         print(get_restore_history_text(limit=limit))
         return
 
+    if "--restore-statistics" in sys.argv:
+        from core.backup_manager import get_restore_history_statistics_text
+
+        print(get_restore_history_statistics_text())
+        return
     if "--export-settings" in sys.argv:
         from core.settings import export_settings
 

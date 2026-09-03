@@ -645,3 +645,58 @@ def get_restore_history_text(limit=None):
         lines.append("")
 
     return "\n".join(lines).rstrip()
+
+def get_restore_history_statistics():
+    history = get_restore_history()
+
+    total = len(history)
+    successful = sum(
+        1 for entry in history
+        if entry.get("success")
+    )
+    failed = total - successful
+    rolled_back = sum(
+        1 for entry in history
+        if entry.get("rolled_back")
+    )
+
+    success_rate = (
+        round((successful / total) * 100, 2)
+        if total
+        else 0.0
+    )
+
+    latest = history[-1] if history else None
+
+    return {
+        "total": total,
+        "successful": successful,
+        "failed": failed,
+        "rolled_back": rolled_back,
+        "success_rate": success_rate,
+        "last_status": (
+            "SUCCESS" if latest and latest.get("success")
+            else "FAILED" if latest
+            else "NONE"
+        ),
+        "last_restore": (
+            latest.get("timestamp")
+            if latest
+            else None
+        ),
+    }
+
+def get_restore_history_statistics_text():
+    stats = get_restore_history_statistics()
+
+    return "\n".join([
+        "JERVIS BACKUP RESTORE STATISTICS",
+        "",
+        f"Total Attempts: {stats['total']}",
+        f"Successful: {stats['successful']}",
+        f"Failed: {stats['failed']}",
+        f"Rolled Back: {stats['rolled_back']}",
+        f"Success Rate: {stats['success_rate']}%",
+        f"Last Status: {stats['last_status']}",
+        f"Last Restore: {stats['last_restore'] or 'None'}",
+    ])
