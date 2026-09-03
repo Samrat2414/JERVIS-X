@@ -1,3 +1,12 @@
+## [1.9.6] - 2026-09-03
+
+### Added
+
+- Added backup recovery risk levels.
+- Added LOW, MEDIUM, HIGH, and CRITICAL recovery risk classification.
+- Added recovery risk tests across all readiness ranges.
+- Added recovery risk level to the human-readable integrity audit.
+
 ## [1.9.5] - 2026-09-03
 
 ### Added
