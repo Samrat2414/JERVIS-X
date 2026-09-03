@@ -792,6 +792,12 @@ def get_backup_integrity_audit():
             "All backups are verified and restore-ready."
         )
 
+    recovery_readiness_score = (
+        round((valid / total) * 100)
+        if total
+        else 0
+    )
+
     return {
         "total": total,
         "valid": valid,
@@ -803,6 +809,7 @@ def get_backup_integrity_audit():
         "latest_invalid": latest_invalid,
         "first_failure_reason": first_failure_reason,
         "recovery_recommendation": recovery_recommendation,
+        "recovery_readiness_score": recovery_readiness_score,
     }
 
 def get_backup_integrity_audit_text():
@@ -820,6 +827,7 @@ def get_backup_integrity_audit_text():
         f"Latest Invalid: {audit['latest_invalid'] or 'None'}",
         f"First Failure Reason: {audit['first_failure_reason'] or 'None'}",
         f"Recovery Recommendation: {audit['recovery_recommendation']}",
+        f"Recovery Readiness Score: {audit['recovery_readiness_score']}/100",
     ]
 
     if audit["details"]:

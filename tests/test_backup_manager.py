@@ -712,3 +712,49 @@ def test_get_backup_integrity_audit_recommends_creating_backup(
     assert audit["recovery_recommendation"] == (
         "No backups are available. Create a new backup."
     )
+
+def test_get_backup_integrity_audit_includes_recovery_readiness_score(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_backup = backup_dir / "backup_20260903_180000"
+    valid_backup.mkdir()
+    (valid_backup / "data.txt").write_text(
+        "hello",
+        encoding="utf-8",
+    )
+    backup_manager._write_checksum_manifest(valid_backup)
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_readiness_score"] == 100
+
+def test_get_backup_integrity_audit_recovery_readiness_score_mixed(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_backup = backup_dir / "backup_20260903_180000"
+    valid_backup.mkdir()
+    (valid_backup / "data.txt").write_text(
+        "hello",
+        encoding="utf-8",
+    )
+    backup_manager._write_checksum_manifest(valid_backup)
+
+    invalid_backup = backup_dir / "backup_20260903_190000"
+    invalid_backup.mkdir()
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_readiness_score"] == 50
+
+def test_get_backup_integrity_audit_recovery_readiness_score_zero(
+    isolated_backup,
+):
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_readiness_score"] == 0
