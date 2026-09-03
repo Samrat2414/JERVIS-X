@@ -936,3 +936,101 @@ def test_get_backup_integrity_audit_recovery_health_grade_d(
 
     assert audit["recovery_readiness_score"] == 60
     assert audit["recovery_health_grade"] == "D"
+
+def test_get_backup_integrity_audit_recovery_confidence_very_high(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    valid_backup = backup_dir / "backup_20260903_230100"
+    valid_backup.mkdir()
+    (valid_backup / "data.txt").write_text(
+        "hello",
+        encoding="utf-8",
+    )
+    backup_manager._write_checksum_manifest(valid_backup)
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_readiness_score"] == 100
+    assert audit["recovery_confidence"] == "VERY HIGH"
+
+def test_get_backup_integrity_audit_recovery_confidence_none(
+    isolated_backup,
+):
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_readiness_score"] == 0
+    assert audit["recovery_confidence"] == "NONE"
+
+def test_get_backup_integrity_audit_recovery_confidence_high(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    for index in range(4):
+        valid_backup = backup_dir / f"backup_valid_{index}"
+        valid_backup.mkdir()
+        (valid_backup / "data.txt").write_text(
+            "hello",
+            encoding="utf-8",
+        )
+        backup_manager._write_checksum_manifest(valid_backup)
+
+    invalid_backup = backup_dir / "backup_invalid"
+    invalid_backup.mkdir()
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_readiness_score"] == 80
+    assert audit["recovery_confidence"] == "HIGH"
+
+def test_get_backup_integrity_audit_recovery_confidence_moderate(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    for index in range(3):
+        valid_backup = backup_dir / f"backup_valid_{index}"
+        valid_backup.mkdir()
+        (valid_backup / "data.txt").write_text(
+            "hello",
+            encoding="utf-8",
+        )
+        backup_manager._write_checksum_manifest(valid_backup)
+
+    for index in range(2):
+        invalid_backup = backup_dir / f"backup_invalid_{index}"
+        invalid_backup.mkdir()
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_readiness_score"] == 60
+    assert audit["recovery_confidence"] == "MODERATE"
+
+def test_get_backup_integrity_audit_recovery_confidence_low(
+    isolated_backup,
+):
+    _, backup_dir = isolated_backup
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    for index in range(2):
+        valid_backup = backup_dir / f"backup_valid_{index}"
+        valid_backup.mkdir()
+        (valid_backup / "data.txt").write_text(
+            "hello",
+            encoding="utf-8",
+        )
+        backup_manager._write_checksum_manifest(valid_backup)
+
+    for index in range(3):
+        invalid_backup = backup_dir / f"backup_invalid_{index}"
+        invalid_backup.mkdir()
+
+    audit = backup_manager.get_backup_integrity_audit()
+
+    assert audit["recovery_readiness_score"] == 40
+    assert audit["recovery_confidence"] == "LOW"

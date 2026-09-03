@@ -818,6 +818,17 @@ def get_backup_integrity_audit():
     else:
         recovery_health_grade = "F"
 
+    if recovery_readiness_score >= 90:
+        recovery_confidence = "VERY HIGH"
+    elif recovery_readiness_score >= 75:
+        recovery_confidence = "HIGH"
+    elif recovery_readiness_score >= 50:
+        recovery_confidence = "MODERATE"
+    elif recovery_readiness_score >= 1:
+        recovery_confidence = "LOW"
+    else:
+        recovery_confidence = "NONE"
+
     return {
         "total": total,
         "valid": valid,
@@ -832,6 +843,7 @@ def get_backup_integrity_audit():
         "recovery_readiness_score": recovery_readiness_score,
         "recovery_risk_level": recovery_risk_level,
         "recovery_health_grade": recovery_health_grade,
+        "recovery_confidence": recovery_confidence,
     }
 
 def get_backup_integrity_audit_text():
@@ -852,6 +864,7 @@ def get_backup_integrity_audit_text():
         f"Recovery Readiness Score: {audit['recovery_readiness_score']}/100",
         f"Recovery Risk Level: {audit['recovery_risk_level']}",
         f"Recovery Health Grade: {audit['recovery_health_grade']}",
+        f"Recovery Confidence: {audit['recovery_confidence']}",
     ]
 
     if audit["details"]:
