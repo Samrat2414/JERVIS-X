@@ -10,6 +10,9 @@ def classify_command(command):
     if "career" in command:
         return "CAREER"
 
+    if "backup" in command:
+        return "BACKUP"
+
     return "UNKNOWN"
 
 
