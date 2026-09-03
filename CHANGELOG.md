@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.4] - 2026-09-03
+
+### Added
+
+- Added automatic backup recovery recommendations.
+- Added latest valid backup recovery guidance when invalid backups exist.
+- Added no-backup and no-valid-backup recovery guidance.
+- Added recovery recommendation details to the human-readable integrity audit.
+
 ## [1.9.3] - 2026-09-03
 
 ### Added
