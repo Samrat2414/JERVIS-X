@@ -775,6 +775,23 @@ def get_backup_integrity_audit():
         else "NO BACKUPS"
     )
 
+    if total == 0:
+        recovery_recommendation = (
+            "No backups are available. Create a new backup."
+        )
+    elif valid == 0:
+        recovery_recommendation = (
+            "No valid backups are available for recovery."
+        )
+    elif invalid > 0:
+        recovery_recommendation = (
+            f"Use latest valid backup for recovery: {latest_valid}"
+        )
+    else:
+        recovery_recommendation = (
+            "All backups are verified and restore-ready."
+        )
+
     return {
         "total": total,
         "valid": valid,
@@ -785,6 +802,7 @@ def get_backup_integrity_audit():
         "latest_valid": latest_valid,
         "latest_invalid": latest_invalid,
         "first_failure_reason": first_failure_reason,
+        "recovery_recommendation": recovery_recommendation,
     }
 
 def get_backup_integrity_audit_text():
@@ -801,6 +819,7 @@ def get_backup_integrity_audit_text():
         f"Latest Valid: {audit['latest_valid'] or 'None'}",
         f"Latest Invalid: {audit['latest_invalid'] or 'None'}",
         f"First Failure Reason: {audit['first_failure_reason'] or 'None'}",
+        f"Recovery Recommendation: {audit['recovery_recommendation']}",
     ]
 
     if audit["details"]:
