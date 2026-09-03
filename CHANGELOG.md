@@ -1,3 +1,12 @@
+## [1.9.8] - 2026-09-03
+
+### Added
+
+- Added backup recovery confidence levels.
+- Added VERY HIGH, HIGH, MODERATE, LOW, and NONE recovery confidence classification.
+- Added recovery confidence tests across all confidence ranges.
+- Added recovery confidence to the human-readable integrity audit.
+
 ## [1.9.7] - 2026-09-03
 
 ### Added
