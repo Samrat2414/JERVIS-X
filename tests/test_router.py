@@ -30,3 +30,8 @@ def test_classify_command_identifies_resume_intelligence():
     result = classify_command("resume intelligence")
 
     assert result == "RESUME"
+
+def test_classify_command_identifies_resume_readiness():
+    result = classify_command("resume readiness")
+
+    assert result == "RESUME"
