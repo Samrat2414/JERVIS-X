@@ -1,3 +1,12 @@
+## [1.9.7] - 2026-09-03
+
+### Added
+
+- Added backup recovery health grades.
+- Added A, B, C, D, and F health-grade classification based on recovery readiness score.
+- Added health-grade test coverage across all grade ranges.
+- Added recovery health grade to the human-readable integrity audit.
+
 ## [1.9.6] - 2026-09-03
 
 ### Added
