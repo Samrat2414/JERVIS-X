@@ -1,6 +1,6 @@
 APP_NAME = "JERVIS-X"
 APP_DISPLAY_NAME = "JERVIS X"
-__version__ = "1.9.1"
+__version__ = "1.9.2"
 
 APP_TITLE = f"{APP_DISPLAY_NAME} v{__version__}"
 VERSION_TEXT = (

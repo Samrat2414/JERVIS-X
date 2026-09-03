@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.2] - 2026-09-03
+
+### Added
+
+- Made backup integrity audit detail ordering deterministic.
+- Invalid backups are listed before valid backups.
+- Backup details are sorted consistently by backup name within each status.
+
+
 ## [1.9.1] - 2026-09-03
 
 ### Added
