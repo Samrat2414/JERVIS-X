@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.3] - 2026-09-03
+
+### Added
+
+- Added latest valid and latest invalid backup summary information.
+- Added first failure reason reporting for backup integrity audits.
+- Added audit summary details to the human-readable integrity report.
+
+
 ## [1.9.2] - 2026-09-03
 
 ### Added
