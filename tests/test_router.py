@@ -20,3 +20,8 @@ def test_classify_command_identifies_backup_intelligence():
     result = classify_command("backup integrity audit")
 
     assert result == "BACKUP"
+
+def test_classify_command_identifies_job_application_intelligence():
+    result = classify_command("job application intelligence")
+
+    assert result == "JOB_APPLICATION"

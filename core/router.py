@@ -10,6 +10,9 @@
     if "backup" in command:
         return "BACKUP"
 
+    if "job application" in command:
+        return "JOB_APPLICATION"
+
     return "UNKNOWN"
 
 
