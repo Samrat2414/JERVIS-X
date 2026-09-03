@@ -1,3 +1,12 @@
+## [1.9.9] - 2026-09-03
+
+### Added
+
+- Added backup recovery actions.
+- Added RESTORE READY, VERIFY BEFORE RESTORE, REPAIR BACKUPS, CREATE NEW BACKUP, and NO RECOVERY AVAILABLE action classification.
+- Added recovery action tests across all action ranges.
+- Added recovery action to the human-readable integrity audit.
+
 ## [1.9.8] - 2026-09-03
 
 ### Added
