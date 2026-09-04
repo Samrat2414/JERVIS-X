@@ -25,12 +25,14 @@
 def get_command_intelligence(command):
     normalized_command = command.strip().lower()
     domain = classify_command(command)
+    recognized = domain != "UNKNOWN"
 
     return {
         "command": command.strip(),
         "normalized_command": normalized_command,
         "domain": domain,
-        "recognized": domain != "UNKNOWN",
+        "recognized": recognized,
+        "confidence": 1.0 if recognized else 0.0,
     }
 
 

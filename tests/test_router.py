@@ -49,6 +49,7 @@ def test_get_command_intelligence_returns_structured_data():
         "normalized_command": "resume intelligence",
         "domain": "RESUME",
         "recognized": True,
+        "confidence": 1.0,
     }
 
 def test_get_command_intelligence_marks_known_command_as_recognized():
@@ -63,3 +64,13 @@ def test_get_command_intelligence_marks_unknown_command_as_unrecognized():
 
 
 
+
+def test_get_command_intelligence_adds_confidence_for_known_command():
+    result = get_command_intelligence("resume intelligence")
+
+    assert result["confidence"] == 1.0
+
+def test_get_command_intelligence_adds_zero_confidence_for_unknown_command():
+    result = get_command_intelligence("open the moon portal")
+
+    assert result["confidence"] == 0.0
