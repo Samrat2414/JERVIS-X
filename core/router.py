@@ -1,4 +1,4 @@
-﻿def classify_command(command):
+def classify_command(command):
     command = command.strip().lower()
 
     if "interview" in command:
@@ -19,6 +19,9 @@
     if "education" in command:
         return "EDUCATION"
 
+
+    if "portfolio" in command:
+        return "PORTFOLIO"
     return "UNKNOWN"
 
 

@@ -74,3 +74,8 @@ def test_get_command_intelligence_adds_zero_confidence_for_unknown_command():
     result = get_command_intelligence("open the moon portal")
 
     assert result["confidence"] == 0.0
+
+def test_classify_command_identifies_portfolio_intelligence():
+    result = classify_command("portfolio intelligence")
+
+    assert result == "PORTFOLIO"
