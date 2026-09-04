@@ -46,6 +46,7 @@ def get_routing_plan(command):
     return {
         "domain": intelligence["domain"],
         "recognized": intelligence["recognized"],
+        "confidence": intelligence["confidence"],
         "handler": "brain.process_command",
     }
 def route_command(command):

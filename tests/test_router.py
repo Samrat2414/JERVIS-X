@@ -94,3 +94,10 @@ def test_get_routing_plan_includes_recognition_status():
     plan = router.get_routing_plan("resume intelligence")
 
     assert plan["recognized"] is True
+
+def test_get_routing_plan_includes_confidence():
+    from core import router
+
+    plan = router.get_routing_plan("resume intelligence")
+
+    assert plan["confidence"] == 1.0
