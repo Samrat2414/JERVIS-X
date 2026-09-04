@@ -1,4 +1,4 @@
-﻿from core.router import classify_command, get_command_intelligence
+from core.router import classify_command, get_command_intelligence
 
 
 def test_classify_command_identifies_interview_intelligence():
@@ -48,4 +48,18 @@ def test_get_command_intelligence_returns_structured_data():
         "command": "Resume Intelligence",
         "normalized_command": "resume intelligence",
         "domain": "RESUME",
+        "recognized": True,
     }
+
+def test_get_command_intelligence_marks_known_command_as_recognized():
+    result = get_command_intelligence("resume intelligence")
+
+    assert result["recognized"] is True
+
+def test_get_command_intelligence_marks_unknown_command_as_unrecognized():
+    result = get_command_intelligence("open the moon portal")
+
+    assert result["recognized"] is False
+
+
+
