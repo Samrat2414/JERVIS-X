@@ -16,6 +16,9 @@
     if "resume" in command:
         return "RESUME"
 
+    if "education" in command:
+        return "EDUCATION"
+
     return "UNKNOWN"
 
 
