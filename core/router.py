@@ -22,6 +22,16 @@
     return "UNKNOWN"
 
 
+def get_command_intelligence(command):
+    normalized_command = command.strip().lower()
+
+    return {
+        "command": command.strip(),
+        "normalized_command": normalized_command,
+        "domain": classify_command(command),
+    }
+
+
 def route_command(command):
     from core.brain import process_command
 

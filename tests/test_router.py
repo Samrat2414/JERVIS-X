@@ -1,4 +1,4 @@
-from core.router import classify_command
+﻿from core.router import classify_command, get_command_intelligence
 
 
 def test_classify_command_identifies_interview_intelligence():
@@ -40,3 +40,12 @@ def test_classify_command_identifies_education_intelligence():
     result = classify_command("education intelligence")
 
     assert result == "EDUCATION"
+
+def test_get_command_intelligence_returns_structured_data():
+    result = get_command_intelligence("Resume Intelligence")
+
+    assert result == {
+        "command": "Resume Intelligence",
+        "normalized_command": "resume intelligence",
+        "domain": "RESUME",
+    }
