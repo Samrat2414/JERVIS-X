@@ -87,3 +87,10 @@ def test_get_routing_plan_uses_brain_for_resume_command():
 
     assert plan["domain"] == "RESUME"
     assert plan["handler"] == "brain.process_command"
+
+def test_get_routing_plan_includes_recognition_status():
+    from core import router
+
+    plan = router.get_routing_plan("resume intelligence")
+
+    assert plan["recognized"] is True
