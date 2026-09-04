@@ -39,6 +39,14 @@ def get_command_intelligence(command):
     }
 
 
+
+def get_routing_plan(command):
+    intelligence = get_command_intelligence(command)
+
+    return {
+        "domain": intelligence["domain"],
+        "handler": "brain.process_command",
+    }
 def route_command(command):
     from core.brain import process_command
 

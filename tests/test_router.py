@@ -79,3 +79,11 @@ def test_classify_command_identifies_portfolio_intelligence():
     result = classify_command("portfolio intelligence")
 
     assert result == "PORTFOLIO"
+
+def test_get_routing_plan_uses_brain_for_resume_command():
+    from core import router
+
+    plan = router.get_routing_plan("resume intelligence")
+
+    assert plan["domain"] == "RESUME"
+    assert plan["handler"] == "brain.process_command"
