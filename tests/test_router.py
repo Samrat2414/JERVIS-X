@@ -101,3 +101,8 @@ def test_get_routing_plan_includes_confidence():
     plan = router.get_routing_plan("resume intelligence")
 
     assert plan["confidence"] == 1.0
+
+def test_classify_command_prioritizes_job_application_backup():
+    result = classify_command("backup job applications")
+
+    assert result == "JOB_APPLICATION"

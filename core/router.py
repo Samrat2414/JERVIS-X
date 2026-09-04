@@ -7,11 +7,11 @@ def classify_command(command):
     if "career" in command:
         return "CAREER"
 
-    if "backup" in command:
-        return "BACKUP"
-
     if "job application" in command:
         return "JOB_APPLICATION"
+
+    if "backup" in command:
+        return "BACKUP"
 
     if "resume" in command:
         return "RESUME"
