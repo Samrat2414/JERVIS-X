@@ -247,3 +247,28 @@ def test_routing_plan_selects_resume_handler_for_ats_report():
     plan = get_routing_plan("ats report")
 
     assert plan["handler"] == "resume_intelligence.get_resume_intelligence_report"
+
+def test_routing_plan_selects_resume_recommendations_handler():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("resume recommendations")
+
+    assert plan["handler"] == "resume_intelligence.get_resume_recommendations"
+def test_routing_plan_selects_resume_recommendations_handler_for_singular_alias():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("resume recommendation")
+
+    assert plan["handler"] == "resume_intelligence.get_resume_recommendations"
+def test_routing_plan_selects_resume_recommendations_handler_for_ats_alias():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("ats recommendations")
+
+    assert plan["handler"] == "resume_intelligence.get_resume_recommendations"
+def test_routing_plan_selects_resume_recommendations_handler_for_improvements_alias():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("resume improvements")
+
+    assert plan["handler"] == "resume_intelligence.get_resume_recommendations"

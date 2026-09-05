@@ -51,6 +51,9 @@ def get_routing_plan(command):
     if intelligence["normalized_command"] in ("resume intelligence", "resume report", "resume intelligence report", "ats report"):
         handler = "resume_intelligence.get_resume_intelligence_report"
 
+    if intelligence["normalized_command"] in ("resume recommendations", "resume recommendation", "ats recommendations", "resume improvements"):
+        handler = "resume_intelligence.get_resume_recommendations"
+
     return {
         "domain": intelligence["domain"],
         "recognized": intelligence["recognized"],
