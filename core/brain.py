@@ -109,6 +109,7 @@ from core.resume_intelligence import (
     set_keyword_coverage,
     add_resume_skill,
     add_missing_keyword,
+    clear_missing_keyword,
     get_resume_intelligence,
     get_resume_recommendations,
     get_best_resume_action,
@@ -3849,6 +3850,14 @@ def process_command(command):
     if command.startswith("add resume skill "):
         skill = original_command[len("add resume skill "):].strip()
         return add_resume_skill(skill)
+
+    if command.startswith("add missing keyword "):
+        keyword = original_command[len("add missing keyword "):].strip()
+        return add_missing_keyword(keyword)
+
+    if command.startswith("clear missing keyword "):
+        keyword = original_command[len("clear missing keyword "):].strip()
+        return clear_missing_keyword(keyword)
 
     if command.startswith("set keyword coverage "):
         value = command.replace("set keyword coverage ", "", 1).strip()
