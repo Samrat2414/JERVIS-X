@@ -80,13 +80,13 @@ def test_classify_command_identifies_portfolio_intelligence():
 
     assert result == "PORTFOLIO"
 
-def test_get_routing_plan_uses_brain_for_resume_command():
+def test_get_routing_plan_uses_resume_handler_for_resume_command():
     from core import router
 
     plan = router.get_routing_plan("resume intelligence")
 
     assert plan["domain"] == "RESUME"
-    assert plan["handler"] == "brain.process_command"
+    assert plan["handler"] == "resume_intelligence.get_resume_intelligence_report"
 
 def test_get_routing_plan_includes_recognition_status():
     from core import router
@@ -212,7 +212,7 @@ def test_route_command_executes_handler_from_registry():
         return "RESOLVED RESPONSE"
 
     handlers = {
-        "brain.process_command": fake_handler,
+        "resume_intelligence.get_resume_intelligence_report": fake_handler,
     }
 
     result = router.route_command(
@@ -221,3 +221,10 @@ def test_route_command_executes_handler_from_registry():
     )
 
     assert result == "RESOLVED RESPONSE"
+
+def test_routing_plan_selects_resume_handler():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("resume intelligence")
+
+    assert plan["handler"] == "resume_intelligence.get_resume_intelligence_report"

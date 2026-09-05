@@ -46,11 +46,16 @@ def get_command_intelligence(command):
 def get_routing_plan(command):
     intelligence = get_command_intelligence(command)
 
+    handler = "brain.process_command"
+
+    if intelligence["normalized_command"] == "resume intelligence":
+        handler = "resume_intelligence.get_resume_intelligence_report"
+
     return {
         "domain": intelligence["domain"],
         "recognized": intelligence["recognized"],
         "confidence": intelligence["confidence"],
-        "handler": "brain.process_command",
+        "handler": handler,
     }
 def resolve_handler(routing_plan, handlers=None):
     handler_name = routing_plan["handler"]
