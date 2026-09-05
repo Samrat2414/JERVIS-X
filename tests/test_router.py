@@ -147,3 +147,77 @@ def test_route_command_accepts_injected_handler():
     )
 
     assert result == "FAKE RESPONSE"
+
+
+def test_resolve_handler_uses_routing_plan_handler():
+    from core import router
+
+    plan = {
+        "domain": "RESUME",
+        "recognized": True,
+        "confidence": 1.0,
+        "handler": "brain.process_command",
+    }
+
+    result = router.resolve_handler(plan)
+
+    assert result == "brain.process_command"
+
+def test_route_command_uses_handler_resolver(monkeypatch):
+    from core import router
+
+    called = {"value": False}
+
+    def fake_resolver(routing_plan, handlers=None):
+        called["value"] = True
+        return routing_plan["handler"]
+
+    monkeypatch.setattr(router, "resolve_handler", fake_resolver)
+
+    def fake_handler(command):
+        return "FAKE RESPONSE"
+
+    router.route_command(
+        "resume intelligence",
+        handler=fake_handler,
+    )
+
+    assert called["value"] is True
+
+def test_resolve_handler_returns_registered_callable():
+    from core import router
+
+    def fake_handler(command):
+        return "FAKE RESPONSE"
+
+    plan = {
+        "domain": "RESUME",
+        "recognized": True,
+        "confidence": 1.0,
+        "handler": "brain.process_command",
+    }
+
+    handlers = {
+        "brain.process_command": fake_handler,
+    }
+
+    result = router.resolve_handler(plan, handlers=handlers)
+
+    assert result is fake_handler
+
+def test_route_command_executes_handler_from_registry():
+    from core import router
+
+    def fake_handler(command):
+        return "RESOLVED RESPONSE"
+
+    handlers = {
+        "brain.process_command": fake_handler,
+    }
+
+    result = router.route_command(
+        "resume intelligence",
+        handlers=handlers,
+    )
+
+    assert result == "RESOLVED RESPONSE"

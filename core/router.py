@@ -52,8 +52,22 @@ def get_routing_plan(command):
         "confidence": intelligence["confidence"],
         "handler": "brain.process_command",
     }
-def route_command(command, handler=None):
-    get_routing_plan(command)
+def resolve_handler(routing_plan, handlers=None):
+    handler_name = routing_plan["handler"]
+
+    if handlers is not None:
+        return handlers[handler_name]
+
+    return handler_name
+
+
+def route_command(command, handler=None, handlers=None):
+    routing_plan = get_routing_plan(command)
+
+    resolved_handler = resolve_handler(routing_plan, handlers=handlers)
+
+    if handler is None and handlers is not None:
+        handler = resolved_handler
 
     if handler is None:
         from core.brain import process_command
