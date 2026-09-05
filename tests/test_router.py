@@ -336,3 +336,9 @@ def test_routing_plan_selects_best_resume_action_handler_for_improve_resume_ques
     plan = get_routing_plan("what should i improve in my resume")
 
     assert plan["handler"] == "resume_intelligence.get_best_resume_action"
+
+
+def test_classify_command_routes_set_keyword_coverage_to_resume():
+    from core.router import classify_command
+
+    assert classify_command("set keyword coverage 80") == "RESUME"

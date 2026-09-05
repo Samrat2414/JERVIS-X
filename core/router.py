@@ -16,6 +16,9 @@ def classify_command(command):
     if "backup" in command:
         return "BACKUP"
 
+    if command.startswith("set keyword coverage "):
+        return "RESUME"
+
     if "resume" in command:
         return "RESUME"
 
