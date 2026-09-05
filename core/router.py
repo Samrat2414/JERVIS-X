@@ -63,6 +63,9 @@ def get_routing_plan(command):
     if intelligence["normalized_command"] in ("best resume action", "best ats action", "next resume action", "what should i improve in my resume"):
         handler = "resume_intelligence.get_best_resume_action"
 
+    if intelligence["normalized_command"].startswith("add resume skill "):
+        handler = "resume_handlers.handle_add_resume_skill"
+
     return {
         "domain": intelligence["domain"],
         "recognized": intelligence["recognized"],

@@ -342,3 +342,11 @@ def test_classify_command_routes_set_keyword_coverage_to_resume():
     from core.router import classify_command
 
     assert classify_command("set keyword coverage 80") == "RESUME"
+
+
+def test_routing_plan_selects_add_resume_skill_handler():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("add resume skill Python")
+
+    assert plan["handler"] == "resume_handlers.handle_add_resume_skill"
