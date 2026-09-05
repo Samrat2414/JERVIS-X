@@ -1,20 +1,27 @@
 import os
-import winreg
 from pathlib import Path
 
+try:
+    import winreg
+except ImportError:
+    winreg = None
 
-STARTUP_REGISTRY_PATHS = [
-    (
-        winreg.HKEY_CURRENT_USER,
-        r"Software\Microsoft\Windows\CurrentVersion\Run",
-        "Current User Registry",
-    ),
-    (
-        winreg.HKEY_LOCAL_MACHINE,
-        r"Software\Microsoft\Windows\CurrentVersion\Run",
-        "Local Machine Registry",
-    ),
-]
+
+if winreg is not None:
+    STARTUP_REGISTRY_PATHS = [
+        (
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Run",
+            "Current User Registry",
+        ),
+        (
+            winreg.HKEY_LOCAL_MACHINE,
+            r"Software\Microsoft\Windows\CurrentVersion\Run",
+            "Local Machine Registry",
+        ),
+    ]
+else:
+    STARTUP_REGISTRY_PATHS = []
 
 USER_STARTUP_FOLDER = (
     Path(os.environ.get("APPDATA", ""))
