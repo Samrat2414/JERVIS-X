@@ -304,3 +304,35 @@ def test_routing_plan_selects_resume_intelligence_handler_for_resume_readiness()
     plan = get_routing_plan("resume readiness")
 
     assert plan["handler"] == "resume_intelligence.get_resume_intelligence"
+
+
+def test_routing_plan_selects_best_resume_action_handler():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("best resume action")
+
+    assert plan["handler"] == "resume_intelligence.get_best_resume_action"
+
+
+def test_routing_plan_selects_best_resume_action_handler_for_best_ats_action():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("best ats action")
+
+    assert plan["handler"] == "resume_intelligence.get_best_resume_action"
+
+
+def test_routing_plan_selects_best_resume_action_handler_for_next_resume_action():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("next resume action")
+
+    assert plan["handler"] == "resume_intelligence.get_best_resume_action"
+
+
+def test_routing_plan_selects_best_resume_action_handler_for_improve_resume_question():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("what should i improve in my resume")
+
+    assert plan["handler"] == "resume_intelligence.get_best_resume_action"
