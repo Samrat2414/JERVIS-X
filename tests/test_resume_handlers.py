@@ -82,3 +82,37 @@ def test_handle_set_resume_section_handles_invalid_score():
     result = handle_set_resume_section("set resume experience abc")
 
     assert result == "Please provide a valid resume section score."
+
+
+def test_handle_add_missing_keyword_passes_parsed_keyword(monkeypatch):
+    from core import resume_handlers
+
+    captured = {}
+
+    def fake_add_missing_keyword(keyword):
+        captured["keyword"] = keyword
+        return "MISSING KEYWORD ADDED"
+
+    monkeypatch.setattr(resume_handlers, "add_missing_keyword", fake_add_missing_keyword)
+
+    result = resume_handlers.handle_add_missing_keyword("add missing keyword Python")
+
+    assert captured["keyword"] == "Python"
+    assert result == "MISSING KEYWORD ADDED"
+
+
+def test_handle_add_missing_keyword_handles_empty_keyword(monkeypatch):
+    from core import resume_handlers
+
+    captured = {}
+
+    def fake_add_missing_keyword(keyword):
+        captured["keyword"] = keyword
+        return "Please provide a missing keyword."
+
+    monkeypatch.setattr(resume_handlers, "add_missing_keyword", fake_add_missing_keyword)
+
+    result = resume_handlers.handle_add_missing_keyword("add missing keyword ")
+
+    assert captured["keyword"] == ""
+    assert result == "Please provide a missing keyword."

@@ -366,3 +366,11 @@ def test_routing_plan_selects_set_resume_section_handler():
     plan = get_routing_plan("set resume experience 70")
 
     assert plan["handler"] == "resume_handlers.handle_set_resume_section"
+
+
+def test_routing_plan_selects_add_missing_keyword_handler():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("add missing keyword Python")
+
+    assert plan["handler"] == "resume_handlers.handle_add_missing_keyword"
