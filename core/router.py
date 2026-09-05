@@ -48,7 +48,7 @@ def get_routing_plan(command):
 
     handler = "brain.process_command"
 
-    if intelligence["normalized_command"] == "resume intelligence":
+    if intelligence["normalized_command"] in ("resume intelligence", "resume report", "resume intelligence report", "ats report"):
         handler = "resume_intelligence.get_resume_intelligence_report"
 
     return {

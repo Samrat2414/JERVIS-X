@@ -228,3 +228,22 @@ def test_routing_plan_selects_resume_handler():
     plan = get_routing_plan("resume intelligence")
 
     assert plan["handler"] == "resume_intelligence.get_resume_intelligence_report"
+
+def test_routing_plan_selects_resume_handler_for_resume_report():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("resume report")
+
+    assert plan["handler"] == "resume_intelligence.get_resume_intelligence_report"
+def test_routing_plan_selects_resume_handler_for_resume_intelligence_report():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("resume intelligence report")
+
+    assert plan["handler"] == "resume_intelligence.get_resume_intelligence_report"
+def test_routing_plan_selects_resume_handler_for_ats_report():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("ats report")
+
+    assert plan["handler"] == "resume_intelligence.get_resume_intelligence_report"
