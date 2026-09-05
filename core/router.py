@@ -4,6 +4,9 @@ def classify_command(command):
     if "interview" in command:
         return "INTERVIEW"
 
+    if command.startswith("set resume readiness "):
+        return "CAREER"
+
     if "career" in command:
         return "CAREER"
 

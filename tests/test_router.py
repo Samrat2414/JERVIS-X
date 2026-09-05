@@ -106,3 +106,8 @@ def test_classify_command_prioritizes_job_application_backup():
     result = classify_command("backup job applications")
 
     assert result == "JOB_APPLICATION"
+
+def test_classify_command_routes_set_resume_readiness_to_career():
+    result = classify_command("set resume readiness 70")
+
+    assert result == "CAREER"
