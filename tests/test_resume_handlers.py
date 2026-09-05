@@ -116,3 +116,20 @@ def test_handle_add_missing_keyword_handles_empty_keyword(monkeypatch):
 
     assert captured["keyword"] == ""
     assert result == "Please provide a missing keyword."
+
+
+def test_handle_clear_missing_keyword_passes_parsed_keyword(monkeypatch):
+    from core import resume_handlers
+
+    captured = {}
+
+    def fake_clear_missing_keyword(keyword):
+        captured["keyword"] = keyword
+        return "MISSING KEYWORD CLEARED"
+
+    monkeypatch.setattr(resume_handlers, "clear_missing_keyword", fake_clear_missing_keyword)
+
+    result = resume_handlers.handle_clear_missing_keyword("clear missing keyword Python")
+
+    assert captured["keyword"] == "Python"
+    assert result == "MISSING KEYWORD CLEARED"
