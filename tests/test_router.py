@@ -272,3 +272,35 @@ def test_routing_plan_selects_resume_recommendations_handler_for_improvements_al
     plan = get_routing_plan("resume improvements")
 
     assert plan["handler"] == "resume_intelligence.get_resume_recommendations"
+
+
+def test_routing_plan_selects_resume_intelligence_handler_for_ats_score():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("ats score")
+
+    assert plan["handler"] == "resume_intelligence.get_resume_intelligence"
+
+
+def test_routing_plan_selects_resume_intelligence_handler_for_resume_ats_score():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("resume ats score")
+
+    assert plan["handler"] == "resume_intelligence.get_resume_intelligence"
+
+
+def test_routing_plan_selects_resume_intelligence_handler_for_resume_score():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("resume score")
+
+    assert plan["handler"] == "resume_intelligence.get_resume_intelligence"
+
+
+def test_routing_plan_selects_resume_intelligence_handler_for_resume_readiness():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("resume readiness")
+
+    assert plan["handler"] == "resume_intelligence.get_resume_intelligence"
