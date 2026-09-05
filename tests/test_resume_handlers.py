@@ -55,3 +55,30 @@ def test_handle_set_keyword_coverage_handles_invalid_score():
     result = handle_set_keyword_coverage("set keyword coverage abc")
 
     assert result == "Please provide a valid keyword coverage score."
+
+
+def test_handle_set_resume_section_passes_parsed_section_and_score(monkeypatch):
+    from core import resume_handlers
+
+    captured = {}
+
+    def fake_set_resume_section(section, score):
+        captured["section"] = section
+        captured["score"] = score
+        return "RESUME SECTION UPDATED"
+
+    monkeypatch.setattr(resume_handlers, "set_resume_section", fake_set_resume_section)
+
+    result = resume_handlers.handle_set_resume_section("set resume experience 70")
+
+    assert captured["section"] == "experience"
+    assert captured["score"] == 70.0
+    assert result == "RESUME SECTION UPDATED"
+
+
+def test_handle_set_resume_section_handles_invalid_score():
+    from core.resume_handlers import handle_set_resume_section
+
+    result = handle_set_resume_section("set resume experience abc")
+
+    assert result == "Please provide a valid resume section score."

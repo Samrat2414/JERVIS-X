@@ -358,3 +358,11 @@ def test_routing_plan_selects_set_keyword_coverage_handler():
     plan = get_routing_plan("set keyword coverage 80")
 
     assert plan["handler"] == "resume_handlers.handle_set_keyword_coverage"
+
+
+def test_routing_plan_selects_set_resume_section_handler():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("set resume experience 70")
+
+    assert plan["handler"] == "resume_handlers.handle_set_resume_section"

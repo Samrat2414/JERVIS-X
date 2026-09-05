@@ -69,6 +69,11 @@ def get_routing_plan(command):
     if intelligence["normalized_command"].startswith("set keyword coverage "):
         handler = "resume_handlers.handle_set_keyword_coverage"
 
+    if intelligence["normalized_command"].startswith("set resume "):
+        parts = intelligence["normalized_command"].split()
+        if len(parts) == 4:
+            handler = "resume_handlers.handle_set_resume_section"
+
     return {
         "domain": intelligence["domain"],
         "recognized": intelligence["recognized"],
