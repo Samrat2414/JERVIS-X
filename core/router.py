@@ -52,10 +52,14 @@ def get_routing_plan(command):
         "confidence": intelligence["confidence"],
         "handler": "brain.process_command",
     }
-def route_command(command):
-    from core.brain import process_command
+def route_command(command, handler=None):
+    get_routing_plan(command)
 
-    response = process_command(command)
+    if handler is None:
+        from core.brain import process_command
+        handler = process_command
+
+    response = handler(command)
 
     if response:
         return response

@@ -111,3 +111,39 @@ def test_classify_command_routes_set_resume_readiness_to_career():
     result = classify_command("set resume readiness 70")
 
     assert result == "CAREER"
+
+def test_route_command_uses_routing_plan(monkeypatch):
+    from core import router
+
+    called = {"value": False}
+
+    def fake_plan(command):
+        called["value"] = True
+        return {
+            "domain": "RESUME",
+            "recognized": True,
+            "confidence": 1.0,
+            "handler": "brain.process_command",
+        }
+
+    monkeypatch.setattr(router, "get_routing_plan", fake_plan)
+
+    def fake_handler(command):
+        return "FAKE RESPONSE"
+
+    router.route_command("resume intelligence", handler=fake_handler)
+
+    assert called["value"] is True
+
+def test_route_command_accepts_injected_handler():
+    from core import router
+
+    def fake_handler(command):
+        return "FAKE RESPONSE"
+
+    result = router.route_command(
+        "resume intelligence",
+        handler=fake_handler,
+    )
+
+    assert result == "FAKE RESPONSE"
