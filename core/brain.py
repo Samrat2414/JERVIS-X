@@ -3868,6 +3868,10 @@ def process_command(command):
         except ValueError:
             return "Please provide a valid keyword coverage score."
 
+    if command.startswith("set resume target role "):
+        role = original_command[len("set resume target role "):].strip()
+        return set_resume_target_role(role)
+
     if command.startswith("set resume "):
         parts = command.split()
 

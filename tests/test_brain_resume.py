@@ -29,3 +29,18 @@ def test_process_command_clear_missing_keyword(monkeypatch):
 
     assert called["keyword"] == "Python"
     assert result == "MISSING KEYWORD CLEARED"
+
+def test_process_command_set_resume_target_role(monkeypatch):
+    called = {}
+
+    def fake_set_resume_target_role(role):
+        called["role"] = role
+        return "TARGET ROLE SET"
+
+    monkeypatch.setattr(brain, "set_resume_target_role", fake_set_resume_target_role)
+
+    result = brain.process_command("set resume target role Python Developer")
+
+    assert called["role"] == "Python Developer"
+    assert result == "TARGET ROLE SET"
+
