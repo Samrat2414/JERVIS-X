@@ -133,3 +133,23 @@ def test_handle_clear_missing_keyword_passes_parsed_keyword(monkeypatch):
 
     assert captured["keyword"] == "Python"
     assert result == "MISSING KEYWORD CLEARED"
+
+
+def test_handle_set_resume_target_role_passes_parsed_role(monkeypatch):
+    from core import resume_handlers
+
+    captured = {}
+
+    def fake_set_resume_target_role(role):
+        captured["role"] = role
+        return "TARGET ROLE SET"
+
+    monkeypatch.setattr(resume_handlers, "set_resume_target_role", fake_set_resume_target_role)
+
+    result = resume_handlers.handle_set_resume_target_role(
+        "set resume target role Python Developer"
+    )
+
+    assert captured["role"] == "Python Developer"
+    assert result == "TARGET ROLE SET"
+

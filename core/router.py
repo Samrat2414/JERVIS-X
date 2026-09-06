@@ -74,6 +74,10 @@ def get_routing_plan(command):
 
     if intelligence["normalized_command"].startswith("clear missing keyword "):
         handler = "resume_handlers.handle_clear_missing_keyword"
+
+    if intelligence["normalized_command"].startswith("set resume target role "):
+        handler = "resume_handlers.handle_set_resume_target_role"
+
     if intelligence["normalized_command"].startswith("set resume "):
         parts = intelligence["normalized_command"].split()
         if len(parts) == 4:
