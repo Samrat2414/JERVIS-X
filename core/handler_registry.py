@@ -1,7 +1,8 @@
-from core import resume_handlers
+from core import resume_handlers, job_application_handlers
 
 
 HANDLERS = {
+    "job_application_handlers.handle_get_job_application_report": job_application_handlers.handle_get_job_application_report,
     "resume_handlers.handle_get_resume_intelligence_report": resume_handlers.handle_get_resume_intelligence_report,
     "resume_handlers.handle_get_resume_recommendations": resume_handlers.handle_get_resume_recommendations,
     "resume_handlers.handle_get_resume_intelligence": resume_handlers.handle_get_resume_intelligence,

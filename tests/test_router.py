@@ -431,3 +431,10 @@ def test_route_command_executes_builtin_registry_handler(monkeypatch):
     result = router.route_command("resume intelligence")
 
     assert result == "BUILTIN RESPONSE"
+
+def test_routing_plan_selects_job_application_report_handler():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("job application report")
+
+    assert plan["handler"] == "job_application_handlers.handle_get_job_application_report"

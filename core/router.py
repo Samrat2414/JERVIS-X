@@ -51,6 +51,9 @@ def get_routing_plan(command):
 
     handler = "brain.process_command"
 
+    if intelligence["normalized_command"] in ("job application intelligence", "job application report", "application intelligence", "application tracker"):
+        handler = "job_application_handlers.handle_get_job_application_report"
+
     if intelligence["normalized_command"] in ("resume intelligence", "resume report", "resume intelligence report", "ats report"):
         handler = "resume_handlers.handle_get_resume_intelligence_report"
 
