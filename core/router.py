@@ -95,6 +95,13 @@ def resolve_handler(routing_plan, handlers=None):
     if handlers is not None:
         return handlers[handler_name]
 
+    if handler_name != "brain.process_command":
+        from core.handler_registry import get_handler
+
+        registered_handler = get_handler(handler_name)
+        if registered_handler is not None:
+            return registered_handler
+
     return handler_name
 
 
@@ -103,7 +110,7 @@ def route_command(command, handler=None, handlers=None):
 
     resolved_handler = resolve_handler(routing_plan, handlers=handlers)
 
-    if handler is None and handlers is not None:
+    if handler is None and callable(resolved_handler):
         handler = resolved_handler
 
     if handler is None:

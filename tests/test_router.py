@@ -391,3 +391,43 @@ def test_routing_plan_selects_set_resume_target_role_handler():
 
     assert plan["handler"] == "resume_handlers.handle_set_resume_target_role"
 
+
+def test_resolve_handler_uses_builtin_registry(monkeypatch):
+    from core import handler_registry, router
+
+    def fake_handler(command):
+        return "BUILTIN RESPONSE"
+
+    monkeypatch.setitem(
+        handler_registry.HANDLERS,
+        "resume_intelligence.get_resume_intelligence_report",
+        fake_handler,
+    )
+
+    plan = {
+        "domain": "RESUME",
+        "recognized": True,
+        "confidence": 1.0,
+        "handler": "resume_intelligence.get_resume_intelligence_report",
+    }
+
+    result = router.resolve_handler(plan)
+
+    assert result is fake_handler
+
+
+def test_route_command_executes_builtin_registry_handler(monkeypatch):
+    from core import handler_registry, router
+
+    def fake_handler(command):
+        return "BUILTIN RESPONSE"
+
+    monkeypatch.setitem(
+        handler_registry.HANDLERS,
+        "resume_intelligence.get_resume_intelligence_report",
+        fake_handler,
+    )
+
+    result = router.route_command("resume intelligence")
+
+    assert result == "BUILTIN RESPONSE"
