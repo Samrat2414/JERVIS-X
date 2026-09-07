@@ -86,7 +86,7 @@ def test_get_routing_plan_uses_resume_handler_for_resume_command():
     plan = router.get_routing_plan("resume intelligence")
 
     assert plan["domain"] == "RESUME"
-    assert plan["handler"] == "resume_intelligence.get_resume_intelligence_report"
+    assert plan["handler"] == "resume_handlers.handle_get_resume_intelligence_report"
 
 def test_get_routing_plan_includes_recognition_status():
     from core import router
@@ -212,7 +212,7 @@ def test_route_command_executes_handler_from_registry():
         return "RESOLVED RESPONSE"
 
     handlers = {
-        "resume_intelligence.get_resume_intelligence_report": fake_handler,
+        "resume_handlers.handle_get_resume_intelligence_report": fake_handler,
     }
 
     result = router.route_command(
@@ -227,51 +227,51 @@ def test_routing_plan_selects_resume_handler():
 
     plan = get_routing_plan("resume intelligence")
 
-    assert plan["handler"] == "resume_intelligence.get_resume_intelligence_report"
+    assert plan["handler"] == "resume_handlers.handle_get_resume_intelligence_report"
 
 def test_routing_plan_selects_resume_handler_for_resume_report():
     from core.router import get_routing_plan
 
     plan = get_routing_plan("resume report")
 
-    assert plan["handler"] == "resume_intelligence.get_resume_intelligence_report"
+    assert plan["handler"] == "resume_handlers.handle_get_resume_intelligence_report"
 def test_routing_plan_selects_resume_handler_for_resume_intelligence_report():
     from core.router import get_routing_plan
 
     plan = get_routing_plan("resume intelligence report")
 
-    assert plan["handler"] == "resume_intelligence.get_resume_intelligence_report"
+    assert plan["handler"] == "resume_handlers.handle_get_resume_intelligence_report"
 def test_routing_plan_selects_resume_handler_for_ats_report():
     from core.router import get_routing_plan
 
     plan = get_routing_plan("ats report")
 
-    assert plan["handler"] == "resume_intelligence.get_resume_intelligence_report"
+    assert plan["handler"] == "resume_handlers.handle_get_resume_intelligence_report"
 
 def test_routing_plan_selects_resume_recommendations_handler():
     from core.router import get_routing_plan
 
     plan = get_routing_plan("resume recommendations")
 
-    assert plan["handler"] == "resume_intelligence.get_resume_recommendations"
+    assert plan["handler"] == "resume_handlers.handle_get_resume_recommendations"
 def test_routing_plan_selects_resume_recommendations_handler_for_singular_alias():
     from core.router import get_routing_plan
 
     plan = get_routing_plan("resume recommendation")
 
-    assert plan["handler"] == "resume_intelligence.get_resume_recommendations"
+    assert plan["handler"] == "resume_handlers.handle_get_resume_recommendations"
 def test_routing_plan_selects_resume_recommendations_handler_for_ats_alias():
     from core.router import get_routing_plan
 
     plan = get_routing_plan("ats recommendations")
 
-    assert plan["handler"] == "resume_intelligence.get_resume_recommendations"
+    assert plan["handler"] == "resume_handlers.handle_get_resume_recommendations"
 def test_routing_plan_selects_resume_recommendations_handler_for_improvements_alias():
     from core.router import get_routing_plan
 
     plan = get_routing_plan("resume improvements")
 
-    assert plan["handler"] == "resume_intelligence.get_resume_recommendations"
+    assert plan["handler"] == "resume_handlers.handle_get_resume_recommendations"
 
 
 def test_routing_plan_selects_resume_intelligence_handler_for_ats_score():
@@ -279,7 +279,7 @@ def test_routing_plan_selects_resume_intelligence_handler_for_ats_score():
 
     plan = get_routing_plan("ats score")
 
-    assert plan["handler"] == "resume_intelligence.get_resume_intelligence"
+    assert plan["handler"] == "resume_handlers.handle_get_resume_intelligence"
 
 
 def test_routing_plan_selects_resume_intelligence_handler_for_resume_ats_score():
@@ -287,7 +287,7 @@ def test_routing_plan_selects_resume_intelligence_handler_for_resume_ats_score()
 
     plan = get_routing_plan("resume ats score")
 
-    assert plan["handler"] == "resume_intelligence.get_resume_intelligence"
+    assert plan["handler"] == "resume_handlers.handle_get_resume_intelligence"
 
 
 def test_routing_plan_selects_resume_intelligence_handler_for_resume_score():
@@ -295,7 +295,7 @@ def test_routing_plan_selects_resume_intelligence_handler_for_resume_score():
 
     plan = get_routing_plan("resume score")
 
-    assert plan["handler"] == "resume_intelligence.get_resume_intelligence"
+    assert plan["handler"] == "resume_handlers.handle_get_resume_intelligence"
 
 
 def test_routing_plan_selects_resume_intelligence_handler_for_resume_readiness():
@@ -303,7 +303,7 @@ def test_routing_plan_selects_resume_intelligence_handler_for_resume_readiness()
 
     plan = get_routing_plan("resume readiness")
 
-    assert plan["handler"] == "resume_intelligence.get_resume_intelligence"
+    assert plan["handler"] == "resume_handlers.handle_get_resume_intelligence"
 
 
 def test_routing_plan_selects_best_resume_action_handler():
@@ -311,7 +311,7 @@ def test_routing_plan_selects_best_resume_action_handler():
 
     plan = get_routing_plan("best resume action")
 
-    assert plan["handler"] == "resume_intelligence.get_best_resume_action"
+    assert plan["handler"] == "resume_handlers.handle_get_best_resume_action"
 
 
 def test_routing_plan_selects_best_resume_action_handler_for_best_ats_action():
@@ -319,7 +319,7 @@ def test_routing_plan_selects_best_resume_action_handler_for_best_ats_action():
 
     plan = get_routing_plan("best ats action")
 
-    assert plan["handler"] == "resume_intelligence.get_best_resume_action"
+    assert plan["handler"] == "resume_handlers.handle_get_best_resume_action"
 
 
 def test_routing_plan_selects_best_resume_action_handler_for_next_resume_action():
@@ -327,7 +327,7 @@ def test_routing_plan_selects_best_resume_action_handler_for_next_resume_action(
 
     plan = get_routing_plan("next resume action")
 
-    assert plan["handler"] == "resume_intelligence.get_best_resume_action"
+    assert plan["handler"] == "resume_handlers.handle_get_best_resume_action"
 
 
 def test_routing_plan_selects_best_resume_action_handler_for_improve_resume_question():
@@ -335,7 +335,7 @@ def test_routing_plan_selects_best_resume_action_handler_for_improve_resume_ques
 
     plan = get_routing_plan("what should i improve in my resume")
 
-    assert plan["handler"] == "resume_intelligence.get_best_resume_action"
+    assert plan["handler"] == "resume_handlers.handle_get_best_resume_action"
 
 
 def test_classify_command_routes_set_keyword_coverage_to_resume():
@@ -400,7 +400,7 @@ def test_resolve_handler_uses_builtin_registry(monkeypatch):
 
     monkeypatch.setitem(
         handler_registry.HANDLERS,
-        "resume_intelligence.get_resume_intelligence_report",
+        "resume_handlers.handle_get_resume_intelligence_report",
         fake_handler,
     )
 
@@ -408,7 +408,7 @@ def test_resolve_handler_uses_builtin_registry(monkeypatch):
         "domain": "RESUME",
         "recognized": True,
         "confidence": 1.0,
-        "handler": "resume_intelligence.get_resume_intelligence_report",
+        "handler": "resume_handlers.handle_get_resume_intelligence_report",
     }
 
     result = router.resolve_handler(plan)
@@ -424,7 +424,7 @@ def test_route_command_executes_builtin_registry_handler(monkeypatch):
 
     monkeypatch.setitem(
         handler_registry.HANDLERS,
-        "resume_intelligence.get_resume_intelligence_report",
+        "resume_handlers.handle_get_resume_intelligence_report",
         fake_handler,
     )
 

@@ -1,4 +1,4 @@
-from core.resume_intelligence import add_resume_skill, set_keyword_coverage, set_resume_section, add_missing_keyword, clear_missing_keyword, set_resume_target_role
+from core.resume_intelligence import add_resume_skill, set_keyword_coverage, set_resume_section, add_missing_keyword, clear_missing_keyword, set_resume_target_role, get_resume_recommendations, get_resume_intelligence_report, get_resume_intelligence, get_best_resume_action
 
 
 def handle_add_resume_skill(command):
@@ -39,4 +39,18 @@ def handle_clear_missing_keyword(command):
 def handle_set_resume_target_role(command):
     role = command[len("set resume target role "):].strip()
     return set_resume_target_role(role)
+
+
+
+def handle_get_resume_recommendations(command):
+    return get_resume_recommendations()
+
+def handle_get_resume_intelligence_report(command):
+    return get_resume_intelligence_report()
+
+def handle_get_resume_intelligence(command):
+    return get_resume_intelligence()
+
+def handle_get_best_resume_action(command):
+    return get_best_resume_action()
 

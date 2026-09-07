@@ -153,3 +153,82 @@ def test_handle_set_resume_target_role_passes_parsed_role(monkeypatch):
     assert captured["role"] == "Python Developer"
     assert result == "TARGET ROLE SET"
 
+
+
+def test_handle_get_resume_recommendations_calls_intelligence(monkeypatch):
+    from core import resume_handlers
+
+    def fake_get_resume_recommendations():
+        return ["Improve skills"]
+
+    monkeypatch.setattr(
+        resume_handlers,
+        "get_resume_recommendations",
+        fake_get_resume_recommendations,
+    )
+
+    result = resume_handlers.handle_get_resume_recommendations(
+        "resume recommendations"
+    )
+
+    assert result == ["Improve skills"]
+
+def test_handle_get_resume_intelligence_report_calls_intelligence(monkeypatch):
+    from core import resume_handlers
+
+    def fake_get_resume_intelligence_report():
+        return "RESUME REPORT"
+
+    monkeypatch.setattr(
+        resume_handlers,
+        "get_resume_intelligence_report",
+        fake_get_resume_intelligence_report,
+    )
+
+    result = resume_handlers.handle_get_resume_intelligence_report(
+        "resume intelligence"
+    )
+
+    assert result == "RESUME REPORT"
+
+def test_handle_get_resume_intelligence_calls_intelligence(monkeypatch):
+    from core import resume_handlers
+
+    def fake_get_resume_intelligence():
+        return {"ats_score": 75.0}
+
+    monkeypatch.setattr(
+        resume_handlers,
+        "get_resume_intelligence",
+        fake_get_resume_intelligence,
+    )
+
+    result = resume_handlers.handle_get_resume_intelligence(
+        "ats score"
+    )
+
+    assert result == {"ats_score": 75.0}
+
+def test_handle_get_best_resume_action_calls_intelligence(monkeypatch):
+    from core import resume_handlers
+
+    def fake_get_best_resume_action():
+        return {
+            "action": "Improve Skills",
+            "priority": "High",
+            "reason": "Skills need improvement.",
+        }
+
+    monkeypatch.setattr(
+        resume_handlers,
+        "get_best_resume_action",
+        fake_get_best_resume_action,
+    )
+
+    result = resume_handlers.handle_get_best_resume_action(
+        "best resume action"
+    )
+
+    assert result["action"] == "Improve Skills"
+    assert result["priority"] == "High"
+

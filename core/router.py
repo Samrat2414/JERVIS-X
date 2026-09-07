@@ -52,16 +52,16 @@ def get_routing_plan(command):
     handler = "brain.process_command"
 
     if intelligence["normalized_command"] in ("resume intelligence", "resume report", "resume intelligence report", "ats report"):
-        handler = "resume_intelligence.get_resume_intelligence_report"
+        handler = "resume_handlers.handle_get_resume_intelligence_report"
 
     if intelligence["normalized_command"] in ("resume recommendations", "resume recommendation", "ats recommendations", "resume improvements"):
-        handler = "resume_intelligence.get_resume_recommendations"
+        handler = "resume_handlers.handle_get_resume_recommendations"
 
     if intelligence["normalized_command"] in ("ats score", "resume ats score", "resume score", "resume readiness"):
-        handler = "resume_intelligence.get_resume_intelligence"
+        handler = "resume_handlers.handle_get_resume_intelligence"
 
     if intelligence["normalized_command"] in ("best resume action", "best ats action", "next resume action", "what should i improve in my resume"):
-        handler = "resume_intelligence.get_best_resume_action"
+        handler = "resume_handlers.handle_get_best_resume_action"
 
     if intelligence["normalized_command"].startswith("add resume skill "):
         handler = "resume_handlers.handle_add_resume_skill"
