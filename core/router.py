@@ -10,6 +10,9 @@ def classify_command(command):
     if command.startswith("career roadmap "):
         return "JOB_APPLICATION"
 
+    if command.startswith("career skill gap "):
+        return "JOB_APPLICATION"
+
     if "career" in command:
         return "CAREER"
 
@@ -144,6 +147,9 @@ def get_routing_plan(command):
 
     elif normalized_command.startswith("career roadmap "):
         handler = "job_application_handlers.handle_get_career_roadmap"
+
+    elif normalized_command.startswith("career skill gap "):
+        handler = "job_application_handlers.handle_get_career_skill_gap_analysis"
 
     elif normalized_command in (
         "application follow up reminders",

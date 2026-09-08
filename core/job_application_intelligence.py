@@ -2627,6 +2627,171 @@ def get_career_roadmap(application_id):
         f"Next Action: {next_action}"
     )
 
+
+def get_career_skill_gap_analysis(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    joining_date = application.get("offer_joining_date")
+
+    if not joining_date:
+        return f"No joining date found for application {application_id}."
+
+    try:
+        parsed_joining_date = datetime.strptime(
+            joining_date,
+            "%d-%m-%Y",
+        ).date()
+    except (TypeError, ValueError):
+        return "Stored joining date is invalid."
+
+    days_in_role = (datetime.now().date() - parsed_joining_date).days
+
+    career_goals = application.get("career_goals", [])
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    role_lower = str(role).lower()
+
+    if "python" in role_lower:
+        priority_skills = [
+            "Advanced Python",
+            "SQL",
+            "Git and GitHub",
+            "Testing and Debugging",
+            "APIs and Backend Development",
+        ]
+    elif "data" in role_lower or "analyst" in role_lower:
+        priority_skills = [
+            "Python",
+            "SQL",
+            "Excel",
+            "Data Visualization",
+            "Statistics",
+        ]
+    elif "embedded" in role_lower:
+        priority_skills = [
+            "Embedded C/C++",
+            "Microcontrollers",
+            "UART/SPI/I2C",
+            "Debugging",
+            "RTOS Fundamentals",
+        ]
+    elif "electronics" in role_lower or "ece" in role_lower:
+        priority_skills = [
+            "Electronics Fundamentals",
+            "Embedded Systems",
+            "Circuit Debugging",
+            "Communication Systems",
+            "Technical Documentation",
+        ]
+    else:
+        priority_skills = [
+            "Role-Specific Technical Skills",
+            "Problem Solving",
+            "Communication",
+            "Team Collaboration",
+            "Professional Development",
+        ]
+
+    pending_goals = [
+        str(goal.get("goal", "")).strip()
+        for goal in career_goals
+        if isinstance(goal, dict)
+        and not goal.get("completed")
+        and str(goal.get("goal", "")).strip()
+    ]
+
+    if days_in_role < 0:
+        readiness = "PRE-JOINING"
+        gap_level = "FOUNDATION"
+        gap_summary = (
+            "Role-specific skills should be prepared before joining."
+        )
+        next_action = (
+            "Build the priority skills and complete joining preparation."
+        )
+
+    elif career_progress < 50:
+        readiness = "DEVELOPING"
+        gap_level = "HIGH"
+        gap_summary = (
+            "Several career goals remain incomplete and skill development "
+            "should be prioritized."
+        )
+        next_action = (
+            "Focus on the highest-priority skill and complete a measurable "
+            "career goal."
+        )
+
+    elif career_progress < 100:
+        readiness = "PROGRESSING"
+        gap_level = "MEDIUM"
+        gap_summary = (
+            "Core development is progressing, but remaining goals and "
+            "role-specific skills need attention."
+        )
+        next_action = (
+            "Close the remaining skill gaps and document measurable results."
+        )
+
+    else:
+        readiness = "STRONG"
+        gap_level = "LOW"
+        gap_summary = (
+            "Tracked career goals are complete. Focus on advanced skills "
+            "and higher-responsibility work."
+        )
+        next_action = (
+            "Develop advanced skills and prepare for larger responsibilities."
+        )
+
+    pending_text = (
+        "\n".join(f"- {goal}" for goal in pending_goals)
+        if pending_goals
+        else "No pending career goals."
+    )
+
+    skill_text = "\n".join(
+        f"{number}. {skill}"
+        for number, skill in enumerate(priority_skills, start=1)
+    )
+
+    return (
+        f"JERVIS Career Skill Gap Analyzer - Application {application_id}\n"
+        "------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Joining Date: {joining_date}\n"
+        f"Days in Role: {days_in_role}\n"
+        f"Skill Readiness: {readiness}\n"
+        f"Skill Gap Level: {gap_level}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Gap Summary: {gap_summary}\n"
+        "Priority Skills:\n"
+        f"{skill_text}\n"
+        "Pending Career Goals:\n"
+        f"{pending_text}\n"
+        f"Next Action: {next_action}"
+    )
+
 def update_interview_stage(application_id, stage):
     stage = str(stage).strip()
 
