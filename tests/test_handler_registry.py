@@ -15,3 +15,13 @@ def test_get_handler_returns_interview_preparation_handler():
     )
 
     assert handler is job_application_handlers.handle_get_interview_preparation
+
+def test_get_handler_returns_job_offer_handler():
+    from core import job_application_handlers
+    from core.handler_registry import get_handler
+
+    handler = get_handler(
+        "job_application_handlers.handle_get_job_offer"
+    )
+
+    assert handler is job_application_handlers.handle_get_job_offer

@@ -515,3 +515,10 @@ def test_routing_plan_selects_interview_preparation_handler():
     plan = get_routing_plan("view interview preparation 1")
 
     assert plan["handler"] == "job_application_handlers.handle_get_interview_preparation"
+
+def test_routing_plan_selects_job_offer_handler():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("view job offer 1")
+
+    assert plan["handler"] == "job_application_handlers.handle_get_job_offer"

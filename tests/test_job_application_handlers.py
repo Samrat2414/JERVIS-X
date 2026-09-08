@@ -214,3 +214,21 @@ def test_handle_get_interview_preparation_extracts_application_id(monkeypatch):
     )
 
     assert result == "INTERVIEW PREPARATION: 1"
+
+def test_handle_get_job_offer_extracts_application_id(monkeypatch):
+    from core import job_application_handlers
+
+    def fake_get_job_offer(application_id):
+        return f"JOB OFFER: {application_id}"
+
+    monkeypatch.setattr(
+        job_application_handlers,
+        "get_job_offer",
+        fake_get_job_offer,
+    )
+
+    result = job_application_handlers.handle_get_job_offer(
+        "view job offer 1"
+    )
+
+    assert result == "JOB OFFER: 1"
