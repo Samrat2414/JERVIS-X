@@ -178,3 +178,21 @@ def test_handle_get_application_interview_result_extracts_application_id(monkeyp
     )
 
     assert result == "INTERVIEW RESULT: 1"
+
+def test_handle_get_application_follow_up_reminders_calls_reader(monkeypatch):
+    from core import job_application_handlers
+
+    def fake_get_application_follow_up_reminders():
+        return "FOLLOW UP REMINDERS"
+
+    monkeypatch.setattr(
+        job_application_handlers,
+        "get_application_follow_up_reminders",
+        fake_get_application_follow_up_reminders,
+    )
+
+    result = job_application_handlers.handle_get_application_follow_up_reminders(
+        "follow up reminders"
+    )
+
+    assert result == "FOLLOW UP REMINDERS"
