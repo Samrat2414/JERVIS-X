@@ -13,6 +13,7 @@ HANDLERS = {
     "job_application_handlers.handle_get_application_interview_reminders": job_application_handlers.handle_get_application_interview_reminders,
     "job_application_handlers.handle_get_application_interview_result": job_application_handlers.handle_get_application_interview_result,
     "job_application_handlers.handle_get_application_follow_up_reminders": job_application_handlers.handle_get_application_follow_up_reminders,
+    "job_application_handlers.handle_get_interview_preparation": job_application_handlers.handle_get_interview_preparation,
     "resume_handlers.handle_get_resume_intelligence_report": resume_handlers.handle_get_resume_intelligence_report,
     "resume_handlers.handle_get_resume_recommendations": resume_handlers.handle_get_resume_recommendations,
     "resume_handlers.handle_get_resume_intelligence": resume_handlers.handle_get_resume_intelligence,
