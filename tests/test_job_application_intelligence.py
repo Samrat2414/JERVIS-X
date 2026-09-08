@@ -1718,3 +1718,196 @@ def test_career_project_plan_output_sections():
     assert "Expected Learning Outcome:" in result
     assert "Next Action:" in result
 
+
+def _set_portfolio_readiness_test_state(
+    application_id,
+    role=None,
+    career_goals=None,
+    notes=None,
+    interview_stage=None,
+    offer_joining_date=None,
+):
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            if role is not None:
+                application["role"] = role
+
+            if career_goals is not None:
+                application["career_goals"] = career_goals
+
+            if notes is not None:
+                application["notes"] = notes
+
+            if interview_stage is not None:
+                application["interview_stage"] = interview_stage
+
+            if offer_joining_date is not None:
+                application["offer_joining_date"] = offer_joining_date
+
+            break
+
+    job_intelligence._save(data)
+
+
+def test_career_portfolio_readiness_application_not_found():
+    result = job_intelligence.get_career_portfolio_readiness(999)
+
+    assert result == "Job application not found."
+
+
+def test_career_portfolio_readiness_python_strong():
+    application_id = add_test_application()
+
+    _set_portfolio_readiness_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"goal": "Python", "completed": True},
+            {"goal": "API", "completed": False},
+        ],
+        notes=["Built portfolio project"],
+        interview_stage="Technical",
+        offer_joining_date="15-09-2026",
+    )
+
+    result = job_intelligence.get_career_portfolio_readiness(
+        application_id
+    )
+
+    assert "Python Project" in result
+    assert "Automated Tests" in result
+    assert "Portfolio Readiness Score: 70/100" in result
+    assert "Readiness Level: STRONG" in result
+
+
+def test_career_portfolio_readiness_data_role():
+    application_id = add_test_application()
+
+    _set_portfolio_readiness_test_state(
+        application_id,
+        role="Data Analyst",
+        career_goals=[],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_portfolio_readiness(
+        application_id
+    )
+
+    assert "Python Data Analysis" in result
+    assert "Dashboard" in result
+    assert "Business Insights" in result
+    assert "Readiness Level: NEEDS WORK" in result
+
+
+def test_career_portfolio_readiness_embedded_role():
+    application_id = add_test_application()
+
+    _set_portfolio_readiness_test_state(
+        application_id,
+        role="Embedded Engineer",
+        career_goals=[
+            {"goal": "Firmware", "completed": True},
+            {"goal": "RTOS", "completed": False},
+        ],
+    )
+
+    result = job_intelligence.get_career_portfolio_readiness(
+        application_id
+    )
+
+    assert "Firmware Project" in result
+    assert "Microcontroller Project" in result
+    assert "Communication Protocols" in result
+
+
+def test_career_portfolio_readiness_ece_role():
+    application_id = add_test_application()
+
+    _set_portfolio_readiness_test_state(
+        application_id,
+        role="ECE Engineer",
+        career_goals=[
+            {"goal": "PCB", "completed": True},
+            {"goal": "Embedded", "completed": True},
+        ],
+    )
+
+    result = job_intelligence.get_career_portfolio_readiness(
+        application_id
+    )
+
+    assert "Electronics Project" in result
+    assert "PCB or Schematic" in result
+    assert "Project Demonstration" in result
+
+
+def test_career_portfolio_readiness_generic_role():
+    application_id = add_test_application()
+
+    _set_portfolio_readiness_test_state(
+        application_id,
+        role="Project Coordinator",
+        career_goals=[],
+    )
+
+    result = job_intelligence.get_career_portfolio_readiness(
+        application_id
+    )
+
+    assert "Role-Specific Project" in result
+    assert "Practical Case Study" in result
+    assert "Problem Solving Evidence" in result
+
+
+def test_career_portfolio_readiness_interview_ready():
+    application_id = add_test_application()
+
+    _set_portfolio_readiness_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"goal": "Goal 1", "completed": True},
+            {"goal": "Goal 2", "completed": True},
+        ],
+        notes=["Strong project evidence"],
+        interview_stage="Final",
+        offer_joining_date="15-09-2026",
+    )
+
+    result = job_intelligence.get_career_portfolio_readiness(
+        application_id
+    )
+
+    assert "Portfolio Readiness Score: 85/100" in result
+    assert "Readiness Level: INTERVIEW READY" in result
+    assert "Maintain portfolio quality" in result
+
+
+def test_career_portfolio_readiness_missing_items():
+    application_id = add_test_application()
+
+    _set_portfolio_readiness_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"goal": "Goal 1", "completed": False},
+        ],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_portfolio_readiness(
+        application_id
+    )
+
+    assert "Complete remaining career development goals." in result
+    assert "Add project notes and measurable achievements." in result
+    assert "Add stronger career-stage evidence" in result
+    assert "Add one advanced portfolio project" in result
+

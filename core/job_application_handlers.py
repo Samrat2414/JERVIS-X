@@ -29,6 +29,7 @@ from core.job_application_intelligence import (
     get_career_skill_development_plan,
     get_career_learning_roadmap,
     get_career_project_plan,
+    get_career_portfolio_readiness,
 )
 
 
@@ -181,3 +182,11 @@ def handle_get_career_learning_roadmap(command):
 def handle_get_career_project_plan(command):
     application_id = command[len("career project plan "):].strip()
     return get_career_project_plan(application_id)
+
+
+def handle_get_career_portfolio_readiness(command):
+    application_id = command[
+        len("career portfolio readiness "):
+    ].strip()
+    return get_career_portfolio_readiness(application_id)
+

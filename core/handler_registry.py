@@ -32,6 +32,7 @@ HANDLERS = {
     "job_application_handlers.handle_get_career_skill_development_plan": job_application_handlers.handle_get_career_skill_development_plan,
     "job_application_handlers.handle_get_career_learning_roadmap": job_application_handlers.handle_get_career_learning_roadmap,
     "job_application_handlers.handle_get_career_project_plan": job_application_handlers.handle_get_career_project_plan,
+    "job_application_handlers.handle_get_career_portfolio_readiness": job_application_handlers.handle_get_career_portfolio_readiness,
 
     "resume_handlers.handle_get_resume_intelligence_report": resume_handlers.handle_get_resume_intelligence_report,
     "resume_handlers.handle_get_resume_recommendations": resume_handlers.handle_get_resume_recommendations,

@@ -4040,3 +4040,159 @@ def get_career_project_plan(application_id):
         "your progress on GitHub."
     )
 
+
+def get_career_portfolio_readiness(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    role_lower = str(role).lower()
+
+    career_goals = application.get("career_goals", [])
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    if "python" in role_lower:
+        portfolio_items = [
+            "Python Project",
+            "SQL or Database Project",
+            "API Integration",
+            "Automated Tests",
+            "GitHub README",
+            "Deployment",
+        ]
+
+    elif "data" in role_lower or "analyst" in role_lower:
+        portfolio_items = [
+            "Python Data Analysis",
+            "SQL Project",
+            "Excel Project",
+            "Dashboard",
+            "Business Insights",
+            "GitHub Documentation",
+        ]
+
+    elif "embedded" in role_lower:
+        portfolio_items = [
+            "Firmware Project",
+            "Microcontroller Project",
+            "Sensor Integration",
+            "Communication Protocols",
+            "Hardware Documentation",
+            "GitHub Repository",
+        ]
+
+    elif "electronics" in role_lower or "ece" in role_lower:
+        portfolio_items = [
+            "Electronics Project",
+            "Embedded Project",
+            "PCB or Schematic",
+            "Circuit Testing",
+            "Technical Documentation",
+            "Project Demonstration",
+        ]
+
+    else:
+        portfolio_items = [
+            "Role-Specific Project",
+            "Practical Case Study",
+            "Documentation",
+            "Problem Solving Evidence",
+            "GitHub or Portfolio Page",
+        ]
+
+    score = 40
+
+    if total_goals:
+        score += min(int(career_progress * 0.3), 30)
+
+    if application.get("notes"):
+        score += 5
+
+    if application.get("interview_stage"):
+        score += 5
+
+    if application.get("offer_joining_date"):
+        score += 5
+
+    score = min(score, 100)
+
+    if score < 50:
+        readiness_level = "NEEDS WORK"
+    elif score < 70:
+        readiness_level = "DEVELOPING"
+    elif score < 85:
+        readiness_level = "STRONG"
+    else:
+        readiness_level = "INTERVIEW READY"
+
+    missing_items = []
+
+    if career_progress < 100:
+        missing_items.append(
+            "Complete remaining career development goals."
+        )
+
+    if not application.get("notes"):
+        missing_items.append(
+            "Add project notes and measurable achievements."
+        )
+
+    if not application.get("offer_joining_date"):
+        missing_items.append(
+            "Add stronger career-stage evidence and project timeline."
+        )
+
+    if score < 85:
+        missing_items.append(
+            "Add one advanced portfolio project with documentation."
+        )
+
+    if not missing_items:
+        missing_items.append(
+            "Maintain portfolio quality and keep projects updated."
+        )
+
+    portfolio_text = "\n".join(
+        f"{number}. {item}"
+        for number, item in enumerate(portfolio_items, start=1)
+    )
+
+    missing_text = "\n".join(
+        f"{number}. {item}"
+        for number, item in enumerate(missing_items, start=1)
+    )
+
+    return (
+        f"JERVIS Career Portfolio Readiness Analyzer - Application "
+        f"{application_id}\n"
+        "----------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Portfolio Readiness Score: {score}/100\n"
+        f"Readiness Level: {readiness_level}\n"
+        "Recommended Portfolio Evidence:\n"
+        f"{portfolio_text}\n"
+        "Missing Portfolio Items:\n"
+        f"{missing_text}\n"
+        "Next Action: Complete the highest-priority missing portfolio "
+        "item and document it on GitHub."
+    )
+
