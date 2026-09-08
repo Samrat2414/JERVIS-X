@@ -1613,6 +1613,86 @@ def get_joining_day_assistant(application_id):
         f"Next Action: {next_action}"
     )
 
+
+def get_joining_day_schedule(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    joining_date = application.get("offer_joining_date")
+
+    if not joining_date:
+        return f"No joining date found for application {application_id}."
+
+    try:
+        parsed_joining_date = datetime.strptime(
+            joining_date,
+            "%d-%m-%Y",
+        ).date()
+    except (TypeError, ValueError):
+        return "Stored joining date is invalid."
+
+    days_remaining = (parsed_joining_date - datetime.now().date()).days
+
+    checklist = application.get("joining_checklist", [])
+    pending_tasks = [
+        task.get("task", "Unnamed task")
+        for task in checklist
+        if isinstance(task, dict) and task.get("completed") is not True
+    ]
+
+    if days_remaining < 0:
+        priority = "CRITICAL"
+        goal = "Contact the employer and confirm joining status immediately."
+    elif days_remaining <= 2:
+        priority = "HIGH"
+        goal = "Finish preparation and be fully ready for joining day."
+    else:
+        priority = "NORMAL"
+        goal = "Prepare early and complete joining smoothly."
+
+    plan = [
+        "Keep ID and joining documents ready",
+        "Reach/report before joining time",
+        "Complete HR verification",
+        "Attend orientation",
+        "Meet manager/team",
+        "Complete system/access setup",
+    ]
+
+    lines = [
+        f"JERVIS Joining Day Schedule - Application {application_id}",
+        "--------------------------------------------",
+        f"Company: {company}",
+        f"Role: {role}",
+        f"Joining Date: {joining_date}",
+        f"Days Remaining: {days_remaining}",
+        "",
+        "First-Day Plan:",
+    ]
+
+    for index, item in enumerate(plan, start=1):
+        lines.append(f"{index}. {item}")
+
+    if pending_tasks:
+        lines.append("")
+        lines.append("Pending Joining Tasks:")
+        for task in pending_tasks:
+            lines.append(f"- {task}")
+
+    lines.extend(
+        [
+            "",
+            f"Priority: {priority}",
+            f"Goal: {goal}",
+        ]
+    )
+
+    return "\n".join(lines)
+
 def mark_application_joined(application_id):
     data = _load()
 

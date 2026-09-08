@@ -17,6 +17,7 @@ from core.job_application_intelligence import (
     get_joining_readiness,
     get_joining_risk,
     get_joining_day_assistant,
+    get_joining_day_schedule,
 )
 
 
@@ -109,3 +110,8 @@ def handle_get_joining_risk(command):
 def handle_get_joining_day_assistant(command):
     application_id = command[len("joining day "):].strip()
     return get_joining_day_assistant(application_id)
+
+
+def handle_get_joining_day_schedule(command):
+    application_id = command[len("joining schedule "):].strip()
+    return get_joining_day_schedule(application_id)
