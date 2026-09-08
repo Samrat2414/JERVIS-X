@@ -1490,6 +1490,68 @@ def get_joining_countdown(application_id):
     )
 
 
+
+def get_joining_risk(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    joining_date = application.get("offer_joining_date")
+
+    if not joining_date:
+        return f"No joining date found for application {application_id}."
+
+    try:
+        parsed_joining_date = datetime.strptime(
+            joining_date,
+            "%d-%m-%Y",
+        ).date()
+    except (TypeError, ValueError):
+        return "Stored joining date is invalid."
+
+    days_remaining = (parsed_joining_date - datetime.now().date()).days
+
+    checklist = application.get("joining_checklist", [])
+    pending_tasks = sum(
+        1
+        for task in checklist
+        if isinstance(task, dict) and task.get("completed") is not True
+    )
+
+    if days_remaining < 0:
+        risk_level = "CRITICAL"
+        recommendation = (
+            "Joining date has already passed. "
+            "Contact the employer immediately."
+        )
+    elif days_remaining <= 2 and pending_tasks > 0:
+        risk_level = "HIGH"
+        recommendation = "Complete all pending joining tasks immediately."
+    elif days_remaining <= 7 and pending_tasks > 0:
+        risk_level = "MEDIUM"
+        recommendation = (
+            "Complete pending joining tasks before the joining date."
+        )
+    else:
+        risk_level = "LOW"
+        recommendation = "Ready for joining."
+
+    return (
+        f"JERVIS Joining Risk Analysis - Application {application_id}\n"
+        "---------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Joining Date: {joining_date}\n"
+        f"Days Remaining: {days_remaining}\n"
+        f"Pending Tasks: {pending_tasks}\n"
+        f"Risk Level: {risk_level}\n"
+        f"Recommendation: {recommendation}"
+    )
+
+
 def mark_application_joined(application_id):
     data = _load()
 

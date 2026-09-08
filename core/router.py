@@ -99,6 +99,9 @@ def get_routing_plan(command):
     if intelligence["normalized_command"].startswith("joining readiness "):
         handler = "job_application_handlers.handle_get_joining_readiness"
 
+    if intelligence["normalized_command"].startswith("joining risk "):
+        handler = "job_application_handlers.handle_get_joining_risk"
+
     if intelligence["normalized_command"] in (
         "application follow up reminders",
         "application follow up reminder",

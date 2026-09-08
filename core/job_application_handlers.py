@@ -15,6 +15,7 @@ from core.job_application_intelligence import (
     get_joining_checklist,
     get_joining_countdown,
     get_joining_readiness,
+    get_joining_risk,
 )
 
 
@@ -97,3 +98,8 @@ def handle_get_joining_countdown(command):
 def handle_get_joining_readiness(command):
     application_id = command[len("joining readiness "):].strip()
     return get_joining_readiness(application_id)
+
+
+def handle_get_joining_risk(command):
+    application_id = command[len("joining risk "):].strip()
+    return get_joining_risk(application_id)

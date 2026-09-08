@@ -18,6 +18,7 @@ HANDLERS = {
     "job_application_handlers.handle_get_joining_checklist": job_application_handlers.handle_get_joining_checklist,
     "job_application_handlers.handle_get_joining_countdown": job_application_handlers.handle_get_joining_countdown,
     "job_application_handlers.handle_get_joining_readiness": job_application_handlers.handle_get_joining_readiness,
+    "job_application_handlers.handle_get_joining_risk": job_application_handlers.handle_get_joining_risk,
 
     "resume_handlers.handle_get_resume_intelligence_report": resume_handlers.handle_get_resume_intelligence_report,
     "resume_handlers.handle_get_resume_recommendations": resume_handlers.handle_get_resume_recommendations,
