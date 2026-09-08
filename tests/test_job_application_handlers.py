@@ -232,3 +232,21 @@ def test_handle_get_job_offer_extracts_application_id(monkeypatch):
     )
 
     assert result == "JOB OFFER: 1"
+
+def test_handle_get_joining_checklist_extracts_application_id(monkeypatch):
+    from core import job_application_handlers
+
+    def fake_get_joining_checklist(application_id):
+        return f"JOINING CHECKLIST: {application_id}"
+
+    monkeypatch.setattr(
+        job_application_handlers,
+        "get_joining_checklist",
+        fake_get_joining_checklist,
+    )
+
+    result = job_application_handlers.handle_get_joining_checklist(
+        "view joining checklist 1"
+    )
+
+    assert result == "JOINING CHECKLIST: 1"

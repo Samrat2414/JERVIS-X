@@ -25,3 +25,13 @@ def test_get_handler_returns_job_offer_handler():
     )
 
     assert handler is job_application_handlers.handle_get_job_offer
+
+def test_get_handler_returns_joining_checklist_handler():
+    from core import job_application_handlers
+    from core.handler_registry import get_handler
+
+    handler = get_handler(
+        "job_application_handlers.handle_get_joining_checklist"
+    )
+
+    assert handler is job_application_handlers.handle_get_joining_checklist
