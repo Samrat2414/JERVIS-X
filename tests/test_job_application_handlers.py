@@ -250,3 +250,22 @@ def test_handle_get_joining_checklist_extracts_application_id(monkeypatch):
     )
 
     assert result == "JOINING CHECKLIST: 1"
+
+def test_handle_get_joining_countdown_extracts_application_id(monkeypatch):
+    from core import job_application_handlers
+
+    def fake_get_joining_countdown(application_id):
+        return f"JOINING COUNTDOWN: {application_id}"
+
+    monkeypatch.setattr(
+        job_application_handlers,
+        "get_joining_countdown",
+        fake_get_joining_countdown,
+    )
+
+    result = job_application_handlers.handle_get_joining_countdown(
+        "joining countdown 1"
+    )
+
+    assert result == "JOINING COUNTDOWN: 1"
+

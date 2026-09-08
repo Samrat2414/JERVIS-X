@@ -1,4 +1,4 @@
-from core.job_application_intelligence import get_job_application_report, get_job_application_commands, search_job_applications, filter_job_applications, sort_job_applications, get_application_notes, get_application_status_timeline, get_job_application_details, get_application_interview_reminders, get_application_interview_result, get_application_follow_up_reminders, get_interview_preparation, get_job_offer, get_joining_checklist
+from core.job_application_intelligence import get_job_application_report, get_job_application_commands, search_job_applications, filter_job_applications, sort_job_applications, get_application_notes, get_application_status_timeline, get_job_application_details, get_application_interview_reminders, get_application_interview_result, get_application_follow_up_reminders, get_interview_preparation, get_job_offer, get_joining_checklist, get_joining_countdown
 
 
 
@@ -59,3 +59,8 @@ def handle_get_job_offer(command):
 def handle_get_joining_checklist(command):
     application_id = command[len("view joining checklist "):].strip()
     return get_joining_checklist(application_id)
+
+def handle_get_joining_countdown(command):
+    application_id = command[len("joining countdown "):].strip()
+    return get_joining_countdown(application_id)
+

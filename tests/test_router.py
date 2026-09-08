@@ -529,3 +529,11 @@ def test_routing_plan_selects_joining_checklist_handler():
     plan = get_routing_plan("view joining checklist 1")
 
     assert plan["handler"] == "job_application_handlers.handle_get_joining_checklist"
+
+def test_routing_plan_selects_joining_countdown_handler():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("joining countdown 1")
+
+    assert plan["handler"] == "job_application_handlers.handle_get_joining_countdown"
+
