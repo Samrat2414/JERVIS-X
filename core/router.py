@@ -1,4 +1,4 @@
-def classify_command(command):
+﻿def classify_command(command):
     command = command.strip().lower()
 
     if "interview" in command:
@@ -111,6 +111,9 @@ def get_routing_plan(command):
 
     elif normalized_command.startswith("joining schedule "):
         handler = "job_application_handlers.handle_get_joining_day_schedule"
+
+    elif normalized_command.startswith("joining checkin "):
+        handler = "job_application_handlers.handle_get_post_joining_checkin"
 
     elif normalized_command in (
         "application follow up reminders",

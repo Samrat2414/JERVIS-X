@@ -1693,6 +1693,61 @@ def get_joining_day_schedule(application_id):
 
     return "\n".join(lines)
 
+def get_post_joining_checkin(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    joining_date = application.get("offer_joining_date")
+
+    if not joining_date:
+        return f"No joining date found for application {application_id}."
+
+    try:
+        parsed_joining_date = datetime.strptime(
+            joining_date,
+            "%d-%m-%Y",
+        ).date()
+    except (TypeError, ValueError):
+        return "Stored joining date is invalid."
+
+    days_since_joining = (datetime.now().date() - parsed_joining_date).days
+
+    onboarding_tasks = application.get("onboarding_tasks", [])
+    pending_tasks = sum(
+        1
+        for task in onboarding_tasks
+        if isinstance(task, dict) and task.get("completed") is not True
+    )
+
+    if days_since_joining < 0:
+        status = "NOT JOINED YET"
+        next_action = "Complete joining preparation before the joining date."
+    elif days_since_joining <= 7:
+        status = "FIRST WEEK"
+        next_action = "Complete remaining onboarding tasks and meet your manager."
+    elif pending_tasks > 0:
+        status = "ONBOARDING PENDING"
+        next_action = "Complete all remaining onboarding tasks."
+    else:
+        status = "SETTLED"
+        next_action = "Focus on learning, performance, and team integration."
+
+    return (
+        f"JERVIS Post-Joining Check-In - Application {application_id}\n"
+        "--------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Joining Date: {joining_date}\n"
+        f"Days Since Joining: {days_since_joining}\n"
+        f"Status: {status}\n"
+        f"Pending Onboarding Tasks: {pending_tasks}\n"
+        f"Next Action: {next_action}"
+    )
+
 def mark_application_joined(application_id):
     data = _load()
 

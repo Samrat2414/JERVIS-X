@@ -1,4 +1,4 @@
-from core import resume_handlers, job_application_handlers
+﻿from core import resume_handlers, job_application_handlers
 
 
 HANDLERS = {
@@ -21,6 +21,7 @@ HANDLERS = {
     "job_application_handlers.handle_get_joining_risk": job_application_handlers.handle_get_joining_risk,
     "job_application_handlers.handle_get_joining_day_assistant": job_application_handlers.handle_get_joining_day_assistant,
     "job_application_handlers.handle_get_joining_day_schedule": job_application_handlers.handle_get_joining_day_schedule,
+    "job_application_handlers.handle_get_post_joining_checkin": job_application_handlers.handle_get_post_joining_checkin,
 
     "resume_handlers.handle_get_resume_intelligence_report": resume_handlers.handle_get_resume_intelligence_report,
     "resume_handlers.handle_get_resume_recommendations": resume_handlers.handle_get_resume_recommendations,

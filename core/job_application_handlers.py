@@ -1,4 +1,4 @@
-from core.job_application_intelligence import (
+﻿from core.job_application_intelligence import (
     get_job_application_report,
     get_job_application_commands,
     search_job_applications,
@@ -18,6 +18,7 @@ from core.job_application_intelligence import (
     get_joining_risk,
     get_joining_day_assistant,
     get_joining_day_schedule,
+    get_post_joining_checkin,
 )
 
 
@@ -115,3 +116,8 @@ def handle_get_joining_day_assistant(command):
 def handle_get_joining_day_schedule(command):
     application_id = command[len("joining schedule "):].strip()
     return get_joining_day_schedule(application_id)
+
+
+def handle_get_post_joining_checkin(command):
+    application_id = command[len("joining checkin "):].strip()
+    return get_post_joining_checkin(application_id)
