@@ -1,4 +1,4 @@
-﻿import csv
+import csv
 import json
 import os
 import sys
@@ -2285,6 +2285,102 @@ def get_performance_review_assistant(application_id):
         f"Improvement Area: {improvement}\n"
         f"Next Action: {next_action}"
     )
+
+def get_promotion_readiness(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    joining_date = application.get("offer_joining_date")
+
+    if not joining_date:
+        return f"No joining date found for application {application_id}."
+
+    try:
+        parsed_joining_date = datetime.strptime(
+            joining_date,
+            "%d-%m-%Y",
+        ).date()
+    except (TypeError, ValueError):
+        return "Stored joining date is invalid."
+
+    days_in_role = (datetime.now().date() - parsed_joining_date).days
+
+    onboarding_tasks = application.get("onboarding_tasks", [])
+    completed_onboarding = sum(
+        1
+        for task in onboarding_tasks
+        if isinstance(task, dict) and task.get("completed")
+    )
+    onboarding_progress = (
+        round((completed_onboarding / len(onboarding_tasks)) * 100, 1)
+        if onboarding_tasks
+        else 0.0
+    )
+
+    career_goals = application.get("career_goals", [])
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    career_progress = (
+        round((completed_goals / len(career_goals)) * 100, 1)
+        if career_goals
+        else 0.0
+    )
+
+    if days_in_role < 0:
+        readiness_level = "NOT ELIGIBLE YET"
+        strength = "Joining preparation is in progress."
+        promotion_gap = "Start the role and build a performance record first."
+        next_action = "Complete joining and onboarding before tracking promotion readiness."
+    elif days_in_role < 90:
+        readiness_level = "EARLY STAGE"
+        strength = "Building role knowledge and team experience."
+        promotion_gap = "More time, ownership, and measurable results are needed."
+        next_action = "Complete onboarding and focus on strong early performance."
+    elif career_progress < 50:
+        readiness_level = "DEVELOPING"
+        strength = "You have established experience in the role."
+        promotion_gap = "Career goal completion is below 50%."
+        next_action = "Complete more career goals and document measurable achievements."
+    elif career_progress < 100:
+        readiness_level = "ALMOST READY"
+        strength = "Good career goal progress and growing ownership."
+        promotion_gap = "Complete remaining goals and strengthen measurable impact."
+        next_action = "Finish remaining goals and collect manager feedback."
+    elif onboarding_tasks and onboarding_progress < 100:
+        readiness_level = "ALMOST READY"
+        strength = "Career goals are complete."
+        promotion_gap = "Some onboarding tasks are still incomplete."
+        next_action = "Complete all onboarding tasks and document achievements."
+    else:
+        readiness_level = "READY"
+        strength = "Strong goal completion and established role experience."
+        promotion_gap = "No major tracked gap detected."
+        next_action = "Prepare a promotion case with achievements, impact, and manager feedback."
+
+    return (
+        f"JERVIS Career Promotion Readiness - Application {application_id}\n"
+        "------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Joining Date: {joining_date}\n"
+        f"Days in Role: {days_in_role}\n"
+        f"Readiness Level: {readiness_level}\n"
+        f"Onboarding Completion: {completed_onboarding}/"
+        f"{len(onboarding_tasks)} ({onboarding_progress}%)\n"
+        f"Career Goal Completion: {completed_goals}/"
+        f"{len(career_goals)} ({career_progress}%)\n"
+        f"Current Strength: {strength}\n"
+        f"Promotion Gap: {promotion_gap}\n"
+        f"Next Action: {next_action}"
+    )
+
 
 def update_interview_stage(application_id, stage):
     stage = str(stage).strip()

@@ -1,4 +1,4 @@
-﻿from datetime import datetime, timedelta
+from datetime import datetime, timedelta
 
 from pathlib import Path
 
@@ -38,6 +38,7 @@ from core.job_application_intelligence import (
     get_new_job_success_tracker,
     get_90_day_career_success_tracker,
     get_performance_review_assistant,
+    get_promotion_readiness,
     _load,
     _save,
     get_onboarding_plan,
@@ -564,3 +565,208 @@ def test_get_performance_review_assistant_90_day_review():
     assert "Current Strength: Growing ownership and contributing to team goals." in result
     assert "Improvement Area: Increase ownership and measurable impact." in result
     assert "Next Action: Prepare achievements, feedback points, and next goals." in result
+
+
+def test_get_promotion_readiness_before_joining():
+    application_id = add_test_application()
+    joining_date = future_date(7)
+
+    add_job_offer(
+        application_id,
+        "450000",
+        "Kolkata",
+        joining_date,
+    )
+
+    result = get_promotion_readiness(application_id)
+
+    assert "JERVIS Career Promotion Readiness - Application 1" in result
+    assert "Company: Test Company" in result
+    assert "Role: Python Developer" in result
+    assert f"Joining Date: {joining_date}" in result
+    assert "Readiness Level: NOT ELIGIBLE YET" in result
+    assert "Onboarding Completion: 0/0 (0.0%)" in result
+    assert "Career Goal Completion: 0/0 (0.0%)" in result
+    assert "Current Strength: Joining preparation is in progress." in result
+    assert "Promotion Gap: Start the role and build a performance record first." in result
+    assert (
+        "Next Action: Complete joining and onboarding before tracking promotion readiness."
+        in result
+    )
+
+
+def test_get_promotion_readiness_early_stage():
+    application_id = add_test_application()
+    joining_date = (
+        datetime.now().date() - timedelta(days=60)
+    ).strftime("%d-%m-%Y")
+
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["offer_joining_date"] = joining_date
+            break
+
+    _save(data)
+
+    result = get_promotion_readiness(application_id)
+
+    assert "Days in Role: 60" in result
+    assert "Readiness Level: EARLY STAGE" in result
+    assert "Current Strength: Building role knowledge and team experience." in result
+    assert (
+        "Promotion Gap: More time, ownership, and measurable results are needed."
+        in result
+    )
+
+
+def test_get_promotion_readiness_developing():
+    application_id = add_test_application()
+    joining_date = (
+        datetime.now().date() - timedelta(days=120)
+    ).strftime("%d-%m-%Y")
+
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["offer_joining_date"] = joining_date
+            application["career_goals"] = [
+                {
+                    "goal": "Improve Python skills",
+                    "completed": False,
+                },
+                {
+                    "goal": "Own a production task",
+                    "completed": False,
+                },
+            ]
+            break
+
+    _save(data)
+
+    result = get_promotion_readiness(application_id)
+
+    assert "Readiness Level: DEVELOPING" in result
+    assert "Career Goal Completion: 0/2 (0.0%)" in result
+    assert "Promotion Gap: Career goal completion is below 50%." in result
+    assert (
+        "Next Action: Complete more career goals and document measurable achievements."
+        in result
+    )
+
+
+def test_get_promotion_readiness_almost_ready():
+    application_id = add_test_application()
+    joining_date = (
+        datetime.now().date() - timedelta(days=150)
+    ).strftime("%d-%m-%Y")
+
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["offer_joining_date"] = joining_date
+            application["career_goals"] = [
+                {
+                    "goal": "Complete first major project",
+                    "completed": True,
+                },
+                {
+                    "goal": "Lead a technical task",
+                    "completed": False,
+                },
+            ]
+            break
+
+    _save(data)
+
+    result = get_promotion_readiness(application_id)
+
+    assert "Readiness Level: ALMOST READY" in result
+    assert "Career Goal Completion: 1/2 (50.0%)" in result
+    assert "Current Strength: Good career goal progress and growing ownership." in result
+    assert (
+        "Promotion Gap: Complete remaining goals and strengthen measurable impact."
+        in result
+    )
+
+
+def test_get_promotion_readiness_incomplete_onboarding():
+    application_id = add_test_application()
+    joining_date = (
+        datetime.now().date() - timedelta(days=180)
+    ).strftime("%d-%m-%Y")
+
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["offer_joining_date"] = joining_date
+            application["career_goals"] = [
+                {
+                    "goal": "Complete first major project",
+                    "completed": True,
+                }
+            ]
+            application["onboarding_tasks"] = [
+                {
+                    "task": "Complete HR induction",
+                    "completed": False,
+                }
+            ]
+            break
+
+    _save(data)
+
+    result = get_promotion_readiness(application_id)
+
+    assert "Readiness Level: ALMOST READY" in result
+    assert "Career Goal Completion: 1/1 (100.0%)" in result
+    assert "Onboarding Completion: 0/1 (0.0%)" in result
+    assert "Current Strength: Career goals are complete." in result
+    assert "Promotion Gap: Some onboarding tasks are still incomplete." in result
+
+
+def test_get_promotion_readiness_ready():
+    application_id = add_test_application()
+    joining_date = (
+        datetime.now().date() - timedelta(days=200)
+    ).strftime("%d-%m-%Y")
+
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["offer_joining_date"] = joining_date
+            application["career_goals"] = [
+                {
+                    "goal": "Complete first major project",
+                    "completed": True,
+                }
+            ]
+            application["onboarding_tasks"] = [
+                {
+                    "task": "Complete HR induction",
+                    "completed": True,
+                }
+            ]
+            break
+
+    _save(data)
+
+    result = get_promotion_readiness(application_id)
+
+    assert "Readiness Level: READY" in result
+    assert "Career Goal Completion: 1/1 (100.0%)" in result
+    assert "Onboarding Completion: 1/1 (100.0%)" in result
+    assert (
+        "Current Strength: Strong goal completion and established role experience."
+        in result
+    )
+    assert "Promotion Gap: No major tracked gap detected." in result
+    assert (
+        "Next Action: Prepare a promotion case with achievements, impact, and manager feedback."
+        in result
+    )

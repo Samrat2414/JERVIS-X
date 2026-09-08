@@ -1,4 +1,4 @@
-﻿from core.job_application_intelligence import (
+from core.job_application_intelligence import (
     get_job_application_report,
     get_job_application_commands,
     search_job_applications,
@@ -22,6 +22,7 @@
     get_new_job_success_tracker,
     get_90_day_career_success_tracker,
     get_performance_review_assistant,
+    get_promotion_readiness,
 )
 
 
@@ -130,10 +131,17 @@ def handle_get_new_job_success_tracker(command):
     application_id = command[len("joining progress "):].strip()
     return get_new_job_success_tracker(application_id)
 
+
 def handle_get_90_day_career_success_tracker(command):
     application_id = command[len("joining 90day "):].strip()
     return get_90_day_career_success_tracker(application_id)
 
+
 def handle_get_performance_review_assistant(command):
     application_id = command[len("performance review "):].strip()
     return get_performance_review_assistant(application_id)
+
+
+def handle_get_promotion_readiness(command):
+    application_id = command[len("promotion readiness "):].strip()
+    return get_promotion_readiness(application_id)
