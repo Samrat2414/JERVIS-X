@@ -26,6 +26,7 @@ HANDLERS = {
     "job_application_handlers.handle_get_90_day_career_success_tracker": job_application_handlers.handle_get_90_day_career_success_tracker,
     "job_application_handlers.handle_get_performance_review_assistant": job_application_handlers.handle_get_performance_review_assistant,
     "job_application_handlers.handle_get_promotion_readiness": job_application_handlers.handle_get_promotion_readiness,
+    "job_application_handlers.handle_get_salary_growth_analysis": job_application_handlers.handle_get_salary_growth_analysis,
 
     "resume_handlers.handle_get_resume_intelligence_report": resume_handlers.handle_get_resume_intelligence_report,
     "resume_handlers.handle_get_resume_recommendations": resume_handlers.handle_get_resume_recommendations,

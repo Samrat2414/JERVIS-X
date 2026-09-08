@@ -1,4 +1,4 @@
-﻿def classify_command(command):
+def classify_command(command):
     command = command.strip().lower()
 
     if "interview" in command:
@@ -20,6 +20,9 @@
         return "JOB_APPLICATION"
 
     if command.startswith("promotion readiness "):
+        return "JOB_APPLICATION"
+
+    if command.startswith("salary growth "):
         return "JOB_APPLICATION"
 
     if "backup" in command:
@@ -132,6 +135,9 @@ def get_routing_plan(command):
 
     elif normalized_command.startswith("promotion readiness "):
         handler = "job_application_handlers.handle_get_promotion_readiness"
+
+    elif normalized_command.startswith("salary growth "):
+        handler = "job_application_handlers.handle_get_salary_growth_analysis"
 
     elif normalized_command in (
         "application follow up reminders",

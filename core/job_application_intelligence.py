@@ -2382,6 +2382,109 @@ def get_promotion_readiness(application_id):
     )
 
 
+
+def get_salary_growth_analysis(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    joining_date = application.get("offer_joining_date")
+    annual_ctc = application.get("offer_annual_ctc", "Not Available")
+
+    if not joining_date:
+        return f"No joining date found for application {application_id}."
+
+    try:
+        parsed_joining_date = datetime.strptime(
+            joining_date,
+            "%d-%m-%Y",
+        ).date()
+    except (TypeError, ValueError):
+        return "Stored joining date is invalid."
+
+    days_in_role = (datetime.now().date() - parsed_joining_date).days
+
+    onboarding_tasks = application.get("onboarding_tasks", [])
+    completed_onboarding = sum(
+        1
+        for task in onboarding_tasks
+        if isinstance(task, dict) and task.get("completed")
+    )
+    onboarding_progress = (
+        round((completed_onboarding / len(onboarding_tasks)) * 100, 1)
+        if onboarding_tasks
+        else 0.0
+    )
+
+    career_goals = application.get("career_goals", [])
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    career_progress = (
+        round((completed_goals / len(career_goals)) * 100, 1)
+        if career_goals
+        else 0.0
+    )
+
+    if days_in_role < 0:
+        appraisal_readiness = "NOT ELIGIBLE YET"
+        salary_discussion = "NOT READY"
+        growth_focus = "Prepare for joining and build a strong start."
+        next_action = "Complete joining and onboarding before tracking salary growth."
+    elif days_in_role < 90:
+        appraisal_readiness = "EARLY STAGE"
+        salary_discussion = "TOO EARLY"
+        growth_focus = "Learn the role, tools, team, and performance expectations."
+        next_action = "Build measurable achievements during your first 90 days."
+    elif career_progress < 50:
+        appraisal_readiness = "DEVELOPING"
+        salary_discussion = "NOT READY"
+        growth_focus = "Improve goal completion and measurable performance."
+        next_action = "Complete more career goals and document your impact."
+    elif career_progress < 100:
+        appraisal_readiness = "PROGRESSING"
+        salary_discussion = "PREPARE"
+        growth_focus = "Finish remaining goals and increase ownership."
+        next_action = "Collect achievements, metrics, and manager feedback."
+    elif onboarding_tasks and onboarding_progress < 100:
+        appraisal_readiness = "PROGRESSING"
+        salary_discussion = "PREPARE"
+        growth_focus = "Close remaining onboarding responsibilities."
+        next_action = "Complete onboarding and document your performance evidence."
+    elif days_in_role < 180:
+        appraisal_readiness = "GOOD PROGRESS"
+        salary_discussion = "PREPARE"
+        growth_focus = "Build a longer track record of consistent results."
+        next_action = "Keep documenting achievements and measurable business impact."
+    else:
+        appraisal_readiness = "READY"
+        salary_discussion = "READY"
+        growth_focus = "Present measurable impact, ownership, and completed goals."
+        next_action = "Prepare an appraisal and salary-growth discussion with your manager."
+
+    return (
+        f"JERVIS Salary Growth & Appraisal Analyzer - Application {application_id}\n"
+        "-----------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Current Annual CTC: {annual_ctc}\n"
+        f"Joining Date: {joining_date}\n"
+        f"Days in Role: {days_in_role}\n"
+        f"Appraisal Readiness: {appraisal_readiness}\n"
+        f"Salary Discussion Readiness: {salary_discussion}\n"
+        f"Onboarding Completion: {completed_onboarding}/"
+        f"{len(onboarding_tasks)} ({onboarding_progress}%)\n"
+        f"Career Goal Completion: {completed_goals}/"
+        f"{len(career_goals)} ({career_progress}%)\n"
+        f"Growth Focus: {growth_focus}\n"
+        f"Next Action: {next_action}"
+    )
+
 def update_interview_stage(application_id, stage):
     stage = str(stage).strip()
 
@@ -2982,5 +3085,3 @@ def get_joining_readiness(application_id):
         f"Pending Tasks: {pending_tasks}\n"
         f"Status: {readiness_status}"
     )
-
-

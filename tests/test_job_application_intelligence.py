@@ -39,6 +39,7 @@ from core.job_application_intelligence import (
     get_90_day_career_success_tracker,
     get_performance_review_assistant,
     get_promotion_readiness,
+    get_salary_growth_analysis,
     _load,
     _save,
     get_onboarding_plan,
@@ -770,3 +771,200 @@ def test_get_promotion_readiness_ready():
         "Next Action: Prepare a promotion case with achievements, impact, and manager feedback."
         in result
     )
+def _set_salary_growth_test_state(
+    application_id,
+    days_in_role,
+    career_goals=None,
+    onboarding_tasks=None,
+):
+    joining_date = (
+        datetime.now().date() - timedelta(days=days_in_role)
+    ).strftime("%d-%m-%Y")
+
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["offer_joining_date"] = joining_date
+
+            if career_goals is not None:
+                application["career_goals"] = career_goals
+
+            if onboarding_tasks is not None:
+                application["onboarding_tasks"] = onboarding_tasks
+
+            break
+
+    _save(data)
+    return joining_date
+
+
+def test_get_salary_growth_analysis_before_joining():
+    application_id = add_test_application()
+    joining_date = future_date(7)
+
+    add_job_offer(
+        application_id,
+        "450000",
+        "Kolkata",
+        joining_date,
+    )
+
+    result = get_salary_growth_analysis(application_id)
+
+    assert "JERVIS Salary Growth & Appraisal Analyzer - Application 1" in result
+    assert "Company: Test Company" in result
+    assert "Role: Python Developer" in result
+    assert "Current Annual CTC: INR 450,000" in result
+    assert f"Joining Date: {joining_date}" in result
+    assert "Appraisal Readiness: NOT ELIGIBLE YET" in result
+    assert "Salary Discussion Readiness: NOT READY" in result
+    assert "Growth Focus: Prepare for joining and build a strong start." in result
+    assert (
+        "Next Action: Complete joining and onboarding before tracking salary growth."
+        in result
+    )
+
+
+def test_get_salary_growth_analysis_early_stage():
+    application_id = add_test_application()
+    _set_salary_growth_test_state(application_id, 60)
+
+    result = get_salary_growth_analysis(application_id)
+
+    assert "Days in Role: 60" in result
+    assert "Appraisal Readiness: EARLY STAGE" in result
+    assert "Salary Discussion Readiness: TOO EARLY" in result
+    assert (
+        "Growth Focus: Learn the role, tools, team, and performance expectations."
+        in result
+    )
+    assert (
+        "Next Action: Build measurable achievements during your first 90 days."
+        in result
+    )
+
+
+def test_get_salary_growth_analysis_developing():
+    application_id = add_test_application()
+    _set_salary_growth_test_state(
+        application_id,
+        120,
+        career_goals=[
+            {"goal": "Improve Python skills", "completed": False},
+            {"goal": "Own a production task", "completed": False},
+        ],
+    )
+
+    result = get_salary_growth_analysis(application_id)
+
+    assert "Appraisal Readiness: DEVELOPING" in result
+    assert "Salary Discussion Readiness: NOT READY" in result
+    assert "Career Goal Completion: 0/2 (0.0%)" in result
+    assert "Growth Focus: Improve goal completion and measurable performance." in result
+    assert "Next Action: Complete more career goals and document your impact." in result
+
+
+def test_get_salary_growth_analysis_progressing():
+    application_id = add_test_application()
+    _set_salary_growth_test_state(
+        application_id,
+        120,
+        career_goals=[
+            {"goal": "Complete first project", "completed": True},
+            {"goal": "Lead a technical task", "completed": False},
+        ],
+    )
+
+    result = get_salary_growth_analysis(application_id)
+
+    assert "Appraisal Readiness: PROGRESSING" in result
+    assert "Salary Discussion Readiness: PREPARE" in result
+    assert "Career Goal Completion: 1/2 (50.0%)" in result
+    assert "Growth Focus: Finish remaining goals and increase ownership." in result
+    assert "Next Action: Collect achievements, metrics, and manager feedback." in result
+
+
+def test_get_salary_growth_analysis_incomplete_onboarding():
+    application_id = add_test_application()
+    _set_salary_growth_test_state(
+        application_id,
+        180,
+        career_goals=[
+            {"goal": "Complete first major project", "completed": True},
+        ],
+        onboarding_tasks=[
+            {"task": "Complete HR induction", "completed": False},
+        ],
+    )
+
+    result = get_salary_growth_analysis(application_id)
+
+    assert "Appraisal Readiness: PROGRESSING" in result
+    assert "Salary Discussion Readiness: PREPARE" in result
+    assert "Career Goal Completion: 1/1 (100.0%)" in result
+    assert "Onboarding Completion: 0/1 (0.0%)" in result
+    assert "Growth Focus: Close remaining onboarding responsibilities." in result
+    assert (
+        "Next Action: Complete onboarding and document your performance evidence."
+        in result
+    )
+
+
+def test_get_salary_growth_analysis_good_progress():
+    application_id = add_test_application()
+    _set_salary_growth_test_state(
+        application_id,
+        120,
+        career_goals=[
+            {"goal": "Complete first major project", "completed": True},
+        ],
+        onboarding_tasks=[
+            {"task": "Complete HR induction", "completed": True},
+        ],
+    )
+
+    result = get_salary_growth_analysis(application_id)
+
+    assert "Appraisal Readiness: GOOD PROGRESS" in result
+    assert "Salary Discussion Readiness: PREPARE" in result
+    assert "Career Goal Completion: 1/1 (100.0%)" in result
+    assert "Onboarding Completion: 1/1 (100.0%)" in result
+    assert (
+        "Growth Focus: Build a longer track record of consistent results."
+        in result
+    )
+    assert (
+        "Next Action: Keep documenting achievements and measurable business impact."
+        in result
+    )
+
+
+def test_get_salary_growth_analysis_ready():
+    application_id = add_test_application()
+    _set_salary_growth_test_state(
+        application_id,
+        200,
+        career_goals=[
+            {"goal": "Complete first major project", "completed": True},
+        ],
+        onboarding_tasks=[
+            {"task": "Complete HR induction", "completed": True},
+        ],
+    )
+
+    result = get_salary_growth_analysis(application_id)
+
+    assert "Appraisal Readiness: READY" in result
+    assert "Salary Discussion Readiness: READY" in result
+    assert "Career Goal Completion: 1/1 (100.0%)" in result
+    assert "Onboarding Completion: 1/1 (100.0%)" in result
+    assert (
+        "Growth Focus: Present measurable impact, ownership, and completed goals."
+        in result
+    )
+    assert (
+        "Next Action: Prepare an appraisal and salary-growth discussion with your manager."
+        in result
+    )
+

@@ -23,6 +23,7 @@ from core.job_application_intelligence import (
     get_90_day_career_success_tracker,
     get_performance_review_assistant,
     get_promotion_readiness,
+    get_salary_growth_analysis,
 )
 
 
@@ -145,3 +146,8 @@ def handle_get_performance_review_assistant(command):
 def handle_get_promotion_readiness(command):
     application_id = command[len("promotion readiness "):].strip()
     return get_promotion_readiness(application_id)
+
+
+def handle_get_salary_growth_analysis(command):
+    application_id = command[len("salary growth "):].strip()
+    return get_salary_growth_analysis(application_id)
