@@ -70,3 +70,21 @@ def test_handle_filter_job_applications_extracts_field_and_value(monkeypatch):
     )
 
     assert result == "FILTERED: Status | Applied"
+
+def test_handle_sort_job_applications_extracts_sort_field(monkeypatch):
+    from core import job_application_handlers
+
+    def fake_sort_job_applications(sort_by):
+        return f"SORTED: {sort_by}"
+
+    monkeypatch.setattr(
+        job_application_handlers,
+        "sort_job_applications",
+        fake_sort_job_applications,
+    )
+
+    result = job_application_handlers.handle_sort_job_applications(
+        "sort applications by Priority"
+    )
+
+    assert result == "SORTED: Priority"

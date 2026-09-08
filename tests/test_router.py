@@ -459,3 +459,10 @@ def test_routing_plan_selects_filter_applications_handler():
     plan = get_routing_plan("filter applications Status | Applied")
 
     assert plan["handler"] == "job_application_handlers.handle_filter_job_applications"
+
+def test_routing_plan_selects_sort_applications_handler():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("sort applications by Priority")
+
+    assert plan["handler"] == "job_application_handlers.handle_sort_job_applications"

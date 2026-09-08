@@ -1,4 +1,4 @@
-from core.job_application_intelligence import get_job_application_report, get_job_application_commands, search_job_applications, filter_job_applications
+from core.job_application_intelligence import get_job_application_report, get_job_application_commands, search_job_applications, filter_job_applications, sort_job_applications
 
 
 
@@ -21,3 +21,7 @@ def handle_filter_job_applications(command):
 
     field, value = [part.strip() for part in details.split("|", 1)]
     return filter_job_applications(field, value)
+
+def handle_sort_job_applications(command):
+    sort_by = command[len("sort applications by "):].strip()
+    return sort_job_applications(sort_by)
