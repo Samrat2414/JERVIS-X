@@ -2299,3 +2299,62 @@ DATA SAFETY
 
 if __name__ == "__main__":
     print(get_job_application_report())
+
+def get_joining_readiness(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    joining_date = application.get("offer_joining_date")
+    offer_status = application.get("offer_status", "Not Available")
+
+    if not joining_date:
+        return f"No joining date found for application {application_id}."
+
+    try:
+        parsed_joining_date = datetime.strptime(
+            joining_date,
+            "%d-%m-%Y",
+        ).date()
+    except (TypeError, ValueError):
+        return "Stored joining date is invalid."
+
+    days_remaining = (parsed_joining_date - datetime.now().date()).days
+
+    checklist = application.get("joining_checklist", [])
+    total_tasks = len(checklist)
+
+    completed_tasks = sum(
+        1 for task in checklist
+        if task.get("completed") is True
+    )
+
+    pending_tasks = total_tasks - completed_tasks
+
+    if total_tasks == 0:
+        progress = 100
+    else:
+        progress = round((completed_tasks / total_tasks) * 100)
+
+    if pending_tasks == 0:
+        readiness_status = "READY FOR JOINING"
+    elif progress >= 75:
+        readiness_status = "ALMOST READY"
+    else:
+        readiness_status = "NOT READY"
+
+    return (
+        f"JERVIS Joining Readiness - Application {application_id}\n"
+        f"-----------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Offer Status: {offer_status}\n"
+        f"Joining Date: {joining_date}\n"
+        f"Days Remaining: {days_remaining}\n"
+        f"Checklist Progress: {progress}%\n"
+        f"Pending Tasks: {pending_tasks}\n"
+        f"Status: {readiness_status}"
+    )

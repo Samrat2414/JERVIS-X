@@ -25,9 +25,9 @@ def classify_command(command):
     if "education" in command:
         return "EDUCATION"
 
-
     if "portfolio" in command:
         return "PORTFOLIO"
+
     return "UNKNOWN"
 
 
@@ -45,22 +45,28 @@ def get_command_intelligence(command):
     }
 
 
-
 def get_routing_plan(command):
     intelligence = get_command_intelligence(command)
 
     handler = "brain.process_command"
 
-    if intelligence["normalized_command"] in ("job application intelligence", "job application report", "application intelligence", "application tracker"):
+    if intelligence["normalized_command"] in (
+        "job application intelligence",
+        "job application report",
+        "application intelligence",
+        "application tracker",
+    ):
         handler = "job_application_handlers.handle_get_job_application_report"
 
-    if intelligence["normalized_command"] in ("job application commands", "application commands", "job tracker help"):
+    if intelligence["normalized_command"] in (
+        "job application commands",
+        "application commands",
+        "job tracker help",
+    ):
         handler = "job_application_handlers.handle_get_job_application_commands"
-
 
     if intelligence["normalized_command"].startswith("search applications "):
         handler = "job_application_handlers.handle_search_job_applications"
-
 
     if intelligence["normalized_command"].startswith("filter applications "):
         handler = "job_application_handlers.handle_filter_job_applications"
@@ -74,7 +80,6 @@ def get_routing_plan(command):
         "upcoming application interviews",
     ):
         handler = "job_application_handlers.handle_get_application_interview_reminders"
-
 
     if intelligence["normalized_command"].startswith("view interview result "):
         handler = "job_application_handlers.handle_get_application_interview_result"
@@ -91,6 +96,8 @@ def get_routing_plan(command):
     if intelligence["normalized_command"].startswith("joining countdown "):
         handler = "job_application_handlers.handle_get_joining_countdown"
 
+    if intelligence["normalized_command"].startswith("joining readiness "):
+        handler = "job_application_handlers.handle_get_joining_readiness"
 
     if intelligence["normalized_command"] in (
         "application follow up reminders",
@@ -109,16 +116,36 @@ def get_routing_plan(command):
     if intelligence["normalized_command"].startswith("view application timeline "):
         handler = "job_application_handlers.handle_get_application_status_timeline"
 
-    if intelligence["normalized_command"] in ("resume intelligence", "resume report", "resume intelligence report", "ats report"):
+    if intelligence["normalized_command"] in (
+        "resume intelligence",
+        "resume report",
+        "resume intelligence report",
+        "ats report",
+    ):
         handler = "resume_handlers.handle_get_resume_intelligence_report"
 
-    if intelligence["normalized_command"] in ("resume recommendations", "resume recommendation", "ats recommendations", "resume improvements"):
+    if intelligence["normalized_command"] in (
+        "resume recommendations",
+        "resume recommendation",
+        "ats recommendations",
+        "resume improvements",
+    ):
         handler = "resume_handlers.handle_get_resume_recommendations"
 
-    if intelligence["normalized_command"] in ("ats score", "resume ats score", "resume score", "resume readiness"):
+    if intelligence["normalized_command"] in (
+        "ats score",
+        "resume ats score",
+        "resume score",
+        "resume readiness",
+    ):
         handler = "resume_handlers.handle_get_resume_intelligence"
 
-    if intelligence["normalized_command"] in ("best resume action", "best ats action", "next resume action", "what should i improve in my resume"):
+    if intelligence["normalized_command"] in (
+        "best resume action",
+        "best ats action",
+        "next resume action",
+        "what should i improve in my resume",
+    ):
         handler = "resume_handlers.handle_get_best_resume_action"
 
     if intelligence["normalized_command"].startswith("add resume skill "):
@@ -147,6 +174,8 @@ def get_routing_plan(command):
         "confidence": intelligence["confidence"],
         "handler": handler,
     }
+
+
 def resolve_handler(routing_plan, handlers=None):
     handler_name = routing_plan["handler"]
 
