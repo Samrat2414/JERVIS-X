@@ -75,6 +75,10 @@ def get_routing_plan(command):
     ):
         handler = "job_application_handlers.handle_get_application_interview_reminders"
 
+
+    if intelligence["normalized_command"].startswith("view interview result "):
+        handler = "job_application_handlers.handle_get_application_interview_result"
+
     if intelligence["normalized_command"].startswith("view application "):
         handler = "job_application_handlers.handle_get_job_application_details"
 

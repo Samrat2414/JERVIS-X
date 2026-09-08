@@ -160,3 +160,21 @@ def test_handle_get_application_interview_reminders_calls_reader(monkeypatch):
     )
 
     assert result == "INTERVIEW REMINDERS"
+
+def test_handle_get_application_interview_result_extracts_application_id(monkeypatch):
+    from core import job_application_handlers
+
+    def fake_get_application_interview_result(application_id):
+        return f"INTERVIEW RESULT: {application_id}"
+
+    monkeypatch.setattr(
+        job_application_handlers,
+        "get_application_interview_result",
+        fake_get_application_interview_result,
+    )
+
+    result = job_application_handlers.handle_get_application_interview_result(
+        "view interview result 1"
+    )
+
+    assert result == "INTERVIEW RESULT: 1"

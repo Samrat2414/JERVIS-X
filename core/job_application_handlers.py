@@ -1,4 +1,4 @@
-from core.job_application_intelligence import get_job_application_report, get_job_application_commands, search_job_applications, filter_job_applications, sort_job_applications, get_application_notes, get_application_status_timeline, get_job_application_details, get_application_interview_reminders
+from core.job_application_intelligence import get_job_application_report, get_job_application_commands, search_job_applications, filter_job_applications, sort_job_applications, get_application_notes, get_application_status_timeline, get_job_application_details, get_application_interview_reminders, get_application_interview_result
 
 
 
@@ -40,3 +40,7 @@ def handle_get_job_application_details(command):
 
 def handle_get_application_interview_reminders(command):
     return get_application_interview_reminders()
+
+def handle_get_application_interview_result(command):
+    application_id = command[len("view interview result "):].strip()
+    return get_application_interview_result(application_id)
