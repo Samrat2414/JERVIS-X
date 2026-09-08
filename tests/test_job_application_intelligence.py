@@ -37,6 +37,7 @@ from core.job_application_intelligence import (
     get_post_joining_checkin,
     get_new_job_success_tracker,
     get_90_day_career_success_tracker,
+    get_performance_review_assistant,
     _load,
     _save,
     get_onboarding_plan,
@@ -519,3 +520,47 @@ def test_get_90_day_career_success_tracker_post_90_days():
     assert "Growth Focus: Move from onboarding to long-term career development." in result
     assert "Next Action: Set your next 90-day growth and performance goals." in result
 
+
+def test_get_performance_review_assistant_before_joining():
+    application_id = add_test_application()
+    joining_date = future_date(7)
+
+    add_job_offer(
+        application_id,
+        "450000",
+        "Kolkata",
+        joining_date,
+    )
+
+    result = get_performance_review_assistant(application_id)
+
+    assert "JERVIS Performance Review Assistant - Application 1" in result
+    assert "Company: Test Company" in result
+    assert "Role: Python Developer" in result
+    assert f"Joining Date: {joining_date}" in result
+    assert "Review Stage: NOT READY" in result
+    assert "Onboarding Completed: 0/0" in result
+    assert "Career Goals Completed: 0/0" in result
+    assert "Current Strength: Joining preparation is still in progress." in result
+    assert "Improvement Area: Complete joining and onboarding first." in result
+    assert "Next Action: Use the review assistant after starting the job." in result
+
+def test_get_performance_review_assistant_90_day_review():
+    application_id = add_test_application()
+    joining_date = (
+        datetime.now().date() - timedelta(days=60)
+    ).strftime("%d-%m-%Y")
+
+    data = _load()
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["offer_joining_date"] = joining_date
+            break
+    _save(data)
+
+    result = get_performance_review_assistant(application_id)
+
+    assert "Review Stage: 90-DAY REVIEW" in result
+    assert "Current Strength: Growing ownership and contributing to team goals." in result
+    assert "Improvement Area: Increase ownership and measurable impact." in result
+    assert "Next Action: Prepare achievements, feedback points, and next goals." in result

@@ -2203,6 +2203,89 @@ def get_90_day_career_success_tracker(application_id):
         f"Next Action: {next_action}"
     )
 
+def get_performance_review_assistant(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    joining_date = application.get("offer_joining_date")
+
+    if not joining_date:
+        return f"No joining date found for application {application_id}."
+
+    try:
+        parsed_joining_date = datetime.strptime(
+            joining_date,
+            "%d-%m-%Y",
+        ).date()
+    except (TypeError, ValueError):
+        return "Stored joining date is invalid."
+
+    days_worked = (datetime.now().date() - parsed_joining_date).days
+
+    onboarding_tasks = application.get("onboarding_tasks", [])
+    completed_onboarding = sum(
+        1
+        for task in onboarding_tasks
+        if isinstance(task, dict) and task.get("completed")
+    )
+
+    career_goals = application.get("career_goals", [])
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+
+    if days_worked < 0:
+        review_stage = "NOT READY"
+        strength = "Joining preparation is still in progress."
+        improvement = "Complete joining and onboarding first."
+        next_action = "Use the review assistant after starting the job."
+    elif days_worked <= 30:
+        review_stage = "EARLY REVIEW"
+        strength = "Building role knowledge and adapting to the team."
+        improvement = "Focus on onboarding, learning, and early goals."
+        next_action = "Prepare examples of what you learned and completed."
+    elif days_worked <= 90:
+        review_stage = "90-DAY REVIEW"
+        strength = "Growing ownership and contributing to team goals."
+
+        if completed_goals < len(career_goals):
+            improvement = "Complete remaining career goals."
+        else:
+            improvement = "Increase ownership and measurable impact."
+
+        next_action = "Prepare achievements, feedback points, and next goals."
+    else:
+        review_stage = "PERFORMANCE REVIEW"
+        strength = "Established experience in the role."
+
+        if completed_goals < len(career_goals):
+            improvement = "Close remaining goals and document progress."
+        else:
+            improvement = "Set higher-impact goals for the next review cycle."
+
+        next_action = "Document achievements and discuss career growth with your manager."
+
+    return (
+        f"JERVIS Performance Review Assistant - Application {application_id}\n"
+        "-------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Joining Date: {joining_date}\n"
+        f"Days Worked: {days_worked}\n"
+        f"Review Stage: {review_stage}\n"
+        f"Onboarding Completed: {completed_onboarding}/{len(onboarding_tasks)}\n"
+        f"Career Goals Completed: {completed_goals}/{len(career_goals)}\n"
+        f"Current Strength: {strength}\n"
+        f"Improvement Area: {improvement}\n"
+        f"Next Action: {next_action}"
+    )
+
 def update_interview_stage(application_id, stage):
     stage = str(stage).strip()
 
@@ -2803,4 +2886,5 @@ def get_joining_readiness(application_id):
         f"Pending Tasks: {pending_tasks}\n"
         f"Status: {readiness_status}"
     )
+
 

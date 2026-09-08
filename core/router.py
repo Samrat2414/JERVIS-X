@@ -16,6 +16,9 @@
     if command.startswith("joining "):
         return "JOB_APPLICATION"
 
+    if command.startswith("performance review "):
+        return "JOB_APPLICATION"
+
     if "backup" in command:
         return "BACKUP"
 
@@ -120,6 +123,9 @@ def get_routing_plan(command):
 
     elif normalized_command.startswith("joining 90day "):
         handler = "job_application_handlers.handle_get_90_day_career_success_tracker"
+
+    elif normalized_command.startswith("performance review "):
+        handler = "job_application_handlers.handle_get_performance_review_assistant"
 
     elif normalized_command in (
         "application follow up reminders",
@@ -237,6 +243,8 @@ def route_command(command, handler=None, handlers=None):
         return response
 
     return "Sorry, I don't understand that command yet."
+
+
 
 
 

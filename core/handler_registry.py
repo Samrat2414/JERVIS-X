@@ -24,6 +24,7 @@ HANDLERS = {
     "job_application_handlers.handle_get_post_joining_checkin": job_application_handlers.handle_get_post_joining_checkin,
     "job_application_handlers.handle_get_new_job_success_tracker": job_application_handlers.handle_get_new_job_success_tracker,
 "job_application_handlers.handle_get_90_day_career_success_tracker": job_application_handlers.handle_get_90_day_career_success_tracker,
+"job_application_handlers.handle_get_performance_review_assistant": job_application_handlers.handle_get_performance_review_assistant,
 
     "resume_handlers.handle_get_resume_intelligence_report": resume_handlers.handle_get_resume_intelligence_report,
     "resume_handlers.handle_get_resume_recommendations": resume_handlers.handle_get_resume_recommendations,
@@ -40,5 +41,6 @@ HANDLERS = {
 
 def get_handler(name):
     return HANDLERS.get(name)
+
 
 
