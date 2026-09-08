@@ -88,3 +88,21 @@ def test_handle_sort_job_applications_extracts_sort_field(monkeypatch):
     )
 
     assert result == "SORTED: Priority"
+
+def test_handle_get_application_notes_extracts_application_id(monkeypatch):
+    from core import job_application_handlers
+
+    def fake_get_application_notes(application_id):
+        return f"NOTES: {application_id}"
+
+    monkeypatch.setattr(
+        job_application_handlers,
+        "get_application_notes",
+        fake_get_application_notes,
+    )
+
+    result = job_application_handlers.handle_get_application_notes(
+        "view application notes 1"
+    )
+
+    assert result == "NOTES: 1"

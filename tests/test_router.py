@@ -466,3 +466,10 @@ def test_routing_plan_selects_sort_applications_handler():
     plan = get_routing_plan("sort applications by Priority")
 
     assert plan["handler"] == "job_application_handlers.handle_sort_job_applications"
+
+def test_routing_plan_selects_application_notes_handler():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("view application notes 1")
+
+    assert plan["handler"] == "job_application_handlers.handle_get_application_notes"
