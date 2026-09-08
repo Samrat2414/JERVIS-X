@@ -1911,3 +1911,214 @@ def test_career_portfolio_readiness_missing_items():
     assert "Add stronger career-stage evidence" in result
     assert "Add one advanced portfolio project" in result
 
+
+def _set_interview_readiness_test_state(
+    application_id,
+    role=None,
+    career_goals=None,
+    notes=None,
+    interview_stage=None,
+    offer_joining_date=None,
+):
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            if role is not None:
+                application["role"] = role
+
+            if career_goals is not None:
+                application["career_goals"] = career_goals
+
+            if notes is not None:
+                application["notes"] = notes
+
+            if interview_stage is not None:
+                application["interview_stage"] = interview_stage
+
+            if offer_joining_date is not None:
+                application["offer_joining_date"] = offer_joining_date
+
+            break
+
+    job_intelligence._save(data)
+
+
+def test_career_interview_readiness_application_not_found():
+    result = job_intelligence.get_career_interview_readiness(999)
+
+    assert result == "Job application not found."
+
+
+def test_career_interview_readiness_python_strong():
+    application_id = add_test_application()
+
+    _set_interview_readiness_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"goal": "Python", "completed": True},
+            {"goal": "API", "completed": False},
+        ],
+        notes=["Built a Python portfolio project"],
+        interview_stage="Technical",
+        offer_joining_date="15-09-2026",
+    )
+
+    result = job_intelligence.get_career_interview_readiness(
+        application_id
+    )
+
+    assert "Interview Readiness Score: 80/100" in result
+    assert "Readiness Level: STRONG" in result
+    assert "Python fundamentals and OOP" in result
+    assert "Explain SQL JOIN types." in result
+    assert "Project Explanation Readiness: STRONG" in result
+    assert "HR Preparation: STRONG" in result
+
+
+def test_career_interview_readiness_data_role():
+    application_id = add_test_application()
+
+    _set_interview_readiness_test_state(
+        application_id,
+        role="Data Analyst",
+        career_goals=[],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_interview_readiness(
+        application_id
+    )
+
+    assert "Interview Readiness Score: 35/100" in result
+    assert "Readiness Level: NEEDS PREPARATION" in result
+    assert "Python and Pandas" in result
+    assert "Data visualization" in result
+    assert "How do you clean missing data?" in result
+
+
+def test_career_interview_readiness_embedded_role():
+    application_id = add_test_application()
+
+    _set_interview_readiness_test_state(
+        application_id,
+        role="Embedded Engineer",
+        career_goals=[
+            {"goal": "Firmware", "completed": True},
+            {"goal": "RTOS", "completed": False},
+        ],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_interview_readiness(
+        application_id
+    )
+
+    assert "Interview Readiness Score: 50/100" in result
+    assert "Readiness Level: DEVELOPING" in result
+    assert "Embedded C/C++" in result
+    assert "UART, SPI, and I2C" in result
+    assert "What is a watchdog timer?" in result
+
+
+def test_career_interview_readiness_ece_role():
+    application_id = add_test_application()
+
+    _set_interview_readiness_test_state(
+        application_id,
+        role="ECE Engineer",
+        career_goals=[
+            {"goal": "Electronics", "completed": True},
+            {"goal": "Embedded", "completed": True},
+        ],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_interview_readiness(
+        application_id
+    )
+
+    assert "Interview Readiness Score: 65/100" in result
+    assert "Electronics fundamentals" in result
+    assert "Circuit debugging" in result
+    assert "Explain MOSFET operation." in result
+
+
+def test_career_interview_readiness_generic_role():
+    application_id = add_test_application()
+
+    _set_interview_readiness_test_state(
+        application_id,
+        role="Project Coordinator",
+        career_goals=[],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_interview_readiness(
+        application_id
+    )
+
+    assert "Role-specific technical fundamentals" in result
+    assert "Why do you want this role?" in result
+    assert "Why should we hire you?" in result
+    assert "Project Explanation Readiness: NEEDS PROJECT EXAMPLES" in result
+    assert "HR Preparation: NEEDS PREPARATION" in result
+
+
+def test_career_interview_readiness_interview_ready():
+    application_id = add_test_application()
+
+    _set_interview_readiness_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"goal": "Goal 1", "completed": True},
+            {"goal": "Goal 2", "completed": True},
+        ],
+        notes=["Strong project achievement"],
+        interview_stage="Final",
+        offer_joining_date="15-09-2026",
+    )
+
+    result = job_intelligence.get_career_interview_readiness(
+        application_id
+    )
+
+    assert "Interview Readiness Score: 95/100" in result
+    assert "Readiness Level: INTERVIEW READY" in result
+    assert "Maintain interview practice" in result
+
+
+def test_career_interview_readiness_weak_areas():
+    application_id = add_test_application()
+
+    _set_interview_readiness_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"goal": "Goal 1", "completed": False},
+        ],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_interview_readiness(
+        application_id
+    )
+
+    assert "Complete remaining career development goals." in result
+    assert "Prepare measurable project achievements" in result
+    assert "Add or confirm the current interview stage." in result
+    assert "Practice mock interviews and role-specific questions." in result
+    assert "Next Action:" in result
+

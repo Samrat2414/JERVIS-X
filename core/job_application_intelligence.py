@@ -4196,3 +4196,231 @@ def get_career_portfolio_readiness(application_id):
         "item and document it on GitHub."
     )
 
+
+def get_career_interview_readiness(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    role_lower = str(role).lower()
+
+    career_goals = application.get("career_goals", [])
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    notes = application.get("notes", [])
+    interview_stage = application.get("interview_stage")
+    offer_joining_date = application.get("offer_joining_date")
+
+    score = 35
+
+    if total_goals:
+        score += min(int(career_progress * 0.3), 30)
+
+    if notes:
+        score += 10
+
+    if interview_stage:
+        score += 15
+
+    if offer_joining_date:
+        score += 5
+
+    score = min(score, 100)
+
+    if score < 50:
+        readiness_level = "NEEDS PREPARATION"
+    elif score < 70:
+        readiness_level = "DEVELOPING"
+    elif score < 85:
+        readiness_level = "STRONG"
+    else:
+        readiness_level = "INTERVIEW READY"
+
+    if "python" in role_lower:
+        technical_preparation = [
+            "Python fundamentals and OOP",
+            "Data structures and problem solving",
+            "SQL and databases",
+            "REST APIs",
+            "Testing and debugging",
+            "Git and GitHub",
+        ]
+
+        priority_questions = [
+            "Explain OOP concepts in Python.",
+            "What is the difference between list and tuple?",
+            "How would you debug a failing Python application?",
+            "Explain SQL JOIN types.",
+            "Describe one Python project from your portfolio.",
+        ]
+
+    elif "data" in role_lower or "analyst" in role_lower:
+        technical_preparation = [
+            "Python and Pandas",
+            "SQL",
+            "Excel",
+            "Data visualization",
+            "Statistics",
+            "Business insights",
+        ]
+
+        priority_questions = [
+            "How do you clean missing data?",
+            "Explain INNER JOIN and LEFT JOIN.",
+            "How do you choose a visualization?",
+            "Explain mean, median, and standard deviation.",
+            "Describe one dashboard or analytics project.",
+        ]
+
+    elif "embedded" in role_lower:
+        technical_preparation = [
+            "Embedded C/C++",
+            "Microcontrollers",
+            "GPIO and interrupts",
+            "UART, SPI, and I2C",
+            "Sensors",
+            "Debugging",
+        ]
+
+        priority_questions = [
+            "Explain interrupt handling.",
+            "Compare UART, SPI, and I2C.",
+            "What is a watchdog timer?",
+            "How do you debug embedded firmware?",
+            "Describe one microcontroller project.",
+        ]
+
+    elif "electronics" in role_lower or "ece" in role_lower:
+        technical_preparation = [
+            "Electronics fundamentals",
+            "Embedded systems",
+            "Circuit debugging",
+            "Communication systems",
+            "Sensors",
+            "PCB fundamentals",
+        ]
+
+        priority_questions = [
+            "Explain PN junction operation.",
+            "Explain MOSFET operation.",
+            "How do you debug an electronic circuit?",
+            "Explain UART, SPI, and I2C.",
+            "Describe your strongest ECE project.",
+        ]
+
+    else:
+        technical_preparation = [
+            "Role-specific technical fundamentals",
+            "Problem solving",
+            "Communication",
+            "Project explanation",
+            "Professional tools",
+        ]
+
+        priority_questions = [
+            "Tell me about yourself.",
+            "Why do you want this role?",
+            "Describe a difficult problem you solved.",
+            "Explain one important project.",
+            "Why should we hire you?",
+        ]
+
+    weak_areas = []
+
+    if career_progress < 100:
+        weak_areas.append(
+            "Complete remaining career development goals."
+        )
+
+    if not notes:
+        weak_areas.append(
+            "Prepare measurable project achievements and examples."
+        )
+
+    if not interview_stage:
+        weak_areas.append(
+            "Add or confirm the current interview stage."
+        )
+
+    if score < 85:
+        weak_areas.append(
+            "Practice mock interviews and role-specific questions."
+        )
+
+    if not weak_areas:
+        weak_areas.append(
+            "Maintain interview practice and revise key examples."
+        )
+
+    technical_text = "\n".join(
+        f"{number}. {item}"
+        for number, item in enumerate(
+            technical_preparation,
+            start=1,
+        )
+    )
+
+    question_text = "\n".join(
+        f"{number}. {item}"
+        for number, item in enumerate(
+            priority_questions,
+            start=1,
+        )
+    )
+
+    weak_text = "\n".join(
+        f"{number}. {item}"
+        for number, item in enumerate(
+            weak_areas,
+            start=1,
+        )
+    )
+
+    project_readiness = (
+        "STRONG"
+        if notes
+        else "NEEDS PROJECT EXAMPLES"
+    )
+
+    hr_readiness = (
+        "STRONG"
+        if interview_stage
+        else "NEEDS PREPARATION"
+    )
+
+    return (
+        f"JERVIS Career Interview Readiness Analyzer - Application "
+        f"{application_id}\n"
+        "----------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Interview Readiness Score: {score}/100\n"
+        f"Readiness Level: {readiness_level}\n"
+        f"Project Explanation Readiness: {project_readiness}\n"
+        f"HR Preparation: {hr_readiness}\n"
+        "Technical Preparation:\n"
+        f"{technical_text}\n"
+        "Weak Areas:\n"
+        f"{weak_text}\n"
+        "Priority Interview Questions:\n"
+        f"{question_text}\n"
+        "Next Action: Practice the highest-priority weak area and "
+        "answer the interview questions aloud."
+    )
+
