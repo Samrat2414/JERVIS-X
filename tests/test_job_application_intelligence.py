@@ -36,6 +36,9 @@ from core.job_application_intelligence import (
     get_joining_day_schedule,
     get_post_joining_checkin,
     get_new_job_success_tracker,
+    get_90_day_career_success_tracker,
+    _load,
+    _save,
     get_onboarding_plan,
     list_job_application_backups,
     mark_application_follow_up,
@@ -433,3 +436,86 @@ def test_get_new_job_success_tracker_before_joining():
     assert "Onboarding Progress: 0/0 (0.0%)" in result
     assert "30-Day Goal Progress: 0/0 (0.0%)" in result
     assert "Next Action: Complete joining preparation before your joining date." in result
+
+def test_get_90_day_career_success_tracker_before_joining():
+    application_id = add_test_application()
+    joining_date = future_date(7)
+
+    add_job_offer(
+        application_id,
+        "450000",
+        "Kolkata",
+        joining_date,
+    )
+
+    result = get_90_day_career_success_tracker(application_id)
+
+    assert "JERVIS 90-Day Career Success Tracker - Application 1" in result
+    assert "Company: Test Company" in result
+    assert "Role: Python Developer" in result
+    assert f"Joining Date: {joining_date}" in result
+    assert "Current Phase: PRE-JOINING" in result
+    assert "Onboarding Progress: 0/0 (0.0%)" in result
+    assert "Career Goal Progress: 0/0 (0.0%)" in result
+    assert "Growth Focus: Prepare for a strong first day." in result
+    assert "Next Action: Complete joining preparation before your joining date." in result
+
+def test_get_90_day_career_success_tracker_days_31_to_60():
+    application_id = add_test_application()
+    joining_date = (
+        datetime.now().date() - timedelta(days=45)
+    ).strftime("%d-%m-%Y")
+
+    data = _load()
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["offer_joining_date"] = joining_date
+            break
+    _save(data)
+
+    result = get_90_day_career_success_tracker(application_id)
+
+    assert "Current Phase: DAYS 31-60" in result
+    assert "Growth Focus: Take ownership and improve independent performance." in result
+    assert "Next Action: Take responsibility for larger tasks and seek feedback." in result
+
+
+def test_get_90_day_career_success_tracker_days_61_to_90():
+    application_id = add_test_application()
+    joining_date = (
+        datetime.now().date() - timedelta(days=75)
+    ).strftime("%d-%m-%Y")
+
+    data = _load()
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["offer_joining_date"] = joining_date
+            break
+    _save(data)
+
+    result = get_90_day_career_success_tracker(application_id)
+
+    assert "Current Phase: DAYS 61-90" in result
+    assert "Growth Focus: Deliver measurable results and strengthen team impact." in result
+    assert "Next Action: Review performance, document achievements, and set new goals." in result
+
+
+def test_get_90_day_career_success_tracker_post_90_days():
+    application_id = add_test_application()
+    joining_date = (
+        datetime.now().date() - timedelta(days=100)
+    ).strftime("%d-%m-%Y")
+
+    data = _load()
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["offer_joining_date"] = joining_date
+            break
+    _save(data)
+
+    result = get_90_day_career_success_tracker(application_id)
+
+    assert "Current Phase: POST 90 DAYS" in result
+    assert "Growth Focus: Move from onboarding to long-term career development." in result
+    assert "Next Action: Set your next 90-day growth and performance goals." in result
+

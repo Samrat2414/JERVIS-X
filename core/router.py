@@ -118,6 +118,9 @@ def get_routing_plan(command):
     elif normalized_command.startswith("joining progress "):
         handler = "job_application_handlers.handle_get_new_job_success_tracker"
 
+    elif normalized_command.startswith("joining 90day "):
+        handler = "job_application_handlers.handle_get_90_day_career_success_tracker"
+
     elif normalized_command in (
         "application follow up reminders",
         "application follow up reminder",
@@ -234,5 +237,6 @@ def route_command(command, handler=None, handlers=None):
         return response
 
     return "Sorry, I don't understand that command yet."
+
 
 

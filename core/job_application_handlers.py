@@ -20,6 +20,7 @@
     get_joining_day_schedule,
     get_post_joining_checkin,
     get_new_job_success_tracker,
+    get_90_day_career_success_tracker,
 )
 
 
@@ -127,3 +128,7 @@ def handle_get_post_joining_checkin(command):
 def handle_get_new_job_success_tracker(command):
     application_id = command[len("joining progress "):].strip()
     return get_new_job_success_tracker(application_id)
+
+def handle_get_90_day_career_success_tracker(command):
+    application_id = command[len("joining 90day "):].strip()
+    return get_90_day_career_success_tracker(application_id)
