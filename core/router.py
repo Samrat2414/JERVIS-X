@@ -71,6 +71,9 @@ def get_routing_plan(command):
     if intelligence["normalized_command"].startswith("view application notes "):
         handler = "job_application_handlers.handle_get_application_notes"
 
+    if intelligence["normalized_command"].startswith("view application timeline "):
+        handler = "job_application_handlers.handle_get_application_status_timeline"
+
     if intelligence["normalized_command"] in ("resume intelligence", "resume report", "resume intelligence report", "ats report"):
         handler = "resume_handlers.handle_get_resume_intelligence_report"
 

@@ -1,4 +1,4 @@
-from core.job_application_intelligence import get_job_application_report, get_job_application_commands, search_job_applications, filter_job_applications, sort_job_applications, get_application_notes
+from core.job_application_intelligence import get_job_application_report, get_job_application_commands, search_job_applications, filter_job_applications, sort_job_applications, get_application_notes, get_application_status_timeline
 
 
 
@@ -29,3 +29,7 @@ def handle_sort_job_applications(command):
 def handle_get_application_notes(command):
     application_id = command[len("view application notes "):].strip()
     return get_application_notes(application_id)
+
+def handle_get_application_status_timeline(command):
+    application_id = command[len("view application timeline "):].strip()
+    return get_application_status_timeline(application_id)

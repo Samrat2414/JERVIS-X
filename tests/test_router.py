@@ -473,3 +473,10 @@ def test_routing_plan_selects_application_notes_handler():
     plan = get_routing_plan("view application notes 1")
 
     assert plan["handler"] == "job_application_handlers.handle_get_application_notes"
+
+def test_routing_plan_selects_application_timeline_handler():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("view application timeline 1")
+
+    assert plan["handler"] == "job_application_handlers.handle_get_application_status_timeline"
