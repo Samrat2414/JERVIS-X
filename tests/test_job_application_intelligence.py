@@ -1160,3 +1160,196 @@ def test_get_career_roadmap_missing_application():
     assert get_career_roadmap(999) == "Job application not found."
 
 
+def _set_skill_plan_test_state(
+    application_id,
+    role=None,
+    joining_date=None,
+    career_goals=None,
+):
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            if role is not None:
+                application["role"] = role
+
+            if joining_date is not None:
+                application["offer_joining_date"] = joining_date
+
+            if career_goals is not None:
+                application["career_goals"] = career_goals
+
+            break
+
+    job_intelligence._save(data)
+
+
+def test_career_skill_development_plan_application_not_found():
+    result = job_intelligence.get_career_skill_development_plan(999)
+
+    assert result == "Job application not found."
+
+
+def test_career_skill_development_plan_no_joining_date():
+    application_id = add_test_application()
+
+    result = job_intelligence.get_career_skill_development_plan(
+        application_id
+    )
+
+    assert (
+        result
+        == f"No joining date found for application {application_id}."
+    )
+
+
+def test_career_skill_development_plan_invalid_joining_date():
+    application_id = add_test_application()
+
+    _set_skill_plan_test_state(
+        application_id,
+        joining_date="invalid-date",
+    )
+
+    result = job_intelligence.get_career_skill_development_plan(
+        application_id
+    )
+
+    assert result == "Stored joining date is invalid."
+
+
+def test_career_skill_development_plan_python_pre_joining():
+    application_id = add_test_application()
+    joining_date = future_date(7)
+
+    add_job_offer(
+        application_id,
+        "450000",
+        "Kolkata",
+        joining_date,
+    )
+
+    result = job_intelligence.get_career_skill_development_plan(
+        application_id
+    )
+
+    assert "JERVIS Career Skill Development Plan" in result
+    assert "Role: Python Developer" in result
+    assert "Development Stage: PRE-JOINING" in result
+    assert "1. Advanced Python" in result
+    assert "2. SQL" in result
+    assert "30-Day Plan: Strengthen Python fundamentals" in result
+    assert "60-Day Plan: Build SQL, API, testing" in result
+    assert "90-Day Plan: Complete a production-style Python project" in result
+    assert "Next Action: Start with Advanced Python" in result
+
+
+def test_career_skill_development_plan_data_analyst():
+    application_id = add_test_application()
+
+    joining_date = (
+        datetime.now().date() - timedelta(days=30)
+    ).strftime("%d-%m-%Y")
+
+    _set_skill_plan_test_state(
+        application_id,
+        role="Data Analyst",
+        joining_date=joining_date,
+        career_goals=[],
+    )
+
+    result = job_intelligence.get_career_skill_development_plan(
+        application_id
+    )
+
+    assert "Role: Data Analyst" in result
+    assert "Development Stage: EARLY DEVELOPMENT" in result
+    assert "1. Python" in result
+    assert "2. SQL" in result
+    assert "3. Excel" in result
+    assert "Data Visualization" in result
+
+
+def test_career_skill_development_plan_embedded_progressing():
+    application_id = add_test_application()
+
+    joining_date = (
+        datetime.now().date() - timedelta(days=60)
+    ).strftime("%d-%m-%Y")
+
+    goals = [
+        {"goal": "Goal 1", "completed": True},
+        {"goal": "Goal 2", "completed": False},
+    ]
+
+    _set_skill_plan_test_state(
+        application_id,
+        role="Embedded Engineer",
+        joining_date=joining_date,
+        career_goals=goals,
+    )
+
+    result = job_intelligence.get_career_skill_development_plan(
+        application_id
+    )
+
+    assert "Development Stage: PROGRESSING" in result
+    assert "Career Goal Progress: 1/2 (50.0%)" in result
+    assert "Embedded C/C++" in result
+    assert "Microcontrollers" in result
+    assert "UART/SPI/I2C" in result
+
+
+def test_career_skill_development_plan_ece_advanced():
+    application_id = add_test_application()
+
+    joining_date = (
+        datetime.now().date() - timedelta(days=120)
+    ).strftime("%d-%m-%Y")
+
+    goals = [
+        {"goal": "Goal 1", "completed": True},
+        {"goal": "Goal 2", "completed": True},
+    ]
+
+    _set_skill_plan_test_state(
+        application_id,
+        role="ECE Engineer",
+        joining_date=joining_date,
+        career_goals=goals,
+    )
+
+    result = job_intelligence.get_career_skill_development_plan(
+        application_id
+    )
+
+    assert "Development Stage: ADVANCED DEVELOPMENT" in result
+    assert "Career Goal Progress: 2/2 (100.0%)" in result
+    assert "Electronics Fundamentals" in result
+    assert "Embedded Systems" in result
+    assert "Circuit Debugging" in result
+
+
+def test_career_skill_development_plan_generic_role():
+    application_id = add_test_application()
+
+    joining_date = (
+        datetime.now().date() - timedelta(days=30)
+    ).strftime("%d-%m-%Y")
+
+    _set_skill_plan_test_state(
+        application_id,
+        role="Operations Associate",
+        joining_date=joining_date,
+        career_goals=[],
+    )
+
+    result = job_intelligence.get_career_skill_development_plan(
+        application_id
+    )
+
+    assert "Role-Specific Technical Skills" in result
+    assert "Problem Solving" in result
+    assert "Communication" in result
+    assert "Development Stage: EARLY DEVELOPMENT" in result
+
