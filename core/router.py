@@ -7,6 +7,9 @@ def classify_command(command):
     if command.startswith("set resume readiness "):
         return "CAREER"
 
+    if command.startswith("career roadmap "):
+        return "JOB_APPLICATION"
+
     if "career" in command:
         return "CAREER"
 
@@ -139,6 +142,9 @@ def get_routing_plan(command):
     elif normalized_command.startswith("salary growth "):
         handler = "job_application_handlers.handle_get_salary_growth_analysis"
 
+    elif normalized_command.startswith("career roadmap "):
+        handler = "job_application_handlers.handle_get_career_roadmap"
+
     elif normalized_command in (
         "application follow up reminders",
         "application follow up reminder",
@@ -255,9 +261,3 @@ def route_command(command, handler=None, handlers=None):
         return response
 
     return "Sorry, I don't understand that command yet."
-
-
-
-
-
-

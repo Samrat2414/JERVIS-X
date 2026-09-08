@@ -40,6 +40,7 @@ from core.job_application_intelligence import (
     get_performance_review_assistant,
     get_promotion_readiness,
     get_salary_growth_analysis,
+    get_career_roadmap,
     _load,
     _save,
     get_onboarding_plan,
@@ -967,4 +968,195 @@ def test_get_salary_growth_analysis_ready():
         "Next Action: Prepare an appraisal and salary-growth discussion with your manager."
         in result
     )
+
+def test_get_career_roadmap_before_joining():
+    application_id = add_test_application()
+    joining_date = future_date(7)
+
+    add_job_offer(
+        application_id,
+        "450000",
+        "Kolkata",
+        joining_date,
+    )
+
+    result = get_career_roadmap(application_id)
+
+    assert "JERVIS Career Roadmap - Application 1" in result
+    assert "Company: Test Company" in result
+    assert "Role: Python Developer" in result
+    assert f"Joining Date: {joining_date}" in result
+    assert "Days in Role: -7" in result
+    assert "Current Career Stage: PRE-JOINING" in result
+    assert "Onboarding Progress: 0/0 (0.0%)" in result
+    assert "Career Goal Progress: 0/0 (0.0%)" in result
+    assert (
+        "Next Action: Complete joining preparation before your joining date."
+        in result
+    )
+
+
+def test_get_career_roadmap_first_30_days():
+    application_id = add_test_application()
+    _set_salary_growth_test_state(application_id, 20)
+
+    result = get_career_roadmap(application_id)
+
+    assert "Days in Role: 20" in result
+    assert "Current Career Stage: FIRST 30 DAYS" in result
+    assert (
+        "Short-Term Milestone: Complete onboarding and learn the team, tools, and workflow."
+        in result
+    )
+    assert (
+        "Next Action: Complete onboarding and your first 30-day career goals."
+        in result
+    )
+
+
+def test_get_career_roadmap_days_31_to_90():
+    application_id = add_test_application()
+    _set_salary_growth_test_state(application_id, 60)
+
+    result = get_career_roadmap(application_id)
+
+    assert "Days in Role: 60" in result
+    assert "Current Career Stage: DAYS 31-90" in result
+    assert (
+        "Skill Focus: Improve independent execution and role-specific expertise."
+        in result
+    )
+    assert (
+        "Next Action: Complete remaining goals and build measurable achievements."
+        in result
+    )
+
+
+def test_get_career_roadmap_growth_development():
+    application_id = add_test_application()
+    _set_salary_growth_test_state(
+        application_id,
+        120,
+        career_goals=[
+            {"goal": "Improve Python skills", "completed": False},
+            {"goal": "Own a production task", "completed": False},
+        ],
+    )
+
+    result = get_career_roadmap(application_id)
+
+    assert "Current Career Stage: GROWTH DEVELOPMENT" in result
+    assert "Career Goal Progress: 0/2 (0.0%)" in result
+    assert (
+        "Skill Focus: Close the skill gaps blocking career goal completion."
+        in result
+    )
+    assert "Next Action: Complete more career goals and document your impact." in result
+
+
+def test_get_career_roadmap_career_progression():
+    application_id = add_test_application()
+    _set_salary_growth_test_state(
+        application_id,
+        120,
+        career_goals=[
+            {"goal": "Complete first project", "completed": True},
+            {"goal": "Lead a technical task", "completed": False},
+        ],
+    )
+
+    result = get_career_roadmap(application_id)
+
+    assert "Current Career Stage: CAREER PROGRESSION" in result
+    assert "Career Goal Progress: 1/2 (50.0%)" in result
+    assert (
+        "Promotion Focus: Finish remaining goals and collect manager feedback."
+        in result
+    )
+    assert (
+        "Next Action: Finish remaining goals and strengthen measurable impact."
+        in result
+    )
+
+
+def test_get_career_roadmap_onboarding_completion():
+    application_id = add_test_application()
+    _set_salary_growth_test_state(
+        application_id,
+        120,
+        career_goals=[
+            {"goal": "Complete first major project", "completed": True},
+        ],
+        onboarding_tasks=[
+            {"task": "Complete HR induction", "completed": False},
+        ],
+    )
+
+    result = get_career_roadmap(application_id)
+
+    assert "Current Career Stage: ONBOARDING COMPLETION" in result
+    assert "Career Goal Progress: 1/1 (100.0%)" in result
+    assert "Onboarding Progress: 0/1 (0.0%)" in result
+    assert "Next Action: Complete all remaining onboarding tasks." in result
+
+
+def test_get_career_roadmap_performance_building():
+    application_id = add_test_application()
+    _set_salary_growth_test_state(
+        application_id,
+        120,
+        career_goals=[
+            {"goal": "Complete first major project", "completed": True},
+        ],
+        onboarding_tasks=[
+            {"task": "Complete HR induction", "completed": True},
+        ],
+    )
+
+    result = get_career_roadmap(application_id)
+
+    assert "Current Career Stage: PERFORMANCE BUILDING" in result
+    assert "Career Goal Progress: 1/1 (100.0%)" in result
+    assert "Onboarding Progress: 1/1 (100.0%)" in result
+    assert (
+        "Next Action: Build consistent measurable performance toward the six-month mark."
+        in result
+    )
+
+
+def test_get_career_roadmap_advancement_ready():
+    application_id = add_test_application()
+    _set_salary_growth_test_state(
+        application_id,
+        200,
+        career_goals=[
+            {"goal": "Complete first major project", "completed": True},
+        ],
+        onboarding_tasks=[
+            {"task": "Complete HR induction", "completed": True},
+        ],
+    )
+
+    result = get_career_roadmap(application_id)
+
+    assert "Current Career Stage: ADVANCEMENT READY" in result
+    assert "Career Goal Progress: 1/1 (100.0%)" in result
+    assert "Onboarding Progress: 1/1 (100.0%)" in result
+    assert (
+        "Promotion Focus: Prepare a promotion case with measurable achievements."
+        in result
+    )
+    assert (
+        "Salary Growth Focus: Prepare an evidence-based appraisal and salary-growth discussion."
+        in result
+    )
+    assert (
+        "Next Action: Review your roadmap with your manager and set the next growth targets."
+        in result
+    )
+
+
+def test_get_career_roadmap_missing_application():
+    assert get_career_roadmap(999) == "Job application not found."
+
 

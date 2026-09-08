@@ -24,6 +24,7 @@ from core.job_application_intelligence import (
     get_performance_review_assistant,
     get_promotion_readiness,
     get_salary_growth_analysis,
+    get_career_roadmap,
 )
 
 
@@ -151,3 +152,8 @@ def handle_get_promotion_readiness(command):
 def handle_get_salary_growth_analysis(command):
     application_id = command[len("salary growth "):].strip()
     return get_salary_growth_analysis(application_id)
+
+
+def handle_get_career_roadmap(command):
+    application_id = command[len("career roadmap "):].strip()
+    return get_career_roadmap(application_id)

@@ -2485,6 +2485,148 @@ def get_salary_growth_analysis(application_id):
         f"Next Action: {next_action}"
     )
 
+
+def get_career_roadmap(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    joining_date = application.get("offer_joining_date")
+
+    if not joining_date:
+        return f"No joining date found for application {application_id}."
+
+    try:
+        parsed_joining_date = datetime.strptime(
+            joining_date,
+            "%d-%m-%Y",
+        ).date()
+    except (TypeError, ValueError):
+        return "Stored joining date is invalid."
+
+    days_in_role = (datetime.now().date() - parsed_joining_date).days
+
+    onboarding_tasks = application.get("onboarding_tasks", [])
+    completed_onboarding = sum(
+        1
+        for task in onboarding_tasks
+        if isinstance(task, dict) and task.get("completed")
+    )
+    onboarding_progress = (
+        round((completed_onboarding / len(onboarding_tasks)) * 100, 1)
+        if onboarding_tasks
+        else 0.0
+    )
+
+    career_goals = application.get("career_goals", [])
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    career_progress = (
+        round((completed_goals / len(career_goals)) * 100, 1)
+        if career_goals
+        else 0.0
+    )
+
+    if days_in_role < 0:
+        career_stage = "PRE-JOINING"
+        short_term = "Complete joining preparation and start the role successfully."
+        mid_term = "Complete onboarding and build strong first-90-day performance."
+        long_term = "Build toward promotion readiness and salary growth."
+        skill_focus = "Prepare role-specific technical and workplace skills."
+        promotion_focus = "Start building a measurable performance record after joining."
+        salary_focus = "Learn performance expectations before planning salary growth."
+        next_action = "Complete joining preparation before your joining date."
+    elif days_in_role <= 30:
+        career_stage = "FIRST 30 DAYS"
+        short_term = "Complete onboarding and learn the team, tools, and workflow."
+        mid_term = "Deliver early results and complete first career goals."
+        long_term = "Build ownership, promotion readiness, and salary-growth evidence."
+        skill_focus = "Strengthen role knowledge, tools, and communication."
+        promotion_focus = "Build reliability and complete assigned responsibilities."
+        salary_focus = "Start documenting completed work and measurable achievements."
+        next_action = "Complete onboarding and your first 30-day career goals."
+    elif days_in_role <= 90:
+        career_stage = "DAYS 31-90"
+        short_term = "Increase ownership and complete remaining early career goals."
+        mid_term = "Deliver measurable results and strengthen team impact."
+        long_term = "Prepare for stronger responsibilities and future promotion."
+        skill_focus = "Improve independent execution and role-specific expertise."
+        promotion_focus = "Take ownership and collect manager feedback."
+        salary_focus = "Document achievements, metrics, and business impact."
+        next_action = "Complete remaining goals and build measurable achievements."
+    elif career_progress < 50:
+        career_stage = "GROWTH DEVELOPMENT"
+        short_term = "Raise career goal completion above 50%."
+        mid_term = "Build consistent performance and stronger ownership."
+        long_term = "Become promotion-ready with measurable results."
+        skill_focus = "Close the skill gaps blocking career goal completion."
+        promotion_focus = "Complete more goals and demonstrate reliable ownership."
+        salary_focus = "Build stronger evidence before starting a salary discussion."
+        next_action = "Complete more career goals and document your impact."
+    elif career_progress < 100:
+        career_stage = "CAREER PROGRESSION"
+        short_term = "Complete all remaining tracked career goals."
+        mid_term = "Increase ownership and deliver higher-impact results."
+        long_term = "Prepare a strong promotion and salary-growth case."
+        skill_focus = "Deepen technical expertise and leadership capability."
+        promotion_focus = "Finish remaining goals and collect manager feedback."
+        salary_focus = "Collect achievements, metrics, and evidence of increased value."
+        next_action = "Finish remaining goals and strengthen measurable impact."
+    elif onboarding_tasks and onboarding_progress < 100:
+        career_stage = "ONBOARDING COMPLETION"
+        short_term = "Close all remaining onboarding responsibilities."
+        mid_term = "Convert completed goals into consistent role performance."
+        long_term = "Prepare for promotion and salary-growth discussions."
+        skill_focus = "Finish required processes while maintaining strong performance."
+        promotion_focus = "Remove remaining onboarding gaps before seeking advancement."
+        salary_focus = "Document completed goals and performance evidence."
+        next_action = "Complete all remaining onboarding tasks."
+    elif days_in_role < 180:
+        career_stage = "PERFORMANCE BUILDING"
+        short_term = "Build a longer record of consistent results."
+        mid_term = "Take ownership of larger and higher-impact work."
+        long_term = "Become fully ready for promotion and salary-growth discussions."
+        skill_focus = "Strengthen advanced role skills and independent problem solving."
+        promotion_focus = "Increase ownership and measurable team impact."
+        salary_focus = "Keep documenting achievements and business value."
+        next_action = "Build consistent measurable performance toward the six-month mark."
+    else:
+        career_stage = "ADVANCEMENT READY"
+        short_term = "Prepare evidence of achievements, impact, and completed goals."
+        mid_term = "Discuss expanded responsibilities and career progression."
+        long_term = "Set the next promotion, compensation, and skill-growth milestones."
+        skill_focus = "Develop advanced technical, leadership, and strategic skills."
+        promotion_focus = "Prepare a promotion case with measurable achievements."
+        salary_focus = "Prepare an evidence-based appraisal and salary-growth discussion."
+        next_action = "Review your roadmap with your manager and set the next growth targets."
+
+    return (
+        f"JERVIS Career Roadmap - Application {application_id}\n"
+        "-------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Joining Date: {joining_date}\n"
+        f"Days in Role: {days_in_role}\n"
+        f"Current Career Stage: {career_stage}\n"
+        f"Onboarding Progress: {completed_onboarding}/"
+        f"{len(onboarding_tasks)} ({onboarding_progress}%)\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{len(career_goals)} ({career_progress}%)\n"
+        f"Short-Term Milestone: {short_term}\n"
+        f"Mid-Term Milestone: {mid_term}\n"
+        f"Long-Term Milestone: {long_term}\n"
+        f"Skill Focus: {skill_focus}\n"
+        f"Promotion Focus: {promotion_focus}\n"
+        f"Salary Growth Focus: {salary_focus}\n"
+        f"Next Action: {next_action}"
+    )
+
 def update_interview_stage(application_id, stage):
     stage = str(stage).strip()
 
