@@ -31,6 +31,7 @@ from core.job_application_intelligence import (
     get_job_offer,
     get_joining_checklist,
     get_joining_countdown,
+    get_joining_day_assistant,
     get_onboarding_plan,
     list_job_application_backups,
     mark_application_follow_up,
@@ -331,3 +332,29 @@ def test_packaged_application_storage_root(tmp_path, monkeypatch):
     assert job_intelligence.get_application_storage_root() == (
         tmp_path / "JERVIS-X"
     )
+
+def test_get_joining_day_assistant_ready():
+    application_id = add_test_application()
+    joining_date = future_date(7)
+
+    add_job_offer(
+        application_id,
+        "450000",
+        "Kolkata",
+        joining_date,
+    )
+
+    add_joining_task(application_id, "Prepare documents")
+    complete_joining_task(application_id, 1)
+
+    result = get_joining_day_assistant(application_id)
+
+    assert "JERVIS Joining Day Assistant - Application 1" in result
+    assert "Company: Test Company" in result
+    assert "Role: Python Developer" in result
+    assert f"Joining Date: {joining_date}" in result
+    assert "Days Remaining: 7" in result
+    assert "Checklist Status: Complete" in result
+    assert "Risk Level: LOW" in result
+    assert "Next Action: Keep documents ready and report on time." in result
+
