@@ -3785,3 +3785,258 @@ def get_career_learning_roadmap(application_id):
         f"Next Action: {next_action}"
     )
 
+
+def get_career_project_plan(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    joining_date = application.get("offer_joining_date")
+
+    role_lower = str(role).lower()
+
+    career_goals = application.get("career_goals", [])
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    days_in_role = None
+
+    if joining_date:
+        try:
+            parsed_joining_date = datetime.strptime(
+                joining_date,
+                "%d-%m-%Y",
+            ).date()
+
+            days_in_role = (
+                datetime.now().date() - parsed_joining_date
+            ).days
+        except (TypeError, ValueError):
+            days_in_role = None
+
+    if days_in_role is None:
+        career_stage = "PREPARATION"
+    elif days_in_role < 0:
+        career_stage = "PRE-JOINING"
+    elif career_progress < 50:
+        career_stage = "FOUNDATION"
+    elif career_progress < 100:
+        career_stage = "GROWTH"
+    else:
+        career_stage = "ADVANCED"
+
+    if "python" in role_lower:
+        required_skills = [
+            "Python",
+            "OOP",
+            "Git and GitHub",
+            "SQL",
+            "APIs",
+            "Testing",
+        ]
+
+        beginner_project = (
+            "Build a CLI-based Job Application Tracker with file storage."
+        )
+
+        intermediate_project = (
+            "Build a Python Job Tracker with SQLite, search, filters, "
+            "reports, and automated tests."
+        )
+
+        advanced_project = (
+            "Build and deploy an AI-powered career assistant with APIs, "
+            "database integration, testing, analytics, and automation."
+        )
+
+        portfolio_focus = (
+            "Clean architecture, tests, documentation, Git history, "
+            "and a strong README."
+        )
+
+        learning_outcome = (
+            "Production-style Python development, databases, APIs, "
+            "testing, and software engineering."
+        )
+
+    elif "data" in role_lower or "analyst" in role_lower:
+        required_skills = [
+            "Python",
+            "SQL",
+            "Excel",
+            "Pandas",
+            "Power BI",
+            "Statistics",
+        ]
+
+        beginner_project = (
+            "Analyze a CSV dataset using Excel or Python and create "
+            "basic insights."
+        )
+
+        intermediate_project = (
+            "Build a sales or job-market dashboard using SQL and Power BI."
+        )
+
+        advanced_project = (
+            "Create an end-to-end analytics project with data cleaning, "
+            "SQL analysis, visualization, and business recommendations."
+        )
+
+        portfolio_focus = (
+            "Clear business questions, clean datasets, dashboards, "
+            "insights, and documented conclusions."
+        )
+
+        learning_outcome = (
+            "Data cleaning, SQL analysis, visualization, statistics, "
+            "and business communication."
+        )
+
+    elif "embedded" in role_lower:
+        required_skills = [
+            "Embedded C/C++",
+            "Microcontrollers",
+            "GPIO",
+            "UART/SPI/I2C",
+            "Sensors",
+            "Debugging",
+        ]
+
+        beginner_project = (
+            "Build a temperature and humidity monitor using ESP32 "
+            "or STM32."
+        )
+
+        intermediate_project = (
+            "Build a sensor control system with OLED display, interrupts, "
+            "PWM, and communication."
+        )
+
+        advanced_project = (
+            "Build an IoT embedded monitoring system with RTOS, sensors, "
+            "communication, logging, and remote control."
+        )
+
+        portfolio_focus = (
+            "Circuit diagram, firmware structure, hardware photos, "
+            "protocol explanation, and GitHub documentation."
+        )
+
+        learning_outcome = (
+            "Firmware development, peripherals, communication protocols, "
+            "debugging, and embedded system design."
+        )
+
+    elif "electronics" in role_lower or "ece" in role_lower:
+        required_skills = [
+            "Electronics Fundamentals",
+            "Embedded Systems",
+            "Sensors",
+            "PCB Design",
+            "Circuit Debugging",
+            "Communication Systems",
+        ]
+
+        beginner_project = (
+            "Build a sensor-based electronics monitoring system."
+        )
+
+        intermediate_project = (
+            "Design an embedded control project with sensors, display, "
+            "motor control, and PCB schematic."
+        )
+
+        advanced_project = (
+            "Build a complete IoT or automation product with custom PCB, "
+            "embedded firmware, communication, and documentation."
+        )
+
+        portfolio_focus = (
+            "Schematic, PCB design, firmware, test results, hardware "
+            "documentation, and project demo."
+        )
+
+        learning_outcome = (
+            "Electronics design, embedded development, debugging, PCB "
+            "workflow, and technical documentation."
+        )
+
+    else:
+        required_skills = [
+            "Role-Specific Technical Skills",
+            "Problem Solving",
+            "Communication",
+            "Documentation",
+            "Professional Tools",
+        ]
+
+        beginner_project = (
+            "Complete a small practical project related to the target role."
+        )
+
+        intermediate_project = (
+            "Build a portfolio project that solves a realistic work problem."
+        )
+
+        advanced_project = (
+            "Create an end-to-end professional project with measurable "
+            "results and documentation."
+        )
+
+        portfolio_focus = (
+            "Clear problem statement, practical implementation, measurable "
+            "results, and professional documentation."
+        )
+
+        learning_outcome = (
+            "Role-specific practical experience, problem solving, "
+            "documentation, and portfolio development."
+        )
+
+    if career_stage in ("PREPARATION", "PRE-JOINING", "FOUNDATION"):
+        best_project = beginner_project
+    elif career_stage == "GROWTH":
+        best_project = intermediate_project
+    else:
+        best_project = advanced_project
+
+    skill_text = "\n".join(
+        f"{number}. {skill}"
+        for number, skill in enumerate(required_skills, start=1)
+    )
+
+    return (
+        f"JERVIS Career Project Recommendation Engine - Application "
+        f"{application_id}\n"
+        "-----------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Career Stage: {career_stage}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        "Required Skills:\n"
+        f"{skill_text}\n"
+        f"Beginner Project: {beginner_project}\n"
+        f"Intermediate Project: {intermediate_project}\n"
+        f"Advanced Project: {advanced_project}\n"
+        f"GitHub Portfolio Focus: {portfolio_focus}\n"
+        f"Expected Learning Outcome: {learning_outcome}\n"
+        f"Best Project To Start Now: {best_project}\n"
+        "Next Action: Start the recommended project and document "
+        "your progress on GitHub."
+    )
+

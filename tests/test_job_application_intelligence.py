@@ -1544,3 +1544,177 @@ def test_career_learning_roadmap_portfolio_and_next_action():
     assert "90-Day Learning Plan:" in result
     assert "Next Action: Start learning Advanced Python" in result
 
+
+def _set_project_plan_test_state(
+    application_id,
+    role=None,
+    joining_date=None,
+    career_goals=None,
+):
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            if role is not None:
+                application["role"] = role
+
+            if joining_date is not None:
+                application["offer_joining_date"] = joining_date
+
+            if career_goals is not None:
+                application["career_goals"] = career_goals
+
+            break
+
+    job_intelligence._save(data)
+
+
+def test_career_project_plan_application_not_found():
+    result = job_intelligence.get_career_project_plan(999)
+
+    assert result == "Job application not found."
+
+
+def test_career_project_plan_python_pre_joining():
+    application_id = add_test_application()
+
+    joining_date = (
+        datetime.now().date() + timedelta(days=10)
+    ).strftime("%d-%m-%Y")
+
+    _set_project_plan_test_state(
+        application_id,
+        role="Python Developer",
+        joining_date=joining_date,
+        career_goals=[
+            {"goal": "Python", "completed": True},
+            {"goal": "API", "completed": False},
+        ],
+    )
+
+    result = job_intelligence.get_career_project_plan(application_id)
+
+    assert "Career Stage: PRE-JOINING" in result
+    assert "Git and GitHub" in result
+    assert "CLI-based Job Application Tracker" in result
+    assert "Career Goal Progress: 1/2 (50.0%)" in result
+
+
+def test_career_project_plan_data_preparation():
+    application_id = add_test_application()
+
+    _set_project_plan_test_state(
+        application_id,
+        role="Data Analyst",
+        career_goals=[],
+    )
+
+    result = job_intelligence.get_career_project_plan(application_id)
+
+    assert "Career Stage: PREPARATION" in result
+    assert "Power BI" in result
+    assert "job-market dashboard" in result
+
+
+def test_career_project_plan_embedded_foundation():
+    application_id = add_test_application()
+
+    joining_date = (
+        datetime.now().date() - timedelta(days=10)
+    ).strftime("%d-%m-%Y")
+
+    _set_project_plan_test_state(
+        application_id,
+        role="Embedded Engineer",
+        joining_date=joining_date,
+        career_goals=[
+            {"goal": "RTOS", "completed": False},
+            {"goal": "Project", "completed": False},
+        ],
+    )
+
+    result = job_intelligence.get_career_project_plan(application_id)
+
+    assert "Career Stage: FOUNDATION" in result
+    assert "Embedded C/C++" in result
+    assert "temperature and humidity monitor" in result
+
+
+def test_career_project_plan_ece_growth():
+    application_id = add_test_application()
+
+    joining_date = (
+        datetime.now().date() - timedelta(days=20)
+    ).strftime("%d-%m-%Y")
+
+    _set_project_plan_test_state(
+        application_id,
+        role="ECE Engineer",
+        joining_date=joining_date,
+        career_goals=[
+            {"goal": "Goal 1", "completed": True},
+            {"goal": "Goal 2", "completed": False},
+        ],
+    )
+
+    result = job_intelligence.get_career_project_plan(application_id)
+
+    assert "Career Stage: GROWTH" in result
+    assert "PCB Design" in result
+    assert "Best Project To Start Now:" in result
+    assert "embedded control project" in result
+
+
+def test_career_project_plan_generic_advanced():
+    application_id = add_test_application()
+
+    joining_date = (
+        datetime.now().date() - timedelta(days=30)
+    ).strftime("%d-%m-%Y")
+
+    _set_project_plan_test_state(
+        application_id,
+        role="Project Coordinator",
+        joining_date=joining_date,
+        career_goals=[
+            {"goal": "Goal 1", "completed": True},
+            {"goal": "Goal 2", "completed": True},
+        ],
+    )
+
+    result = job_intelligence.get_career_project_plan(application_id)
+
+    assert "Career Stage: ADVANCED" in result
+    assert "Role-Specific Technical Skills" in result
+    assert "Best Project To Start Now:" in result
+    assert "end-to-end professional project" in result
+
+
+def test_career_project_plan_invalid_joining_date():
+    application_id = add_test_application()
+
+    _set_project_plan_test_state(
+        application_id,
+        role="Python Developer",
+        joining_date="invalid-date",
+    )
+
+    result = job_intelligence.get_career_project_plan(application_id)
+
+    assert "Career Stage: PREPARATION" in result
+    assert "Best Project To Start Now:" in result
+    assert "CLI-based Job Application Tracker" in result
+
+
+def test_career_project_plan_output_sections():
+    application_id = add_test_application()
+
+    result = job_intelligence.get_career_project_plan(application_id)
+
+    assert "Beginner Project:" in result
+    assert "Intermediate Project:" in result
+    assert "Advanced Project:" in result
+    assert "GitHub Portfolio Focus:" in result
+    assert "Expected Learning Outcome:" in result
+    assert "Next Action:" in result
+
