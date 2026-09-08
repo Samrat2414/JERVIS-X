@@ -487,3 +487,10 @@ def test_routing_plan_selects_application_details_handler():
     plan = get_routing_plan("view application 1")
 
     assert plan["handler"] == "job_application_handlers.handle_get_job_application_details"
+
+def test_routing_plan_selects_application_interview_reminders_handler():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("interview reminders")
+
+    assert plan["handler"] == "job_application_handlers.handle_get_application_interview_reminders"
