@@ -1,4 +1,4 @@
-﻿from core.job_application_intelligence import (
+from core.job_application_intelligence import (
     get_job_application_report,
     get_job_application_commands,
     search_job_applications,
@@ -26,6 +26,7 @@
     get_salary_growth_analysis,
     get_career_roadmap,
     get_career_skill_gap_analysis,
+    get_career_skill_development_plan,
 )
 
 
@@ -163,3 +164,8 @@ def handle_get_career_roadmap(command):
 def handle_get_career_skill_gap_analysis(command):
     application_id = command[len("career skill gap "):].strip()
     return get_career_skill_gap_analysis(application_id)
+
+
+def handle_get_career_skill_development_plan(command):
+    application_id = command[len("career skill plan "):].strip()
+    return get_career_skill_development_plan(application_id)

@@ -3392,3 +3392,175 @@ def get_joining_readiness(application_id):
         f"Pending Tasks: {pending_tasks}\n"
         f"Status: {readiness_status}"
     )
+
+def get_career_skill_development_plan(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    joining_date = application.get("offer_joining_date")
+
+    if not joining_date:
+        return f"No joining date found for application {application_id}."
+
+    try:
+        parsed_joining_date = datetime.strptime(
+            joining_date,
+            "%d-%m-%Y",
+        ).date()
+    except (TypeError, ValueError):
+        return "Stored joining date is invalid."
+
+    days_in_role = (datetime.now().date() - parsed_joining_date).days
+    role_lower = str(role).lower()
+
+    if "python" in role_lower:
+        priority_skills = [
+            "Advanced Python",
+            "SQL",
+            "Git and GitHub",
+            "Testing and Debugging",
+            "APIs and Backend Development",
+        ]
+        plan_30 = (
+            "Strengthen Python fundamentals, OOP, Git, and debugging."
+        )
+        plan_60 = (
+            "Build SQL, API, testing, and backend development skills."
+        )
+        plan_90 = (
+            "Complete a production-style Python project and document results."
+        )
+
+    elif "data" in role_lower or "analyst" in role_lower:
+        priority_skills = [
+            "Python",
+            "SQL",
+            "Excel",
+            "Data Visualization",
+            "Statistics",
+        ]
+        plan_30 = (
+            "Strengthen Excel, SQL, Python, and data-cleaning fundamentals."
+        )
+        plan_60 = (
+            "Practice visualization, statistics, and analytical projects."
+        )
+        plan_90 = (
+            "Complete an end-to-end data analysis portfolio project."
+        )
+
+    elif "embedded" in role_lower:
+        priority_skills = [
+            "Embedded C/C++",
+            "Microcontrollers",
+            "UART/SPI/I2C",
+            "Debugging",
+            "RTOS Fundamentals",
+        ]
+        plan_30 = (
+            "Strengthen Embedded C/C++ and microcontroller fundamentals."
+        )
+        plan_60 = (
+            "Practice UART, SPI, I2C, interrupts, timers, and debugging."
+        )
+        plan_90 = (
+            "Build an embedded project using sensors and communication."
+        )
+
+    elif "electronics" in role_lower or "ece" in role_lower:
+        priority_skills = [
+            "Electronics Fundamentals",
+            "Embedded Systems",
+            "Circuit Debugging",
+            "Communication Systems",
+            "Technical Documentation",
+        ]
+        plan_30 = (
+            "Revise core electronics and circuit fundamentals."
+        )
+        plan_60 = (
+            "Practice embedded systems, debugging, and communication topics."
+        )
+        plan_90 = (
+            "Complete a practical electronics project with documentation."
+        )
+
+    else:
+        priority_skills = [
+            "Role-Specific Technical Skills",
+            "Problem Solving",
+            "Communication",
+            "Team Collaboration",
+            "Professional Development",
+        ]
+        plan_30 = (
+            "Build core technical and communication foundations."
+        )
+        plan_60 = (
+            "Practice role-specific tasks and problem solving."
+        )
+        plan_90 = (
+            "Complete a measurable project and document achievements."
+        )
+
+    career_goals = application.get("career_goals", [])
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    skill_text = "\n".join(
+        f"{number}. {skill}"
+        for number, skill in enumerate(priority_skills, start=1)
+    )
+
+    if days_in_role < 0:
+        stage = "PRE-JOINING"
+        next_action = (
+            f"Start with {priority_skills[0]} before your joining date."
+        )
+    elif career_progress < 50:
+        stage = "EARLY DEVELOPMENT"
+        next_action = (
+            f"Focus first on {priority_skills[0]} and complete one career goal."
+        )
+    elif career_progress < 100:
+        stage = "PROGRESSING"
+        next_action = (
+            "Close remaining skill gaps and document measurable results."
+        )
+    else:
+        stage = "ADVANCED DEVELOPMENT"
+        next_action = (
+            "Move toward advanced skills and higher-responsibility work."
+        )
+
+    return (
+        f"JERVIS Career Skill Development Plan - Application {application_id}\n"
+        "---------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Joining Date: {joining_date}\n"
+        f"Days in Role: {days_in_role}\n"
+        f"Development Stage: {stage}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        "Priority Skills:\n"
+        f"{skill_text}\n"
+        f"30-Day Plan: {plan_30}\n"
+        f"60-Day Plan: {plan_60}\n"
+        f"90-Day Plan: {plan_90}\n"
+        f"Next Action: {next_action}"
+    )
