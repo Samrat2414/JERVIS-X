@@ -52,3 +52,21 @@ def test_handle_search_job_applications_extracts_query(monkeypatch):
     )
 
     assert result == "SEARCHED: Python Developer"
+
+def test_handle_filter_job_applications_extracts_field_and_value(monkeypatch):
+    from core import job_application_handlers
+
+    def fake_filter_job_applications(field, value):
+        return f"FILTERED: {field} | {value}"
+
+    monkeypatch.setattr(
+        job_application_handlers,
+        "filter_job_applications",
+        fake_filter_job_applications,
+    )
+
+    result = job_application_handlers.handle_filter_job_applications(
+        "filter applications Status | Applied"
+    )
+
+    assert result == "FILTERED: Status | Applied"
