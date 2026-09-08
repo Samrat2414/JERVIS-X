@@ -19,6 +19,7 @@
     get_joining_day_assistant,
     get_joining_day_schedule,
     get_post_joining_checkin,
+    get_new_job_success_tracker,
 )
 
 
@@ -121,3 +122,8 @@ def handle_get_joining_day_schedule(command):
 def handle_get_post_joining_checkin(command):
     application_id = command[len("joining checkin "):].strip()
     return get_post_joining_checkin(application_id)
+
+
+def handle_get_new_job_success_tracker(command):
+    application_id = command[len("joining progress "):].strip()
+    return get_new_job_success_tracker(application_id)

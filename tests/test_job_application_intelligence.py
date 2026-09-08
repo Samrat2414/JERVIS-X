@@ -35,6 +35,7 @@ from core.job_application_intelligence import (
     get_joining_day_assistant,
     get_joining_day_schedule,
     get_post_joining_checkin,
+    get_new_job_success_tracker,
     get_onboarding_plan,
     list_job_application_backups,
     mark_application_follow_up,
@@ -410,3 +411,25 @@ def test_get_post_joining_checkin_before_joining():
     assert "Status: NOT JOINED YET" in result
     assert "Pending Onboarding Tasks: 0" in result
     assert "Next Action: Complete joining preparation before the joining date." in result
+
+def test_get_new_job_success_tracker_before_joining():
+    application_id = add_test_application()
+    joining_date = future_date(7)
+
+    add_job_offer(
+        application_id,
+        "450000",
+        "Kolkata",
+        joining_date,
+    )
+
+    result = get_new_job_success_tracker(application_id)
+
+    assert "JERVIS New Job Success Tracker - Application 1" in result
+    assert "Company: Test Company" in result
+    assert "Role: Python Developer" in result
+    assert f"Joining Date: {joining_date}" in result
+    assert "Current Phase: PRE-JOINING" in result
+    assert "Onboarding Progress: 0/0 (0.0%)" in result
+    assert "30-Day Goal Progress: 0/0 (0.0%)" in result
+    assert "Next Action: Complete joining preparation before your joining date." in result

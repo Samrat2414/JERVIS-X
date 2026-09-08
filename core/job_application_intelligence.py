@@ -1,4 +1,4 @@
-import csv
+﻿import csv
 import json
 import os
 import sys
@@ -2015,6 +2015,97 @@ def get_career_growth_plan(application_id):
         + "\n".join(goal_lines)
     )
 
+
+def get_new_job_success_tracker(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    joining_date = application.get("offer_joining_date")
+
+    if not joining_date:
+        return f"No joining date found for application {application_id}."
+
+    try:
+        parsed_joining_date = datetime.strptime(
+            joining_date,
+            "%d-%m-%Y",
+        ).date()
+    except (TypeError, ValueError):
+        return "Stored joining date is invalid."
+
+    days_worked = (datetime.now().date() - parsed_joining_date).days
+
+    onboarding_tasks = application.get("onboarding_tasks", [])
+    completed_onboarding = sum(
+        1
+        for task in onboarding_tasks
+        if isinstance(task, dict) and task.get("completed")
+    )
+
+    onboarding_progress = (
+        round((completed_onboarding / len(onboarding_tasks)) * 100, 1)
+        if onboarding_tasks
+        else 0.0
+    )
+
+    career_goals = application.get("career_goals", [])
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+
+    career_progress = (
+        round((completed_goals / len(career_goals)) * 100, 1)
+        if career_goals
+        else 0.0
+    )
+
+    if days_worked < 0:
+        phase = "PRE-JOINING"
+        next_action = "Complete joining preparation before your joining date."
+    elif days_worked <= 7:
+        phase = "FIRST WEEK"
+
+        if completed_onboarding < len(onboarding_tasks):
+            next_action = "Complete remaining onboarding tasks."
+        else:
+            next_action = "Meet your manager and learn your team workflow."
+    elif days_worked <= 30:
+        phase = "FIRST 30 DAYS"
+
+        if completed_onboarding < len(onboarding_tasks):
+            next_action = "Finish remaining onboarding tasks."
+        elif completed_goals < len(career_goals):
+            next_action = "Focus on completing your 30-day career goals."
+        else:
+            next_action = "Keep learning and build strong performance momentum."
+    else:
+        phase = "POST 30 DAYS"
+
+        if completed_goals < len(career_goals):
+            next_action = "Complete remaining career goals and review progress."
+        else:
+            next_action = "Set your next 60-day career goals."
+
+    return (
+        f"JERVIS New Job Success Tracker - Application {application_id}\n"
+        "------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Joining Date: {joining_date}\n"
+        f"Days Worked: {days_worked}\n"
+        f"Current Phase: {phase}\n"
+        f"Onboarding Progress: {completed_onboarding}/"
+        f"{len(onboarding_tasks)} ({onboarding_progress}%)\n"
+        f"30-Day Goal Progress: {completed_goals}/"
+        f"{len(career_goals)} ({career_progress}%)\n"
+        f"Next Action: {next_action}"
+    )
 
 def update_interview_stage(application_id, stage):
     stage = str(stage).strip()
