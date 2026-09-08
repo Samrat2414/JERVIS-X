@@ -157,6 +157,9 @@ def get_routing_plan(command):
     elif normalized_command.startswith("career skill plan "):
         handler = "job_application_handlers.handle_get_career_skill_development_plan"
 
+    elif normalized_command.startswith("career learning roadmap "):
+        handler = "job_application_handlers.handle_get_career_learning_roadmap"
+
     elif normalized_command in (
         "application follow up reminders",
         "application follow up reminder",

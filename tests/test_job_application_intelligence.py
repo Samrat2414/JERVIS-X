@@ -1353,3 +1353,194 @@ def test_career_skill_development_plan_generic_role():
     assert "Communication" in result
     assert "Development Stage: EARLY DEVELOPMENT" in result
 
+
+def _set_learning_roadmap_test_state(
+    application_id,
+    role=None,
+    joining_date=None,
+    career_goals=None,
+):
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            if role is not None:
+                application["role"] = role
+
+            if joining_date is not None:
+                application["offer_joining_date"] = joining_date
+
+            if career_goals is not None:
+                application["career_goals"] = career_goals
+
+            break
+
+    job_intelligence._save(data)
+
+
+def test_career_learning_roadmap_application_not_found():
+    result = job_intelligence.get_career_learning_roadmap(999)
+
+    assert result == "Job application not found."
+
+
+def test_career_learning_roadmap_python_pre_joining():
+    application_id = add_test_application()
+
+    joining_date = (
+        datetime.now().date() + timedelta(days=10)
+    ).strftime("%d-%m-%Y")
+
+    _set_learning_roadmap_test_state(
+        application_id,
+        role="Python Developer",
+        joining_date=joining_date,
+        career_goals=[
+            {"goal": "Learn Python", "completed": True},
+            {"goal": "Build API", "completed": False},
+        ],
+    )
+
+    result = job_intelligence.get_career_learning_roadmap(
+        application_id
+    )
+
+    assert "Learning Stage: PRE-JOINING" in result
+    assert "Advanced Python" in result
+    assert "Python Institute PCEP/PCAP" in result
+    assert "Career Goal Progress: 1/2 (50.0%)" in result
+
+
+def test_career_learning_roadmap_data_preparation():
+    application_id = add_test_application()
+
+    _set_learning_roadmap_test_state(
+        application_id,
+        role="Data Analyst",
+        career_goals=[],
+    )
+
+    result = job_intelligence.get_career_learning_roadmap(
+        application_id
+    )
+
+    assert "Learning Stage: PREPARATION" in result
+    assert "Power BI" in result
+    assert "Google Data Analytics" in result
+    assert "Career Goal Progress: 0/0 (0.0%)" in result
+
+
+def test_career_learning_roadmap_embedded_foundation():
+    application_id = add_test_application()
+
+    joining_date = (
+        datetime.now().date() - timedelta(days=10)
+    ).strftime("%d-%m-%Y")
+
+    _set_learning_roadmap_test_state(
+        application_id,
+        role="Embedded Engineer",
+        joining_date=joining_date,
+        career_goals=[
+            {"goal": "Learn RTOS", "completed": False},
+            {"goal": "Build project", "completed": False},
+        ],
+    )
+
+    result = job_intelligence.get_career_learning_roadmap(
+        application_id
+    )
+
+    assert "Learning Stage: FOUNDATION" in result
+    assert "Embedded C/C++" in result
+    assert "ARM Cortex-M Training" in result
+
+
+def test_career_learning_roadmap_ece_skill_building():
+    application_id = add_test_application()
+
+    joining_date = (
+        datetime.now().date() - timedelta(days=20)
+    ).strftime("%d-%m-%Y")
+
+    _set_learning_roadmap_test_state(
+        application_id,
+        role="ECE Engineer",
+        joining_date=joining_date,
+        career_goals=[
+            {"goal": "PCB project", "completed": True},
+            {"goal": "Embedded project", "completed": False},
+        ],
+    )
+
+    result = job_intelligence.get_career_learning_roadmap(
+        application_id
+    )
+
+    assert "Learning Stage: SKILL BUILDING" in result
+    assert "PCB Design" in result
+    assert "IoT Fundamentals" in result
+
+
+def test_career_learning_roadmap_generic_advanced():
+    application_id = add_test_application()
+
+    joining_date = (
+        datetime.now().date() - timedelta(days=30)
+    ).strftime("%d-%m-%Y")
+
+    _set_learning_roadmap_test_state(
+        application_id,
+        role="Project Coordinator",
+        joining_date=joining_date,
+        career_goals=[
+            {"goal": "Goal 1", "completed": True},
+            {"goal": "Goal 2", "completed": True},
+        ],
+    )
+
+    result = job_intelligence.get_career_learning_roadmap(
+        application_id
+    )
+
+    assert "Learning Stage: ADVANCED LEARNING" in result
+    assert "Role-Specific Technical Skills" in result
+    assert "Project Management Fundamentals" in result
+    assert "Career Goal Progress: 2/2 (100.0%)" in result
+
+
+def test_career_learning_roadmap_invalid_joining_date():
+    application_id = add_test_application()
+
+    _set_learning_roadmap_test_state(
+        application_id,
+        role="Python Developer",
+        joining_date="invalid-date",
+    )
+
+    result = job_intelligence.get_career_learning_roadmap(
+        application_id
+    )
+
+    assert "Learning Stage: PREPARATION" in result
+    assert "Joining Date: invalid-date" in result
+
+
+def test_career_learning_roadmap_portfolio_and_next_action():
+    application_id = add_test_application()
+
+    _set_learning_roadmap_test_state(
+        application_id,
+        role="Python Developer",
+    )
+
+    result = job_intelligence.get_career_learning_roadmap(
+        application_id
+    )
+
+    assert "Portfolio Project:" in result
+    assert "30-Day Learning Plan:" in result
+    assert "60-Day Learning Plan:" in result
+    assert "90-Day Learning Plan:" in result
+    assert "Next Action: Start learning Advanced Python" in result
+

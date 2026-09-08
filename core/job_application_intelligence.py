@@ -3564,3 +3564,224 @@ def get_career_skill_development_plan(application_id):
         f"90-Day Plan: {plan_90}\n"
         f"Next Action: {next_action}"
     )
+
+
+def get_career_learning_roadmap(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    joining_date = application.get("offer_joining_date")
+
+    role_lower = str(role).lower()
+
+    if "python" in role_lower:
+        priority_skills = [
+            "Advanced Python",
+            "SQL",
+            "Git and GitHub",
+            "Testing",
+            "REST APIs",
+        ]
+        certifications = [
+            "Python Institute PCEP/PCAP",
+            "SQL Certification",
+            "GitHub Foundations",
+        ]
+        plan_30 = (
+            "Strengthen Python, OOP, Git, debugging, and SQL fundamentals."
+        )
+        plan_60 = (
+            "Practice APIs, testing, databases, and backend development."
+        )
+        plan_90 = (
+            "Build and deploy a production-style Python application."
+        )
+        project = (
+            "Build a Python job-tracking or productivity application "
+            "with SQL, APIs, tests, and GitHub documentation."
+        )
+
+    elif "data" in role_lower or "analyst" in role_lower:
+        priority_skills = [
+            "Python",
+            "SQL",
+            "Excel",
+            "Power BI",
+            "Statistics",
+        ]
+        certifications = [
+            "Microsoft Power BI Data Analyst",
+            "Google Data Analytics",
+            "SQL Certification",
+        ]
+        plan_30 = (
+            "Strengthen Excel, SQL, Python, and data-cleaning skills."
+        )
+        plan_60 = (
+            "Practice Power BI, statistics, dashboards, and analysis."
+        )
+        plan_90 = (
+            "Complete an end-to-end analytics portfolio project."
+        )
+        project = (
+            "Analyze a real dataset and create a dashboard, report, "
+            "and GitHub portfolio project."
+        )
+
+    elif "embedded" in role_lower:
+        priority_skills = [
+            "Embedded C/C++",
+            "Microcontrollers",
+            "UART/SPI/I2C",
+            "Debugging",
+            "RTOS",
+        ]
+        certifications = [
+            "Embedded Systems Certification",
+            "ARM Cortex-M Training",
+            "RTOS Fundamentals",
+        ]
+        plan_30 = (
+            "Strengthen Embedded C/C++ and microcontroller fundamentals."
+        )
+        plan_60 = (
+            "Practice communication protocols, interrupts, timers, and debugging."
+        )
+        plan_90 = (
+            "Build a complete embedded system project with documentation."
+        )
+        project = (
+            "Build an ESP32 or STM32 sensor-monitoring system "
+            "with communication and real-time control."
+        )
+
+    elif "electronics" in role_lower or "ece" in role_lower:
+        priority_skills = [
+            "Electronics Fundamentals",
+            "Embedded Systems",
+            "Circuit Debugging",
+            "Communication Systems",
+            "PCB Design",
+        ]
+        certifications = [
+            "Embedded Systems Course",
+            "PCB Design Certification",
+            "IoT Fundamentals",
+        ]
+        plan_30 = (
+            "Revise analog, digital, communication, and circuit fundamentals."
+        )
+        plan_60 = (
+            "Practice embedded systems, PCB tools, and circuit debugging."
+        )
+        plan_90 = (
+            "Complete a hardware project with PCB or embedded integration."
+        )
+        project = (
+            "Build and document an ECE hardware project using sensors, "
+            "microcontrollers, and PCB design."
+        )
+
+    else:
+        priority_skills = [
+            "Role-Specific Technical Skills",
+            "Problem Solving",
+            "Communication",
+            "Team Collaboration",
+            "Professional Tools",
+        ]
+        certifications = [
+            "Role-Relevant Professional Certification",
+            "Communication Skills Course",
+            "Project Management Fundamentals",
+        ]
+        plan_30 = (
+            "Build role-specific technical and communication foundations."
+        )
+        plan_60 = (
+            "Practice practical tasks, tools, and problem-solving."
+        )
+        plan_90 = (
+            "Complete a measurable project relevant to the target role."
+        )
+        project = (
+            "Build a portfolio project directly related to the target role."
+        )
+
+    career_goals = application.get("career_goals", [])
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    if joining_date:
+        try:
+            parsed_joining_date = datetime.strptime(
+                joining_date,
+                "%d-%m-%Y",
+            ).date()
+            days_in_role = (
+                datetime.now().date() - parsed_joining_date
+            ).days
+        except (TypeError, ValueError):
+            days_in_role = None
+    else:
+        days_in_role = None
+
+    if days_in_role is None:
+        stage = "PREPARATION"
+    elif days_in_role < 0:
+        stage = "PRE-JOINING"
+    elif progress < 50:
+        stage = "FOUNDATION"
+    elif progress < 100:
+        stage = "SKILL BUILDING"
+    else:
+        stage = "ADVANCED LEARNING"
+
+    skill_text = "\n".join(
+        f"{number}. {skill}"
+        for number, skill in enumerate(priority_skills, start=1)
+    )
+
+    certification_text = "\n".join(
+        f"{number}. {certification}"
+        for number, certification in enumerate(certifications, start=1)
+    )
+
+    next_action = (
+        f"Start learning {priority_skills[0]} and complete one practical task."
+    )
+
+    return (
+        f"JERVIS Career Learning Roadmap - Application {application_id}\n"
+        "-----------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Joining Date: {joining_date or 'Not Scheduled'}\n"
+        f"Learning Stage: {stage}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({progress}%)\n"
+        "Priority Skills:\n"
+        f"{skill_text}\n"
+        "Recommended Certifications:\n"
+        f"{certification_text}\n"
+        f"30-Day Learning Plan: {plan_30}\n"
+        f"60-Day Learning Plan: {plan_60}\n"
+        f"90-Day Learning Plan: {plan_90}\n"
+        f"Portfolio Project: {project}\n"
+        f"Next Action: {next_action}"
+    )
+

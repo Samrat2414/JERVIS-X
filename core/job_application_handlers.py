@@ -27,6 +27,7 @@ from core.job_application_intelligence import (
     get_career_roadmap,
     get_career_skill_gap_analysis,
     get_career_skill_development_plan,
+    get_career_learning_roadmap,
 )
 
 
@@ -169,3 +170,8 @@ def handle_get_career_skill_gap_analysis(command):
 def handle_get_career_skill_development_plan(command):
     application_id = command[len("career skill plan "):].strip()
     return get_career_skill_development_plan(application_id)
+
+
+def handle_get_career_learning_roadmap(command):
+    application_id = command[len("career learning roadmap "):].strip()
+    return get_career_learning_roadmap(application_id)
