@@ -124,3 +124,21 @@ def test_handle_get_application_status_timeline_extracts_application_id(monkeypa
     )
 
     assert result == "TIMELINE: 1"
+
+def test_handle_get_job_application_details_extracts_application_id(monkeypatch):
+    from core import job_application_handlers
+
+    def fake_get_job_application_details(application_id):
+        return f"DETAILS: {application_id}"
+
+    monkeypatch.setattr(
+        job_application_handlers,
+        "get_job_application_details",
+        fake_get_job_application_details,
+    )
+
+    result = job_application_handlers.handle_get_job_application_details(
+        "view application 1"
+    )
+
+    assert result == "DETAILS: 1"
