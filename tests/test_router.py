@@ -445,3 +445,10 @@ def test_routing_plan_selects_job_application_commands_handler():
     plan = get_routing_plan("job application commands")
 
     assert plan["handler"] == "job_application_handlers.handle_get_job_application_commands"
+
+def test_routing_plan_selects_search_applications_handler():
+    from core.router import get_routing_plan
+
+    plan = get_routing_plan("search applications Python Developer")
+
+    assert plan["handler"] == "job_application_handlers.handle_search_job_applications"

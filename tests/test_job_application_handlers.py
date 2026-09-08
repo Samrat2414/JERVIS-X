@@ -34,3 +34,21 @@ def test_handle_get_job_application_commands_calls_intelligence(monkeypatch):
     )
 
     assert result == "JOB APPLICATION COMMANDS"
+
+def test_handle_search_job_applications_extracts_query(monkeypatch):
+    from core import job_application_handlers
+
+    def fake_search_job_applications(query):
+        return f"SEARCHED: {query}"
+
+    monkeypatch.setattr(
+        job_application_handlers,
+        "search_job_applications",
+        fake_search_job_applications,
+    )
+
+    result = job_application_handlers.handle_search_job_applications(
+        "search applications Python Developer"
+    )
+
+    assert result == "SEARCHED: Python Developer"

@@ -57,6 +57,10 @@ def get_routing_plan(command):
     if intelligence["normalized_command"] in ("job application commands", "application commands", "job tracker help"):
         handler = "job_application_handlers.handle_get_job_application_commands"
 
+
+    if intelligence["normalized_command"].startswith("search applications "):
+        handler = "job_application_handlers.handle_search_job_applications"
+
     if intelligence["normalized_command"] in ("resume intelligence", "resume report", "resume intelligence report", "ats report"):
         handler = "resume_handlers.handle_get_resume_intelligence_report"
 
