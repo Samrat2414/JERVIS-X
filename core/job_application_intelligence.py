@@ -5004,3 +5004,158 @@ def get_career_job_recommendations(application_id):
         "highest-priority missing skill."
     )
 
+
+def get_career_application_success_prediction(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    role_lower = str(role).lower()
+
+    career_goals = application.get("career_goals", [])
+    notes = application.get("notes", [])
+    interview_stage = application.get("interview_stage")
+    offer_joining_date = application.get("offer_joining_date")
+    status = str(application.get("status", "")).lower()
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    score = 30
+
+    if total_goals:
+        score += min(int(career_progress * 0.30), 30)
+
+    if notes:
+        score += 10
+
+    if interview_stage:
+        score += 15
+
+    if offer_joining_date:
+        score += 10
+
+    if status in {"shortlisted", "interview", "offer"}:
+        score += 5
+
+    score = min(score, 100)
+
+    if score < 45:
+        success_level = "LOW"
+    elif score < 65:
+        success_level = "MODERATE"
+    elif score < 85:
+        success_level = "STRONG"
+    else:
+        success_level = "VERY STRONG"
+
+    if career_progress >= 70:
+        profile_strength = "STRONG"
+    elif career_progress >= 40:
+        profile_strength = "DEVELOPING"
+    else:
+        profile_strength = "WEAK"
+
+    interview_readiness = (
+        "STRONG"
+        if interview_stage
+        else "NEEDS PREPARATION"
+    )
+
+    risk_factors = []
+    improvement_priorities = []
+
+    if career_progress < 50:
+        risk_factors.append("Low career-goal completion")
+        improvement_priorities.append(
+            "Complete more role-relevant career goals"
+        )
+
+    if not notes:
+        risk_factors.append("Limited project or experience evidence")
+        improvement_priorities.append(
+            "Add stronger project and achievement evidence"
+        )
+
+    if not interview_stage:
+        risk_factors.append("Interview stage not reached")
+        improvement_priorities.append(
+            "Improve resume targeting and interview preparation"
+        )
+
+    if not offer_joining_date:
+        risk_factors.append("No offer or joining confirmation")
+        improvement_priorities.append(
+            "Focus on converting interviews into offers"
+        )
+
+    if "python" in role_lower:
+        improvement_priorities.append(
+            "Strengthen Python, SQL, APIs, and testing"
+        )
+    elif "data" in role_lower or "analyst" in role_lower:
+        improvement_priorities.append(
+            "Strengthen SQL, Excel, Power BI, and statistics"
+        )
+    elif "embedded" in role_lower:
+        improvement_priorities.append(
+            "Strengthen Embedded C/C++, RTOS, and communication protocols"
+        )
+    elif "electronics" in role_lower or "ece" in role_lower:
+        improvement_priorities.append(
+            "Strengthen PCB, circuit debugging, and embedded skills"
+        )
+    else:
+        improvement_priorities.append(
+            "Strengthen role-specific technical and professional skills"
+        )
+
+    if not risk_factors:
+        risk_factors.append("No major risk factors detected")
+
+    risk_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(risk_factors, start=1)
+    )
+
+    priority_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(
+            improvement_priorities,
+            start=1,
+        )
+    )
+
+    return (
+        f"JERVIS Career Application Success Predictor - Application "
+        f"{application_id}\n"
+        "----------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Success Probability: {score}%\n"
+        f"Success Level: {success_level}\n"
+        f"Profile Strength: {profile_strength}\n"
+        f"Interview Readiness: {interview_readiness}\n"
+        "Major Risk Factors:\n"
+        f"{risk_text}\n"
+        "Improvement Priorities:\n"
+        f"{priority_text}\n"
+        "Next Action: Improve the highest-impact weakness and focus on "
+        "moving this application to the next hiring stage."
+    )
+

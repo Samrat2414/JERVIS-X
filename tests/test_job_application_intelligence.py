@@ -2731,3 +2731,220 @@ def test_career_job_recommendations_output_sections():
     assert "Application Strategy:" in result
     assert "Next Action:" in result
 
+
+def _set_application_success_test_state(
+    application_id,
+    role=None,
+    career_goals=None,
+    notes=None,
+    interview_stage=None,
+    offer_joining_date=None,
+    status=None,
+):
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            if role is not None:
+                application["role"] = role
+            if career_goals is not None:
+                application["career_goals"] = career_goals
+            if notes is not None:
+                application["notes"] = notes
+            if interview_stage is not None:
+                application["interview_stage"] = interview_stage
+            if offer_joining_date is not None:
+                application["offer_joining_date"] = offer_joining_date
+            if status is not None:
+                application["status"] = status
+            break
+
+    job_intelligence._save(data)
+
+
+def test_career_application_success_not_found():
+    result = job_intelligence.get_career_application_success_prediction(999)
+
+    assert result == "Job application not found."
+
+
+def test_career_application_success_python_strong():
+    application_id = add_test_application()
+
+    _set_application_success_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"goal": "Python", "completed": True},
+            {"goal": "API", "completed": False},
+        ],
+        notes=["Python project evidence"],
+        interview_stage="Technical",
+        offer_joining_date="15-09-2026",
+        status="Interview",
+    )
+
+    result = job_intelligence.get_career_application_success_prediction(
+        application_id
+    )
+
+    assert "Success Probability: 85%" in result
+    assert "Success Level: VERY STRONG" in result
+    assert "Profile Strength: DEVELOPING" in result
+    assert "Interview Readiness: STRONG" in result
+    assert "Strengthen Python, SQL, APIs, and testing" in result
+
+
+def test_career_application_success_low():
+    application_id = add_test_application()
+
+    _set_application_success_test_state(
+        application_id,
+        role="Project Coordinator",
+        career_goals=[],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+        status="Applied",
+    )
+
+    result = job_intelligence.get_career_application_success_prediction(
+        application_id
+    )
+
+    assert "Success Probability: 30%" in result
+    assert "Success Level: LOW" in result
+    assert "Profile Strength: WEAK" in result
+    assert "Interview Readiness: NEEDS PREPARATION" in result
+    assert "Low career-goal completion" in result
+    assert "Limited project or experience evidence" in result
+    assert "Interview stage not reached" in result
+    assert "No offer or joining confirmation" in result
+
+
+def test_career_application_success_data_role():
+    application_id = add_test_application()
+
+    _set_application_success_test_state(
+        application_id,
+        role="Data Analyst",
+        career_goals=[
+            {"goal": "SQL", "completed": True},
+            {"goal": "Power BI", "completed": False},
+        ],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+        status="Applied",
+    )
+
+    result = job_intelligence.get_career_application_success_prediction(
+        application_id
+    )
+
+    assert "Success Probability: 45%" in result
+    assert "Success Level: MODERATE" in result
+    assert "Strengthen SQL, Excel, Power BI, and statistics" in result
+
+
+def test_career_application_success_embedded_role():
+    application_id = add_test_application()
+
+    _set_application_success_test_state(
+        application_id,
+        role="Embedded Engineer",
+        career_goals=[
+            {"goal": "Firmware", "completed": True},
+            {"goal": "RTOS", "completed": True},
+        ],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+        status="Applied",
+    )
+
+    result = job_intelligence.get_career_application_success_prediction(
+        application_id
+    )
+
+    assert "Success Probability: 60%" in result
+    assert "Success Level: MODERATE" in result
+    assert "Profile Strength: STRONG" in result
+    assert "Embedded C/C++" in result
+    assert "RTOS" in result
+
+
+def test_career_application_success_ece_role():
+    application_id = add_test_application()
+
+    _set_application_success_test_state(
+        application_id,
+        role="ECE Engineer",
+        career_goals=[
+            {"goal": "Electronics", "completed": True},
+            {"goal": "Embedded", "completed": True},
+        ],
+        notes=["ECE project"],
+        interview_stage="Technical",
+        offer_joining_date="",
+        status="Shortlisted",
+    )
+
+    result = job_intelligence.get_career_application_success_prediction(
+        application_id
+    )
+
+    assert "Success Probability: 90%" in result
+    assert "Success Level: VERY STRONG" in result
+    assert "Strengthen PCB, circuit debugging, and embedded skills" in result
+
+
+def test_career_application_success_generic_role():
+    application_id = add_test_application()
+
+    _set_application_success_test_state(
+        application_id,
+        role="Project Coordinator",
+        career_goals=[
+            {"goal": "Goal 1", "completed": True},
+            {"goal": "Goal 2", "completed": False},
+        ],
+        notes=["Project evidence"],
+        interview_stage="",
+        offer_joining_date="",
+        status="Applied",
+    )
+
+    result = job_intelligence.get_career_application_success_prediction(
+        application_id
+    )
+
+    assert "Strengthen role-specific technical and professional skills" in result
+    assert "Improvement Priorities:" in result
+    assert "Next Action:" in result
+
+
+def test_career_application_success_no_major_risks():
+    application_id = add_test_application()
+
+    _set_application_success_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"goal": "Goal 1", "completed": True},
+            {"goal": "Goal 2", "completed": True},
+        ],
+        notes=["Strong project"],
+        interview_stage="Final",
+        offer_joining_date="15-09-2026",
+        status="Offer",
+    )
+
+    result = job_intelligence.get_career_application_success_prediction(
+        application_id
+    )
+
+    assert "Success Probability: 100%" in result
+    assert "Success Level: VERY STRONG" in result
+    assert "No major risk factors detected" in result
+

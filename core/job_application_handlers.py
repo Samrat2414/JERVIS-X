@@ -34,6 +34,7 @@ from core.job_application_intelligence import (
     get_career_resume_readiness,
     get_career_job_match_analysis,
     get_career_job_recommendations,
+    get_career_application_success_prediction,
 )
 
 
@@ -224,3 +225,12 @@ def handle_get_career_job_recommendations(command):
     ].strip()
 
     return get_career_job_recommendations(application_id)
+
+
+
+def handle_get_career_application_success_prediction(command):
+    application_id = command[
+        len("career application success "):
+    ].strip()
+
+    return get_career_application_success_prediction(application_id)
