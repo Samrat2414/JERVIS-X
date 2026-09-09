@@ -4838,3 +4838,169 @@ def get_career_job_match_analysis(application_id):
         "tailor the application to this role."
     )
 
+
+def get_career_job_recommendations(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    role_lower = str(role).lower()
+
+    career_goals = application.get("career_goals", [])
+    notes = application.get("notes", [])
+    interview_stage = application.get("interview_stage")
+    offer_joining_date = application.get("offer_joining_date")
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    base_score = 40
+
+    if total_goals:
+        base_score += min(int(career_progress * 0.25), 25)
+
+    if notes:
+        base_score += 10
+
+    if interview_stage:
+        base_score += 10
+
+    if offer_joining_date:
+        base_score += 5
+
+    base_score = min(base_score, 100)
+
+    if "python" in role_lower:
+        recommendations = [
+            ("Python Developer", min(base_score + 5, 100)),
+            ("Backend Developer", min(base_score, 100)),
+            ("Junior Software Engineer", max(base_score - 5, 0)),
+            ("Automation Developer", max(base_score - 8, 0)),
+        ]
+        skill_gaps = [
+            "Advanced Python",
+            "SQL and databases",
+            "REST APIs",
+            "Testing",
+        ]
+
+    elif "data" in role_lower or "analyst" in role_lower:
+        recommendations = [
+            ("Data Analyst", min(base_score + 5, 100)),
+            ("Junior Data Analyst", min(base_score, 100)),
+            ("Business Analyst", max(base_score - 5, 0)),
+            ("BI Analyst", max(base_score - 8, 0)),
+        ]
+        skill_gaps = [
+            "Advanced SQL",
+            "Excel",
+            "Power BI",
+            "Statistics",
+        ]
+
+    elif "embedded" in role_lower:
+        recommendations = [
+            ("Embedded Systems Engineer", min(base_score + 5, 100)),
+            ("Firmware Engineer", min(base_score, 100)),
+            ("IoT Developer", max(base_score - 5, 0)),
+            ("Junior Embedded Engineer", max(base_score - 8, 0)),
+        ]
+        skill_gaps = [
+            "Embedded C/C++",
+            "RTOS",
+            "UART/SPI/I2C",
+            "Firmware debugging",
+        ]
+
+    elif "electronics" in role_lower or "ece" in role_lower:
+        recommendations = [
+            ("Electronics Engineer", min(base_score + 5, 100)),
+            ("Embedded Engineer", min(base_score, 100)),
+            ("Test Engineer", max(base_score - 5, 0)),
+            ("Graduate Engineer Trainee", max(base_score - 8, 0)),
+        ]
+        skill_gaps = [
+            "PCB design",
+            "Circuit debugging",
+            "Embedded systems",
+            "Communication systems",
+        ]
+
+    else:
+        recommendations = [
+            (str(role), min(base_score + 5, 100)),
+            ("Junior " + str(role), min(base_score, 100)),
+            ("Graduate Trainee", max(base_score - 5, 0)),
+            ("Associate Role", max(base_score - 8, 0)),
+        ]
+        skill_gaps = [
+            "Role-specific technical skills",
+            "Professional tools",
+            "Project evidence",
+            "Industry knowledge",
+        ]
+
+    recommendations = sorted(
+        recommendations,
+        key=lambda item: item[1],
+        reverse=True,
+    )
+
+    recommendation_lines = "\n".join(
+        f"{index}. {job_role} - Match Score: {score}/100"
+        for index, (job_role, score) in enumerate(
+            recommendations,
+            start=1,
+        )
+    )
+
+    gap_lines = "\n".join(
+        f"{index}. {gap}"
+        for index, gap in enumerate(skill_gaps, start=1)
+    )
+
+    top_role, top_score = recommendations[0]
+
+    if top_score >= 85:
+        priority = "VERY HIGH"
+    elif top_score >= 70:
+        priority = "HIGH"
+    elif top_score >= 50:
+        priority = "MEDIUM"
+    else:
+        priority = "LOW"
+
+    return (
+        f"JERVIS Career Job Recommendation Engine - Application "
+        f"{application_id}\n"
+        "---------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Current Target Role: {role}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Best Recommended Role: {top_role}\n"
+        f"Best Match Score: {top_score}/100\n"
+        f"Application Priority: {priority}\n"
+        "Recommended Job Roles:\n"
+        f"{recommendation_lines}\n"
+        "Priority Skill Gaps:\n"
+        f"{gap_lines}\n"
+        "Application Strategy: Focus first on the highest-match roles, "
+        "tailor the resume for each role, and close the top skill gaps.\n"
+        "Next Action: Apply to the top recommended role and improve the "
+        "highest-priority missing skill."
+    )
+

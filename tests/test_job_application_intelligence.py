@@ -2538,3 +2538,196 @@ def test_career_job_match_developing_skills():
     assert "Skills Match: DEVELOPING" in result
     assert "Next Action:" in result
 
+
+def _set_job_recommendation_test_state(
+    application_id,
+    role=None,
+    career_goals=None,
+    notes=None,
+    interview_stage=None,
+    offer_joining_date=None,
+):
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            if role is not None:
+                application["role"] = role
+            if career_goals is not None:
+                application["career_goals"] = career_goals
+            if notes is not None:
+                application["notes"] = notes
+            if interview_stage is not None:
+                application["interview_stage"] = interview_stage
+            if offer_joining_date is not None:
+                application["offer_joining_date"] = offer_joining_date
+            break
+
+    job_intelligence._save(data)
+
+
+def test_career_job_recommendations_application_not_found():
+    result = job_intelligence.get_career_job_recommendations(999)
+
+    assert result == "Job application not found."
+
+
+def test_career_job_recommendations_python_role():
+    application_id = add_test_application()
+
+    _set_job_recommendation_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"goal": "Python", "completed": True},
+            {"goal": "API", "completed": False},
+        ],
+        notes=["Python project"],
+        interview_stage="Technical",
+        offer_joining_date="15-09-2026",
+    )
+
+    result = job_intelligence.get_career_job_recommendations(
+        application_id
+    )
+
+    assert "Best Recommended Role: Python Developer" in result
+    assert "Best Match Score: 82/100" in result
+    assert "Application Priority: HIGH" in result
+    assert "Backend Developer" in result
+    assert "Advanced Python" in result
+    assert "REST APIs" in result
+
+
+def test_career_job_recommendations_data_role():
+    application_id = add_test_application()
+
+    _set_job_recommendation_test_state(
+        application_id,
+        role="Data Analyst",
+        career_goals=[],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_job_recommendations(
+        application_id
+    )
+
+    assert "Best Recommended Role: Data Analyst" in result
+    assert "Best Match Score: 45/100" in result
+    assert "Application Priority: LOW" in result
+    assert "Business Analyst" in result
+    assert "Power BI" in result
+
+
+def test_career_job_recommendations_embedded_role():
+    application_id = add_test_application()
+
+    _set_job_recommendation_test_state(
+        application_id,
+        role="Embedded Engineer",
+        career_goals=[
+            {"goal": "Firmware", "completed": True},
+            {"goal": "RTOS", "completed": False},
+        ],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_job_recommendations(
+        application_id
+    )
+
+    assert "Best Recommended Role: Embedded Systems Engineer" in result
+    assert "Firmware Engineer" in result
+    assert "IoT Developer" in result
+    assert "Embedded C/C++" in result
+    assert "RTOS" in result
+
+
+def test_career_job_recommendations_ece_role():
+    application_id = add_test_application()
+
+    _set_job_recommendation_test_state(
+        application_id,
+        role="ECE Engineer",
+        career_goals=[
+            {"goal": "Electronics", "completed": True},
+            {"goal": "Embedded", "completed": True},
+        ],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_job_recommendations(
+        application_id
+    )
+
+    assert "Best Recommended Role: Electronics Engineer" in result
+    assert "Embedded Engineer" in result
+    assert "Graduate Engineer Trainee" in result
+    assert "PCB design" in result
+    assert "Circuit debugging" in result
+
+
+def test_career_job_recommendations_generic_role():
+    application_id = add_test_application()
+
+    _set_job_recommendation_test_state(
+        application_id,
+        role="Project Coordinator",
+        career_goals=[],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_job_recommendations(
+        application_id
+    )
+
+    assert "Best Recommended Role: Project Coordinator" in result
+    assert "Junior Project Coordinator" in result
+    assert "Graduate Trainee" in result
+    assert "Industry knowledge" in result
+
+
+def test_career_job_recommendations_very_high_priority():
+    application_id = add_test_application()
+
+    _set_job_recommendation_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"goal": "Goal 1", "completed": True},
+            {"goal": "Goal 2", "completed": True},
+        ],
+        notes=["Strong evidence"],
+        interview_stage="Final",
+        offer_joining_date="15-09-2026",
+    )
+
+    result = job_intelligence.get_career_job_recommendations(
+        application_id
+    )
+
+    assert "Best Match Score: 95/100" in result
+    assert "Application Priority: VERY HIGH" in result
+
+
+def test_career_job_recommendations_output_sections():
+    application_id = add_test_application()
+
+    result = job_intelligence.get_career_job_recommendations(
+        application_id
+    )
+
+    assert "Recommended Job Roles:" in result
+    assert "Priority Skill Gaps:" in result
+    assert "Application Strategy:" in result
+    assert "Next Action:" in result
+
