@@ -32,6 +32,7 @@ from core.job_application_intelligence import (
     get_career_portfolio_readiness,
     get_career_interview_readiness,
     get_career_resume_readiness,
+    get_career_job_match_analysis,
 )
 
 
@@ -205,4 +206,11 @@ def handle_get_career_resume_readiness(command):
         len("career resume readiness "):
     ].strip()
     return get_career_resume_readiness(application_id)
+
+
+def handle_get_career_job_match_analysis(command):
+    application_id = command[
+        len("career job match "):
+    ].strip()
+    return get_career_job_match_analysis(application_id)
 

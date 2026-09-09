@@ -4658,3 +4658,183 @@ def get_career_resume_readiness(application_id):
         "tailor the resume to this role."
     )
 
+
+def get_career_job_match_analysis(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    role_lower = str(role).lower()
+
+    career_goals = application.get("career_goals", [])
+    notes = application.get("notes", [])
+    interview_stage = application.get("interview_stage")
+    offer_joining_date = application.get("offer_joining_date")
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    score = 35
+
+    if total_goals:
+        score += min(int(career_progress * 0.30), 30)
+
+    if notes:
+        score += 10
+
+    if interview_stage:
+        score += 10
+
+    if offer_joining_date:
+        score += 5
+
+    score = min(score, 100)
+
+    if score < 50:
+        match_level = "LOW MATCH"
+        application_priority = "LOW"
+    elif score < 70:
+        match_level = "MODERATE MATCH"
+        application_priority = "MEDIUM"
+    elif score < 85:
+        match_level = "STRONG MATCH"
+        application_priority = "HIGH"
+    else:
+        match_level = "EXCELLENT MATCH"
+        application_priority = "VERY HIGH"
+
+    if "python" in role_lower:
+        matched_strengths = [
+            "Python development focus",
+            "Problem solving",
+            "Git and GitHub",
+            "Backend and API growth potential",
+        ]
+        skill_gaps = [
+            "Advanced Python",
+            "SQL and databases",
+            "REST APIs",
+            "Testing and debugging",
+        ]
+
+    elif "data" in role_lower or "analyst" in role_lower:
+        matched_strengths = [
+            "Python-based analysis potential",
+            "Data-driven problem solving",
+            "SQL learning alignment",
+            "Business insight development",
+        ]
+        skill_gaps = [
+            "Advanced SQL",
+            "Excel",
+            "Power BI",
+            "Statistics",
+            "Data visualization",
+        ]
+
+    elif "embedded" in role_lower:
+        matched_strengths = [
+            "Embedded systems alignment",
+            "Microcontroller knowledge",
+            "Hardware-software integration",
+            "Debugging mindset",
+        ]
+        skill_gaps = [
+            "Embedded C/C++",
+            "UART/SPI/I2C",
+            "RTOS",
+            "Firmware debugging",
+        ]
+
+    elif "electronics" in role_lower or "ece" in role_lower:
+        matched_strengths = [
+            "ECE academic alignment",
+            "Electronics fundamentals",
+            "Embedded systems exposure",
+            "Circuit and communication knowledge",
+        ]
+        skill_gaps = [
+            "Circuit debugging",
+            "PCB design",
+            "Embedded systems",
+            "Communication systems",
+        ]
+
+    else:
+        matched_strengths = [
+            "Role-specific learning potential",
+            "Problem solving",
+            "Communication",
+            "Team collaboration",
+        ]
+        skill_gaps = [
+            "Role-specific technical depth",
+            "Professional tools",
+            "Project evidence",
+            "Industry knowledge",
+        ]
+
+    career_goal_fit = (
+        "STRONG"
+        if career_progress >= 50
+        else "NEEDS DEVELOPMENT"
+    )
+
+    project_fit = (
+        "STRONG"
+        if notes
+        else "NEEDS MORE EVIDENCE"
+    )
+
+    if career_progress >= 70:
+        skills_match = "STRONG"
+    elif career_progress >= 40:
+        skills_match = "DEVELOPING"
+    else:
+        skills_match = "LOW"
+
+    strength_text = "\n".join(
+        f"{number}. {item}"
+        for number, item in enumerate(matched_strengths, start=1)
+    )
+
+    gap_text = "\n".join(
+        f"{number}. {item}"
+        for number, item in enumerate(skill_gaps, start=1)
+    )
+
+    return (
+        f"JERVIS Career Job Match Analyzer - Application "
+        f"{application_id}\n"
+        "------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Job Match Score: {score}/100\n"
+        f"Match Level: {match_level}\n"
+        f"Skills Match: {skills_match}\n"
+        f"Career Goal Fit: {career_goal_fit}\n"
+        f"Project/Experience Fit: {project_fit}\n"
+        f"Application Priority: {application_priority}\n"
+        "Matched Strengths:\n"
+        f"{strength_text}\n"
+        "Skill Gaps:\n"
+        f"{gap_text}\n"
+        "Next Action: Improve the highest-priority skill gap and "
+        "tailor the application to this role."
+    )
+
