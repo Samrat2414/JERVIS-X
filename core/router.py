@@ -25,6 +25,9 @@ def classify_command(command):
     if command.startswith("career interview readiness "):
         return "JOB_APPLICATION"
 
+    if command.startswith("career resume readiness "):
+        return "JOB_APPLICATION"
+
     if "career" in command:
         return "CAREER"
 
@@ -177,6 +180,9 @@ def get_routing_plan(command):
 
     elif normalized_command.startswith("career interview readiness "):
         handler = "job_application_handlers.handle_get_career_interview_readiness"
+
+    elif normalized_command.startswith("career resume readiness "):
+        handler = "job_application_handlers.handle_get_career_resume_readiness"
 
     elif normalized_command in (
         "application follow up reminders",

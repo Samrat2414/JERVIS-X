@@ -4424,3 +4424,237 @@ def get_career_interview_readiness(application_id):
         "answer the interview questions aloud."
     )
 
+
+def get_career_resume_readiness(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    role_lower = str(role).lower()
+
+    career_goals = application.get("career_goals", [])
+    notes = application.get("notes", [])
+    interview_stage = application.get("interview_stage")
+    offer_joining_date = application.get("offer_joining_date")
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    score = 40
+
+    if total_goals:
+        score += min(int(career_progress * 0.25), 25)
+
+    if notes:
+        score += 10
+
+    if interview_stage:
+        score += 10
+
+    if offer_joining_date:
+        score += 5
+
+    score = min(score, 100)
+
+    if score < 50:
+        readiness_level = "NEEDS WORK"
+    elif score < 70:
+        readiness_level = "DEVELOPING"
+    elif score < 85:
+        readiness_level = "STRONG"
+    else:
+        readiness_level = "ATS READY"
+
+    if "python" in role_lower:
+        required_skills = [
+            "Python",
+            "OOP",
+            "SQL",
+            "Git and GitHub",
+            "REST APIs",
+            "Testing",
+        ]
+        project_evidence = (
+            "Python projects with GitHub, database, API, and testing evidence."
+        )
+        ats_keywords = [
+            "Python",
+            "SQL",
+            "Git",
+            "REST API",
+            "Unit Testing",
+            "Problem Solving",
+        ]
+
+    elif "data" in role_lower or "analyst" in role_lower:
+        required_skills = [
+            "Python",
+            "SQL",
+            "Excel",
+            "Power BI",
+            "Statistics",
+            "Data Visualization",
+        ]
+        project_evidence = (
+            "Analytics projects with dashboards, SQL, Python, and business insights."
+        )
+        ats_keywords = [
+            "Python",
+            "SQL",
+            "Excel",
+            "Power BI",
+            "Data Analysis",
+            "Dashboard",
+        ]
+
+    elif "embedded" in role_lower:
+        required_skills = [
+            "Embedded C/C++",
+            "Microcontrollers",
+            "UART/SPI/I2C",
+            "GPIO",
+            "Debugging",
+            "RTOS",
+        ]
+        project_evidence = (
+            "Embedded projects with firmware, sensors, protocols, and debugging."
+        )
+        ats_keywords = [
+            "Embedded C",
+            "Microcontroller",
+            "UART",
+            "SPI",
+            "I2C",
+            "RTOS",
+        ]
+
+    elif "electronics" in role_lower or "ece" in role_lower:
+        required_skills = [
+            "Electronics Fundamentals",
+            "Embedded Systems",
+            "Circuit Debugging",
+            "Communication Systems",
+            "PCB Design",
+            "Sensors",
+        ]
+        project_evidence = (
+            "ECE projects with circuits, embedded systems, testing, and documentation."
+        )
+        ats_keywords = [
+            "Electronics",
+            "Embedded Systems",
+            "PCB",
+            "Circuit Debugging",
+            "Communication Systems",
+            "Microcontroller",
+        ]
+
+    else:
+        required_skills = [
+            "Role-Specific Technical Skills",
+            "Problem Solving",
+            "Communication",
+            "Team Collaboration",
+            "Professional Tools",
+        ]
+        project_evidence = (
+            "Role-relevant projects, case studies, measurable results, and documentation."
+        )
+        ats_keywords = [
+            "Technical Skills",
+            "Problem Solving",
+            "Communication",
+            "Projects",
+            "Teamwork",
+        ]
+
+    missing_sections = []
+
+    if not notes:
+        missing_sections.append(
+            "Add measurable project achievements and impact."
+        )
+
+    if career_progress < 100:
+        missing_sections.append(
+            "Strengthen skills and career-goal evidence."
+        )
+
+    if not interview_stage:
+        missing_sections.append(
+            "Add stronger role-targeted professional summary evidence."
+        )
+
+    if score < 85:
+        missing_sections.append(
+            "Improve ATS keywords and project descriptions."
+        )
+
+    if not missing_sections:
+        missing_sections.append(
+            "Maintain resume quality and tailor it for each job."
+        )
+
+    skill_text = "\n".join(
+        f"{number}. {item}"
+        for number, item in enumerate(required_skills, start=1)
+    )
+
+    keyword_text = "\n".join(
+        f"{number}. {item}"
+        for number, item in enumerate(ats_keywords, start=1)
+    )
+
+    missing_text = "\n".join(
+        f"{number}. {item}"
+        for number, item in enumerate(missing_sections, start=1)
+    )
+
+    skills_match = (
+        "STRONG"
+        if career_progress >= 70
+        else "DEVELOPING"
+    )
+
+    career_alignment = (
+        "STRONG"
+        if career_progress >= 50
+        else "NEEDS IMPROVEMENT"
+    )
+
+    return (
+        f"JERVIS Career Resume Readiness Analyzer - Application "
+        f"{application_id}\n"
+        "-------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Resume Readiness Score: {score}/100\n"
+        f"Readiness Level: {readiness_level}\n"
+        f"Skills Match: {skills_match}\n"
+        f"Career Goal Alignment: {career_alignment}\n"
+        f"Project Evidence: {project_evidence}\n"
+        "Required Skills:\n"
+        f"{skill_text}\n"
+        "ATS Keywords:\n"
+        f"{keyword_text}\n"
+        "Priority Resume Fixes:\n"
+        f"{missing_text}\n"
+        "Next Action: Update the highest-priority resume gap and "
+        "tailor the resume to this role."
+    )
+

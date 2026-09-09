@@ -2122,3 +2122,210 @@ def test_career_interview_readiness_weak_areas():
     assert "Practice mock interviews and role-specific questions." in result
     assert "Next Action:" in result
 
+
+def _set_resume_readiness_test_state(
+    application_id,
+    role=None,
+    career_goals=None,
+    notes=None,
+    interview_stage=None,
+    offer_joining_date=None,
+):
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            if role is not None:
+                application["role"] = role
+            if career_goals is not None:
+                application["career_goals"] = career_goals
+            if notes is not None:
+                application["notes"] = notes
+            if interview_stage is not None:
+                application["interview_stage"] = interview_stage
+            if offer_joining_date is not None:
+                application["offer_joining_date"] = offer_joining_date
+            break
+
+    job_intelligence._save(data)
+
+
+def test_career_resume_readiness_application_not_found():
+    result = job_intelligence.get_career_resume_readiness(999)
+
+    assert result == "Job application not found."
+
+
+def test_career_resume_readiness_python_strong():
+    application_id = add_test_application()
+
+    _set_resume_readiness_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"goal": "Python", "completed": True},
+            {"goal": "API", "completed": False},
+        ],
+        notes=["Built a Python portfolio project"],
+        interview_stage="Technical",
+        offer_joining_date="15-09-2026",
+    )
+
+    result = job_intelligence.get_career_resume_readiness(
+        application_id
+    )
+
+    assert "Resume Readiness Score: 77/100" in result
+    assert "Readiness Level: STRONG" in result
+    assert "Skills Match: DEVELOPING" in result
+    assert "Career Goal Alignment: STRONG" in result
+    assert "REST APIs" in result
+    assert "Unit Testing" in result
+
+
+def test_career_resume_readiness_data_role():
+    application_id = add_test_application()
+
+    _set_resume_readiness_test_state(
+        application_id,
+        role="Data Analyst",
+        career_goals=[],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_resume_readiness(
+        application_id
+    )
+
+    assert "Resume Readiness Score: 40/100" in result
+    assert "Readiness Level: NEEDS WORK" in result
+    assert "Python" in result
+    assert "Power BI" in result
+    assert "Data Visualization" in result
+    assert "Dashboard" in result
+
+
+def test_career_resume_readiness_embedded_role():
+    application_id = add_test_application()
+
+    _set_resume_readiness_test_state(
+        application_id,
+        role="Embedded Engineer",
+        career_goals=[
+            {"goal": "Firmware", "completed": True},
+            {"goal": "RTOS", "completed": False},
+        ],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_resume_readiness(
+        application_id
+    )
+
+    assert "Resume Readiness Score: 52/100" in result
+    assert "Readiness Level: DEVELOPING" in result
+    assert "Embedded C/C++" in result
+    assert "UART/SPI/I2C" in result
+    assert "RTOS" in result
+
+
+def test_career_resume_readiness_ece_role():
+    application_id = add_test_application()
+
+    _set_resume_readiness_test_state(
+        application_id,
+        role="ECE Engineer",
+        career_goals=[
+            {"goal": "Electronics", "completed": True},
+            {"goal": "Embedded", "completed": True},
+        ],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_resume_readiness(
+        application_id
+    )
+
+    assert "Resume Readiness Score: 65/100" in result
+    assert "Electronics Fundamentals" in result
+    assert "PCB Design" in result
+    assert "Circuit Debugging" in result
+
+
+def test_career_resume_readiness_generic_role():
+    application_id = add_test_application()
+
+    _set_resume_readiness_test_state(
+        application_id,
+        role="Project Coordinator",
+        career_goals=[],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_resume_readiness(
+        application_id
+    )
+
+    assert "Role-Specific Technical Skills" in result
+    assert "Team Collaboration" in result
+    assert "Technical Skills" in result
+    assert "Career Goal Alignment: NEEDS IMPROVEMENT" in result
+
+
+def test_career_resume_readiness_ats_ready():
+    application_id = add_test_application()
+
+    _set_resume_readiness_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"goal": "Goal 1", "completed": True},
+            {"goal": "Goal 2", "completed": True},
+        ],
+        notes=["Strong measurable project achievement"],
+        interview_stage="Final",
+        offer_joining_date="15-09-2026",
+    )
+
+    result = job_intelligence.get_career_resume_readiness(
+        application_id
+    )
+
+    assert "Resume Readiness Score: 90/100" in result
+    assert "Readiness Level: ATS READY" in result
+    assert "Skills Match: STRONG" in result
+    assert "Maintain resume quality" in result
+
+
+def test_career_resume_readiness_priority_fixes():
+    application_id = add_test_application()
+
+    _set_resume_readiness_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"goal": "Python", "completed": False},
+        ],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+    )
+
+    result = job_intelligence.get_career_resume_readiness(
+        application_id
+    )
+
+    assert "Add measurable project achievements and impact." in result
+    assert "Strengthen skills and career-goal evidence." in result
+    assert "Add stronger role-targeted professional summary evidence." in result
+    assert "Improve ATS keywords and project descriptions." in result
+    assert "Next Action:" in result
+
