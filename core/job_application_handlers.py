@@ -1,4 +1,4 @@
-from core.job_application_intelligence import (
+﻿from core.job_application_intelligence import (
     get_job_application_report,
     get_job_application_commands,
     search_job_applications,
@@ -35,6 +35,7 @@ from core.job_application_intelligence import (
     get_career_job_match_analysis,
     get_career_job_recommendations,
     get_career_application_success_prediction,
+    get_career_offer_conversion_prediction,
 )
 
 
@@ -234,3 +235,11 @@ def handle_get_career_application_success_prediction(command):
     ].strip()
 
     return get_career_application_success_prediction(application_id)
+
+
+def handle_get_career_offer_conversion_prediction(command):
+    application_id = command[
+        len("career offer prediction "):
+    ].strip()
+
+    return get_career_offer_conversion_prediction(application_id)

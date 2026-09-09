@@ -1,4 +1,4 @@
-from core import resume_handlers, job_application_handlers
+﻿from core import resume_handlers, job_application_handlers
 
 
 HANDLERS = {
@@ -38,6 +38,7 @@ HANDLERS = {
     "job_application_handlers.handle_get_career_job_match_analysis": job_application_handlers.handle_get_career_job_match_analysis,
     "job_application_handlers.handle_get_career_job_recommendations": job_application_handlers.handle_get_career_job_recommendations,
     "job_application_handlers.handle_get_career_application_success_prediction": job_application_handlers.handle_get_career_application_success_prediction,
+    "job_application_handlers.handle_get_career_offer_conversion_prediction": job_application_handlers.handle_get_career_offer_conversion_prediction,
 
     "resume_handlers.handle_get_resume_intelligence_report": resume_handlers.handle_get_resume_intelligence_report,
     "resume_handlers.handle_get_resume_recommendations": resume_handlers.handle_get_resume_recommendations,

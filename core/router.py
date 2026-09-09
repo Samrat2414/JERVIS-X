@@ -1,4 +1,4 @@
-def classify_command(command):
+﻿def classify_command(command):
     command = command.strip().lower()
 
     if "interview" in command:
@@ -35,6 +35,9 @@ def classify_command(command):
         return "JOB_APPLICATION"
 
     if command.startswith("career application success "):
+        return "JOB_APPLICATION"
+
+    if command.startswith("career offer prediction "):
         return "JOB_APPLICATION"
 
     if "career" in command:
@@ -202,6 +205,9 @@ def get_routing_plan(command):
     elif normalized_command.startswith("career application success "):
         handler = "job_application_handlers.handle_get_career_application_success_prediction"
 
+    elif normalized_command.startswith("career offer prediction "):
+        handler = "job_application_handlers.handle_get_career_offer_conversion_prediction"
+
     elif normalized_command in (
         "application follow up reminders",
         "application follow up reminder",
@@ -318,3 +324,4 @@ def route_command(command, handler=None, handlers=None):
         return response
 
     return "Sorry, I don't understand that command yet."
+

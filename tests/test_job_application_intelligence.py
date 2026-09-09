@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+﻿from datetime import datetime, timedelta
 
 from pathlib import Path
 
@@ -2947,4 +2947,212 @@ def test_career_application_success_no_major_risks():
     assert "Success Probability: 100%" in result
     assert "Success Level: VERY STRONG" in result
     assert "No major risk factors detected" in result
+
+
+def _set_offer_conversion_test_state(
+    application_id,
+    role=None,
+    career_goals=None,
+    notes=None,
+    interview_stage=None,
+    offer_joining_date=None,
+    status=None,
+):
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            if role is not None:
+                application["role"] = role
+            if career_goals is not None:
+                application["career_goals"] = career_goals
+            if notes is not None:
+                application["notes"] = notes
+            if interview_stage is not None:
+                application["interview_stage"] = interview_stage
+            if offer_joining_date is not None:
+                application["offer_joining_date"] = offer_joining_date
+            if status is not None:
+                application["status"] = status
+            break
+
+    job_intelligence._save(data)
+
+
+def test_career_offer_prediction_not_found():
+    result = job_intelligence.get_career_offer_conversion_prediction(999999)
+    assert result == "Job application not found."
+
+
+def test_career_offer_prediction_python_high():
+    application_id = add_test_application()
+
+    _set_offer_conversion_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"completed": True},
+            {"completed": False},
+        ],
+        notes=["Built Python API project"],
+        interview_stage="Technical Interview",
+        status="interview",
+    )
+
+    result = job_intelligence.get_career_offer_conversion_prediction(
+        application_id
+    )
+
+    assert "Offer Probability: 77%" in result
+    assert "Conversion Level: HIGH" in result
+    assert "Interview Strength: STRONG" in result
+    assert "Application Momentum: POSITIVE" in result
+    assert "Strengthen Python, SQL, APIs, testing" in result
+
+
+def test_career_offer_prediction_low():
+    application_id = add_test_application()
+
+    _set_offer_conversion_test_state(
+        application_id,
+        role="General Engineer",
+        career_goals=[],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+        status="applied",
+    )
+
+    result = job_intelligence.get_career_offer_conversion_prediction(
+        application_id
+    )
+
+    assert "Offer Probability: 25%" in result
+    assert "Conversion Level: LOW" in result
+    assert "Interview Strength: NEEDS PREPARATION" in result
+    assert "Application Momentum: EARLY STAGE" in result
+
+
+def test_career_offer_prediction_shortlisted():
+    application_id = add_test_application()
+
+    _set_offer_conversion_test_state(
+        application_id,
+        role="Data Analyst",
+        career_goals=[
+            {"completed": True},
+            {"completed": False},
+        ],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+        status="shortlisted",
+    )
+
+    result = job_intelligence.get_career_offer_conversion_prediction(
+        application_id
+    )
+
+    assert "Offer Probability: 42%" in result
+    assert "Conversion Level: LOW" in result
+    assert "Application Momentum: BUILDING" in result
+    assert "Strengthen SQL, Excel, Power BI" in result
+
+
+def test_career_offer_prediction_embedded():
+    application_id = add_test_application()
+
+    _set_offer_conversion_test_state(
+        application_id,
+        role="Embedded Systems Engineer",
+        career_goals=[
+            {"completed": True},
+            {"completed": True},
+        ],
+        notes=[],
+        interview_stage="",
+        offer_joining_date="",
+        status="applied",
+    )
+
+    result = job_intelligence.get_career_offer_conversion_prediction(
+        application_id
+    )
+
+    assert "Offer Probability: 50%" in result
+    assert "Conversion Level: MODERATE" in result
+    assert "Strengthen Embedded C/C++, RTOS" in result
+
+
+def test_career_offer_prediction_ece():
+    application_id = add_test_application()
+
+    _set_offer_conversion_test_state(
+        application_id,
+        role="ECE Engineer",
+        career_goals=[
+            {"completed": True},
+            {"completed": True},
+        ],
+        notes=["PCB project"],
+        interview_stage="Technical",
+        offer_joining_date="2026-12-10",
+        status="offer",
+    )
+
+    result = job_intelligence.get_career_offer_conversion_prediction(
+        application_id
+    )
+
+    assert "Offer Probability: 100%" in result
+    assert "Conversion Level: VERY HIGH" in result
+    assert "Application Momentum: POSITIVE" in result
+    assert "Strengthen electronics fundamentals, PCB" in result
+
+
+def test_career_offer_prediction_generic_role():
+    application_id = add_test_application()
+
+    _set_offer_conversion_test_state(
+        application_id,
+        role="Operations Associate",
+        career_goals=[
+            {"completed": True},
+            {"completed": False},
+        ],
+        notes=["Achievement evidence"],
+        interview_stage="HR Round",
+        offer_joining_date="",
+        status="interview",
+    )
+
+    result = job_intelligence.get_career_offer_conversion_prediction(
+        application_id
+    )
+
+    assert "Strengthen role-specific technical and interview skills" in result
+
+
+def test_career_offer_prediction_no_major_risks():
+    application_id = add_test_application()
+
+    _set_offer_conversion_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"completed": True},
+            {"completed": True},
+        ],
+        notes=["Strong project evidence"],
+        interview_stage="Final Interview",
+        offer_joining_date="2026-12-15",
+        status="offer",
+    )
+
+    result = job_intelligence.get_career_offer_conversion_prediction(
+        application_id
+    )
+
+    assert "No major conversion risks detected" in result
+    assert "Offer Probability: 100%" in result
 

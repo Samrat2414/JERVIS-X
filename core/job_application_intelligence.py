@@ -5159,3 +5159,164 @@ def get_career_application_success_prediction(application_id):
         "moving this application to the next hiring stage."
     )
 
+
+def get_career_offer_conversion_prediction(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    role_lower = str(role).lower()
+
+    career_goals = application.get("career_goals", [])
+    notes = application.get("notes", [])
+    interview_stage = application.get("interview_stage")
+    offer_joining_date = application.get("offer_joining_date")
+    status = str(application.get("status", "")).lower()
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    score = 25
+
+    if total_goals:
+        score += min(int(career_progress * 0.25), 25)
+
+    if notes:
+        score += 10
+
+    if interview_stage:
+        score += 20
+
+    if status == "shortlisted":
+        score += 5
+    elif status == "interview":
+        score += 10
+    elif status == "offer":
+        score += 20
+
+    if offer_joining_date:
+        score += 10
+
+    score = min(score, 100)
+
+    if score < 45:
+        conversion_level = "LOW"
+    elif score < 65:
+        conversion_level = "MODERATE"
+    elif score < 85:
+        conversion_level = "HIGH"
+    else:
+        conversion_level = "VERY HIGH"
+
+    interview_strength = (
+        "STRONG"
+        if interview_stage
+        else "NEEDS PREPARATION"
+    )
+
+    if status in {"interview", "offer"}:
+        application_momentum = "POSITIVE"
+    elif status == "shortlisted":
+        application_momentum = "BUILDING"
+    else:
+        application_momentum = "EARLY STAGE"
+
+    risks = []
+    priorities = []
+
+    if career_progress < 50:
+        risks.append("Low career-goal completion")
+        priorities.append(
+            "Complete more role-relevant career goals"
+        )
+
+    if not notes:
+        risks.append("Limited project or achievement evidence")
+        priorities.append(
+            "Add stronger project, achievement, and impact evidence"
+        )
+
+    if not interview_stage:
+        risks.append("Interview stage not reached")
+        priorities.append(
+            "Improve resume targeting and interview preparation"
+        )
+
+    if status not in {"shortlisted", "interview", "offer"}:
+        risks.append("Application has limited hiring momentum")
+        priorities.append(
+            "Follow up professionally and strengthen recruiter engagement"
+        )
+
+    if not offer_joining_date:
+        risks.append("No confirmed offer or joining date")
+        priorities.append(
+            "Focus on converting interview performance into an offer"
+        )
+
+    if "python" in role_lower:
+        priorities.append(
+            "Strengthen Python, SQL, APIs, testing, and project explanation"
+        )
+    elif "data" in role_lower or "analyst" in role_lower:
+        priorities.append(
+            "Strengthen SQL, Excel, Power BI, statistics, and case studies"
+        )
+    elif "embedded" in role_lower:
+        priorities.append(
+            "Strengthen Embedded C/C++, RTOS, debugging, and protocols"
+        )
+    elif "electronics" in role_lower or "ece" in role_lower:
+        priorities.append(
+            "Strengthen electronics fundamentals, PCB, and debugging skills"
+        )
+    else:
+        priorities.append(
+            "Strengthen role-specific technical and interview skills"
+        )
+
+    if not risks:
+        risks.append("No major conversion risks detected")
+
+    risk_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(risks, start=1)
+    )
+
+    priority_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(priorities, start=1)
+    )
+
+    return (
+        f"JERVIS Career Offer Conversion Predictor - Application "
+        f"{application_id}\n"
+        "--------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Offer Probability: {score}%\n"
+        f"Conversion Level: {conversion_level}\n"
+        f"Interview Strength: {interview_strength}\n"
+        f"Application Momentum: {application_momentum}\n"
+        "Main Conversion Risks:\n"
+        f"{risk_text}\n"
+        "Offer Improvement Priorities:\n"
+        f"{priority_text}\n"
+        "Next Action: Focus on the highest-impact conversion weakness "
+        "and prepare strongly for the next hiring stage."
+    )
