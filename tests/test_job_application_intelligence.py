@@ -3156,3 +3156,180 @@ def test_career_offer_prediction_no_major_risks():
     assert "No major conversion risks detected" in result
     assert "Offer Probability: 100%" in result
 
+
+
+def _set_rejection_risk_test_state(
+    application_id,
+    role=None,
+    career_goals=None,
+    notes=None,
+    interview_stage=None,
+    offer_joining_date=None,
+    status=None,
+):
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            if role is not None:
+                application["role"] = role
+            if career_goals is not None:
+                application["career_goals"] = career_goals
+            if notes is not None:
+                application["notes"] = notes
+            if interview_stage is not None:
+                application["interview_stage"] = interview_stage
+            if offer_joining_date is not None:
+                application["offer_joining_date"] = offer_joining_date
+            if status is not None:
+                application["status"] = status
+            break
+
+    job_intelligence._save(data)
+
+
+def test_career_rejection_risk_not_found():
+    result = job_intelligence.get_career_rejection_risk_analysis(999)
+
+    assert result == "Job application not found."
+
+
+def test_career_rejection_risk_python_low():
+    application_id = add_test_application()
+
+    _set_rejection_risk_test_state(
+        application_id,
+        career_goals=[
+            {"completed": True},
+            {"completed": True},
+        ],
+        notes=["Strong Python project"],
+        interview_stage="Technical Interview",
+        status="interview",
+    )
+
+    result = job_intelligence.get_career_rejection_risk_analysis(
+        application_id
+    )
+
+    assert "Rejection Risk Score:" in result
+    assert "Risk Level: VERY LOW" in result
+    assert "Resume Risk: LOW" in result
+    assert "Interview Risk: LOW" in result
+    assert "Strengthen Python, SQL, APIs, testing" in result
+
+
+def test_career_rejection_risk_high():
+    application_id = add_test_application()
+
+    _set_rejection_risk_test_state(
+        application_id,
+        career_goals=[],
+        notes=[],
+        status="applied",
+    )
+
+    result = job_intelligence.get_career_rejection_risk_analysis(
+        application_id
+    )
+
+    assert "Rejection Risk Score: 70/100" in result
+    assert "Risk Level: HIGH" in result
+    assert "Resume Risk: HIGH" in result
+    assert "Interview Risk: HIGH" in result
+    assert "Career Goal Risk: HIGH" in result
+
+
+def test_career_rejection_risk_shortlisted():
+    application_id = add_test_application()
+
+    _set_rejection_risk_test_state(
+        application_id,
+        career_goals=[
+            {"completed": True},
+            {"completed": False},
+        ],
+        notes=["Project evidence"],
+        status="shortlisted",
+    )
+
+    result = job_intelligence.get_career_rejection_risk_analysis(
+        application_id
+    )
+
+    assert "Risk Level:" in result
+    assert "Career Goal Risk: MODERATE" in result
+    assert "Weak application momentum" not in result
+
+
+def test_career_rejection_risk_embedded():
+    application_id = add_test_application()
+
+    _set_rejection_risk_test_state(
+        application_id,
+        role="Embedded Systems Engineer",
+    )
+
+    result = job_intelligence.get_career_rejection_risk_analysis(
+        application_id
+    )
+
+    assert "Strengthen Embedded C/C++, RTOS, debugging, and protocols" in result
+
+
+def test_career_rejection_risk_ece():
+    application_id = add_test_application()
+
+    _set_rejection_risk_test_state(
+        application_id,
+        role="Electronics Engineer",
+    )
+
+    result = job_intelligence.get_career_rejection_risk_analysis(
+        application_id
+    )
+
+    assert "Strengthen electronics, PCB, embedded, and debugging skills" in result
+
+
+def test_career_rejection_risk_generic_role():
+    application_id = add_test_application()
+
+    _set_rejection_risk_test_state(
+        application_id,
+        role="Operations Associate",
+    )
+
+    result = job_intelligence.get_career_rejection_risk_analysis(
+        application_id
+    )
+
+    assert "Strengthen role-specific technical and professional skills" in result
+
+
+def test_career_rejection_risk_no_major_risks():
+    application_id = add_test_application()
+
+    _set_rejection_risk_test_state(
+        application_id,
+        career_goals=[
+            {"completed": True},
+            {"completed": True},
+        ],
+        notes=["Strong project evidence"],
+        interview_stage="Final Interview",
+        offer_joining_date="2099-12-31",
+        status="offer",
+    )
+
+    result = job_intelligence.get_career_rejection_risk_analysis(
+        application_id
+    )
+
+    assert "Risk Level: VERY LOW" in result
+    assert "No major rejection risks detected" in result
+    assert "Resume Risk: LOW" in result
+    assert "Interview Risk: LOW" in result
+    assert "Career Goal Risk: LOW" in result
+
+

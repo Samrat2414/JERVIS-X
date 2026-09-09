@@ -1,4 +1,4 @@
-import csv
+﻿import csv
 import json
 import os
 import sys
@@ -5320,3 +5320,188 @@ def get_career_offer_conversion_prediction(application_id):
         "Next Action: Focus on the highest-impact conversion weakness "
         "and prepare strongly for the next hiring stage."
     )
+
+def get_career_rejection_risk_analysis(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    role_lower = str(role).lower()
+
+    career_goals = application.get("career_goals", [])
+    notes = application.get("notes", [])
+    interview_stage = application.get("interview_stage")
+    offer_joining_date = application.get("offer_joining_date")
+    status = str(application.get("status", "")).lower()
+
+    if str(interview_stage).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        interview_stage = None
+
+    if str(offer_joining_date).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        offer_joining_date = None
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    risk_score = 70
+
+    if total_goals:
+        risk_score -= min(int(career_progress * 0.25), 25)
+
+    if notes:
+        risk_score -= 10
+
+    if interview_stage:
+        risk_score -= 15
+
+    if status == "shortlisted":
+        risk_score -= 5
+    elif status == "interview":
+        risk_score -= 10
+    elif status == "offer":
+        risk_score -= 20
+
+    if offer_joining_date:
+        risk_score -= 10
+
+    risk_score = max(0, min(risk_score, 100))
+
+    if risk_score < 20:
+        risk_level = "VERY LOW"
+    elif risk_score < 40:
+        risk_level = "LOW"
+    elif risk_score < 60:
+        risk_level = "MODERATE"
+    elif risk_score < 80:
+        risk_level = "HIGH"
+    else:
+        risk_level = "VERY HIGH"
+
+    if notes:
+        resume_risk = "LOW"
+    else:
+        resume_risk = "HIGH"
+
+    if interview_stage:
+        interview_risk = "LOW"
+    else:
+        interview_risk = "HIGH"
+
+    if career_progress >= 70:
+        career_goal_risk = "LOW"
+    elif career_progress >= 40:
+        career_goal_risk = "MODERATE"
+    else:
+        career_goal_risk = "HIGH"
+
+    risk_factors = []
+    priorities = []
+
+    if career_progress < 50:
+        risk_factors.append("Low career-goal completion")
+        priorities.append(
+            "Complete more role-relevant career goals"
+        )
+
+    if not notes:
+        risk_factors.append(
+            "Limited resume, project, or achievement evidence"
+        )
+        priorities.append(
+            "Add measurable projects, achievements, and impact evidence"
+        )
+
+    if not interview_stage:
+        risk_factors.append("Interview stage not reached")
+        priorities.append(
+            "Improve resume targeting and interview preparation"
+        )
+
+    if status not in {"shortlisted", "interview", "offer"}:
+        risk_factors.append("Weak application momentum")
+        priorities.append(
+            "Follow up professionally and improve application targeting"
+        )
+
+    if not offer_joining_date:
+        risk_factors.append("No confirmed offer or joining date")
+        priorities.append(
+            "Improve interview conversion and recruiter communication"
+        )
+
+    if "python" in role_lower:
+        priorities.append(
+            "Strengthen Python, SQL, APIs, testing, and project evidence"
+        )
+    elif "data" in role_lower or "analyst" in role_lower:
+        priorities.append(
+            "Strengthen SQL, Excel, Power BI, statistics, and case studies"
+        )
+    elif "embedded" in role_lower:
+        priorities.append(
+            "Strengthen Embedded C/C++, RTOS, debugging, and protocols"
+        )
+    elif "electronics" in role_lower or "ece" in role_lower:
+        priorities.append(
+            "Strengthen electronics, PCB, embedded, and debugging skills"
+        )
+    else:
+        priorities.append(
+            "Strengthen role-specific technical and professional skills"
+        )
+
+    if not risk_factors:
+        risk_factors.append("No major rejection risks detected")
+
+    risk_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(risk_factors, start=1)
+    )
+
+    priority_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(priorities, start=1)
+    )
+
+    return (
+        f"JERVIS Career Rejection Risk Analyzer - Application "
+        f"{application_id}\n"
+        "-----------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Rejection Risk Score: {risk_score}/100\n"
+        f"Risk Level: {risk_level}\n"
+        f"Resume Risk: {resume_risk}\n"
+        f"Interview Risk: {interview_risk}\n"
+        f"Career Goal Risk: {career_goal_risk}\n"
+        "Main Risk Factors:\n"
+        f"{risk_text}\n"
+        "Risk Reduction Priorities:\n"
+        f"{priority_text}\n"
+        "Next Action: Reduce the highest-impact rejection risk before "
+        "the next hiring stage."
+    )
+
