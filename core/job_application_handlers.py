@@ -40,6 +40,7 @@
     get_career_offer_decision_analysis,
     get_career_offer_negotiation_advice,
     get_career_offer_comparison_analysis,
+    get_career_offer_acceptance_analysis,
 )
 
 
@@ -290,3 +291,12 @@ def handle_get_career_offer_comparison_analysis(command):
         application_id_1,
         application_id_2,
     )
+
+def handle_get_career_offer_acceptance_analysis(command):
+    application_id = command[len("career accept offer "):].strip()
+
+    if not application_id:
+        return "Usage: career accept offer <application_id>"
+
+    return get_career_offer_acceptance_analysis(application_id)
+

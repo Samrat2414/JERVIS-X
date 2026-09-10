@@ -3922,3 +3922,99 @@ def test_career_offer_comparison_output_sections():
     assert "Growth Potential:" in result
     assert "Recommended Offer:" in result
 
+
+def test_career_offer_acceptance_not_found():
+    result = job_intelligence.get_career_offer_acceptance_analysis(999)
+    assert result == "Job application not found."
+
+
+def test_career_offer_acceptance_accept():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["offer_salary"] = "500000"
+            application["offer_location"] = "Kolkata"
+            application["offer_joining_date"] = "30-09-2026"
+            application["career_goals"] = [
+                {"completed": True},
+                {"completed": True},
+            ]
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_offer_acceptance_analysis(
+        application_id
+    )
+
+    assert "Final Recommendation: ACCEPT" in result
+    assert "Acceptance Readiness Score:" in result
+    assert "Salary Available: YES" in result
+    assert "Location Available: YES" in result
+    assert "Joining Date Available: YES" in result
+
+
+def test_career_offer_acceptance_review():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Interview"
+            application["offer_location"] = "Kolkata"
+            application["offer_joining_date"] = "30-09-2026"
+            application["career_goals"] = [
+                {"completed": True},
+                {"completed": False},
+            ]
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_offer_acceptance_analysis(
+        application_id
+    )
+
+    assert "Final Recommendation: REVIEW" in result
+
+
+def test_career_offer_acceptance_not_ready():
+    application_id = add_test_application()
+
+    result = job_intelligence.get_career_offer_acceptance_analysis(
+        application_id
+    )
+
+    assert "Final Recommendation: NOT READY" in result
+
+
+def test_career_offer_acceptance_checklist():
+    application_id = add_test_application()
+
+    result = job_intelligence.get_career_offer_acceptance_analysis(
+        application_id
+    )
+
+    assert "Confirm salary, compensation structure, and benefits" in result
+    assert "Confirm job location, work mode, and relocation requirements" in result
+    assert "Confirm the official joining date" in result
+    assert "Wait for or verify the official written offer" in result
+
+
+def test_career_offer_acceptance_output_sections():
+    application_id = add_test_application()
+
+    result = job_intelligence.get_career_offer_acceptance_analysis(
+        application_id
+    )
+
+    assert "JERVIS Career Offer Acceptance Assistant" in result
+    assert "Company:" in result
+    assert "Role:" in result
+    assert "Career Goal Progress:" in result
+    assert "Acceptance Readiness Score:" in result
+    assert "Before Accepting Checklist:" in result
+    assert "Next Action:" in result

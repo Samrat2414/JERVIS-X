@@ -6104,3 +6104,116 @@ def get_career_offer_comparison_analysis(application_id_1, application_id_2):
         "Next Action: Compare compensation, responsibilities, location, "
         "work mode, and long-term growth before accepting the final offer."
     )
+
+def get_career_offer_acceptance_analysis(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    status = str(application.get("status", "")).lower()
+    career_goals = application.get("career_goals", [])
+    notes = application.get("notes", [])
+    offer_joining_date = application.get("offer_joining_date")
+    offer_salary = application.get("offer_salary")
+    offer_location = application.get("offer_location")
+
+    if str(offer_joining_date).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        offer_joining_date = None
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    score = 30
+
+    if status == "offer":
+        score += 25
+    elif status == "interview":
+        score += 15
+    elif status == "shortlisted":
+        score += 10
+
+    if offer_salary:
+        score += 10
+
+    if offer_location:
+        score += 10
+
+    if offer_joining_date:
+        score += 10
+
+    if total_goals:
+        score += min(int(career_progress * 0.15), 15)
+
+    score = min(score, 100)
+
+    if score >= 80 and status == "offer":
+        recommendation = "ACCEPT"
+    elif score >= 55:
+        recommendation = "REVIEW"
+    else:
+        recommendation = "NOT READY"
+
+    checklist = []
+
+    if not offer_salary:
+        checklist.append("Confirm salary, compensation structure, and benefits")
+
+    if not offer_location:
+        checklist.append("Confirm job location, work mode, and relocation requirements")
+
+    if not offer_joining_date:
+        checklist.append("Confirm the official joining date")
+
+    if status != "offer":
+        checklist.append("Wait for or verify the official written offer")
+
+    if career_progress < 50:
+        checklist.append("Review whether the role supports your long-term career goals")
+
+    if notes:
+        checklist.append("Review all recruiter or HR notes before accepting")
+
+    if not checklist:
+        checklist.append("Verify the written offer and complete acceptance formalities")
+
+    checklist_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(checklist, start=1)
+    )
+
+    return (
+        "JERVIS Career Offer Acceptance Assistant\n"
+        "----------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Application Status: {application.get('status', 'Unknown')}\n"
+        f"Career Goal Progress: {completed_goals}/{total_goals} "
+        f"({career_progress}%)\n"
+        f"Acceptance Readiness Score: {score}/100\n"
+        f"Final Recommendation: {recommendation}\n"
+        f"Salary Available: {'YES' if offer_salary else 'NO'}\n"
+        f"Location Available: {'YES' if offer_location else 'NO'}\n"
+        f"Joining Date Available: {'YES' if offer_joining_date else 'NO'}\n"
+        "Before Accepting Checklist:\n"
+        f"{checklist_text}\n"
+        "Next Action: Review the complete written offer, confirm all important "
+        "terms, and accept only when the role, compensation, location, and "
+        "joining conditions are clear."
+    )
