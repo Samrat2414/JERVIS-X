@@ -5698,3 +5698,206 @@ def get_career_offer_decision_analysis(application_id):
         "Next Action: Review the offer against career growth, compensation, "
         "role quality, and joining conditions before making the final decision."
     )
+
+def get_career_offer_negotiation_advice(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    role_lower = str(role).lower()
+
+    career_goals = application.get("career_goals", [])
+    notes = application.get("notes", [])
+    interview_stage = application.get("interview_stage")
+    offer_joining_date = application.get("offer_joining_date")
+    offer_salary = application.get("offer_salary")
+    offer_location = application.get("offer_location")
+    status = str(application.get("status", "")).lower()
+
+    if str(interview_stage).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        interview_stage = None
+
+    if str(offer_joining_date).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        offer_joining_date = None
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    score = 30
+
+    if total_goals:
+        score += min(int(career_progress * 0.25), 25)
+
+    if notes:
+        score += 10
+
+    if interview_stage:
+        score += 10
+
+    if status == "shortlisted":
+        score += 5
+    elif status == "interview":
+        score += 10
+    elif status == "offer":
+        score += 15
+
+    if offer_joining_date:
+        score += 5
+
+    if offer_salary:
+        score += 5
+
+    if offer_location:
+        score += 5
+
+    score = min(score, 100)
+
+    if score < 45:
+        negotiation_level = "LOW"
+    elif score < 65:
+        negotiation_level = "MODERATE"
+    elif score < 85:
+        negotiation_level = "HIGH"
+    else:
+        negotiation_level = "VERY HIGH"
+
+    salary_priority = (
+        "HIGH"
+        if offer_salary
+        else "VERY HIGH"
+    )
+
+    role_scope_priority = (
+        "HIGH"
+        if career_progress < 70
+        else "MODERATE"
+    )
+
+    location_priority = (
+        "MODERATE"
+        if offer_location
+        else "HIGH"
+    )
+
+    joining_priority = (
+        "LOW"
+        if offer_joining_date
+        else "HIGH"
+    )
+
+    negotiation_points = []
+    strategy = []
+
+    negotiation_points.append(
+        "Compensation, salary structure, incentives, and benefits"
+    )
+
+    negotiation_points.append(
+        "Role responsibilities, ownership, and growth expectations"
+    )
+
+    if not offer_location:
+        negotiation_points.append(
+            "Work location, remote or hybrid options, and relocation support"
+        )
+
+    if not offer_joining_date:
+        negotiation_points.append(
+            "Joining date and onboarding flexibility"
+        )
+
+    if career_progress < 50:
+        negotiation_points.append(
+            "Training, mentorship, and learning opportunities"
+        )
+
+    if status != "offer":
+        strategy.append(
+            "Wait for a written offer before making major negotiation requests"
+        )
+    else:
+        strategy.append(
+            "Negotiate after reviewing the complete written offer"
+        )
+
+    strategy.append(
+        "Prioritize two or three important items instead of negotiating everything"
+    )
+
+    strategy.append(
+        "Support requests with skills, projects, achievements, and market value"
+    )
+
+    if "python" in role_lower:
+        strategy.append(
+            "Discuss Python ownership, backend exposure, APIs, databases, and testing scope"
+        )
+    elif "data" in role_lower or "analyst" in role_lower:
+        strategy.append(
+            "Discuss SQL, BI tools, analytics ownership, and business exposure"
+        )
+    elif "embedded" in role_lower:
+        strategy.append(
+            "Discuss firmware ownership, hardware exposure, RTOS, and debugging scope"
+        )
+    elif "electronics" in role_lower or "ece" in role_lower:
+        strategy.append(
+            "Discuss PCB, testing, hardware design, and debugging responsibilities"
+        )
+    else:
+        strategy.append(
+            "Discuss role scope, learning opportunities, and promotion path"
+        )
+
+    negotiation_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(negotiation_points, start=1)
+    )
+
+    strategy_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(strategy, start=1)
+    )
+
+    return (
+        f"JERVIS Career Offer Negotiation Advisor - Application "
+        f"{application_id}\n"
+        "-------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Negotiation Readiness Score: {score}/100\n"
+        f"Negotiation Level: {negotiation_level}\n"
+        f"Salary Negotiation Priority: {salary_priority}\n"
+        f"Role Scope Priority: {role_scope_priority}\n"
+        f"Work Mode / Location Priority: {location_priority}\n"
+        f"Joining Date Priority: {joining_priority}\n"
+        "Main Negotiation Points:\n"
+        f"{negotiation_text}\n"
+        "Suggested Negotiation Strategy:\n"
+        f"{strategy_text}\n"
+        "Next Action: Review the written offer and prepare a short, "
+        "professional negotiation request focused on your top priorities."
+    )

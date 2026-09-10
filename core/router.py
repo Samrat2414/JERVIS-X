@@ -46,6 +46,9 @@
     if command.startswith("career offer decision "):
         return "JOB_APPLICATION"
 
+    if command.startswith("career offer negotiation "):
+        return "JOB_APPLICATION"
+
     if "career" in command:
         return "CAREER"
 
@@ -220,6 +223,9 @@ def get_routing_plan(command):
     elif normalized_command.startswith("career offer decision "):
         handler = "job_application_handlers.handle_get_career_offer_decision_analysis"
 
+    elif normalized_command.startswith("career offer negotiation "):
+        handler = "job_application_handlers.handle_get_career_offer_negotiation_advice"
+
     elif normalized_command in (
         "application follow up reminders",
         "application follow up reminder",
@@ -336,6 +342,8 @@ def route_command(command, handler=None, handlers=None):
         return response
 
     return "Sorry, I don't understand that command yet."
+
+
 
 
 

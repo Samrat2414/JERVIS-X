@@ -3500,3 +3500,192 @@ def test_career_offer_decision_generic_role():
     )
 
     assert "Evaluate role responsibilities, learning scope, and career growth" in result
+
+def _set_offer_negotiation_test_state(
+    application_id,
+    role=None,
+    career_goals=None,
+    notes=None,
+    interview_stage=None,
+    offer_joining_date=None,
+    offer_salary=None,
+    offer_location=None,
+    status=None,
+):
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            if role is not None:
+                application["role"] = role
+            if career_goals is not None:
+                application["career_goals"] = career_goals
+            if notes is not None:
+                application["notes"] = notes
+            if interview_stage is not None:
+                application["interview_stage"] = interview_stage
+            if offer_joining_date is not None:
+                application["offer_joining_date"] = offer_joining_date
+            if offer_salary is not None:
+                application["offer_salary"] = offer_salary
+            if offer_location is not None:
+                application["offer_location"] = offer_location
+            if status is not None:
+                application["status"] = status
+            break
+
+    job_intelligence._save(data)
+
+
+def test_career_offer_negotiation_not_found():
+    result = job_intelligence.get_career_offer_negotiation_advice(999999)
+
+    assert result == "Job application not found."
+
+
+def test_career_offer_negotiation_python_high():
+    application_id = add_test_application()
+
+    _set_offer_negotiation_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"completed": True},
+            {"completed": True},
+        ],
+        notes=[{"text": "Strong Python project"}],
+        interview_stage="Final Interview",
+        offer_joining_date="20-09-2026",
+        offer_salary="500000",
+        offer_location="Kolkata",
+        status="offer",
+    )
+
+    result = job_intelligence.get_career_offer_negotiation_advice(
+        application_id
+    )
+
+    assert "Negotiation Level: VERY HIGH" in result
+    assert "Python ownership" in result
+
+
+def test_career_offer_negotiation_low_information():
+    application_id = add_test_application()
+
+    _set_offer_negotiation_test_state(
+        application_id,
+        role="Software Engineer",
+        career_goals=[],
+        notes=[],
+        interview_stage="Not Scheduled",
+        offer_joining_date="Not Scheduled",
+        status="Applied",
+    )
+
+    result = job_intelligence.get_career_offer_negotiation_advice(
+        application_id
+    )
+
+    assert "Negotiation Level: LOW" in result
+    assert "Work Mode / Location Priority: HIGH" in result
+
+
+def test_career_offer_negotiation_data_role():
+    application_id = add_test_application()
+
+    _set_offer_negotiation_test_state(
+        application_id,
+        role="Data Analyst",
+        career_goals=[{"completed": True}],
+        notes=[{"text": "Analytics project"}],
+        interview_stage="Technical Interview",
+        status="interview",
+    )
+
+    result = job_intelligence.get_career_offer_negotiation_advice(
+        application_id
+    )
+
+    assert "SQL, BI tools" in result
+
+
+def test_career_offer_negotiation_embedded_role():
+    application_id = add_test_application()
+
+    _set_offer_negotiation_test_state(
+        application_id,
+        role="Embedded Engineer",
+        career_goals=[{"completed": True}],
+        notes=[{"text": "Firmware project"}],
+        interview_stage="Technical Interview",
+        status="shortlisted",
+    )
+
+    result = job_intelligence.get_career_offer_negotiation_advice(
+        application_id
+    )
+
+    assert "RTOS" in result
+
+
+def test_career_offer_negotiation_ece_role():
+    application_id = add_test_application()
+
+    _set_offer_negotiation_test_state(
+        application_id,
+        role="ECE Engineer",
+        career_goals=[{"completed": True}],
+        notes=[{"text": "Electronics project"}],
+        interview_stage="HR Interview",
+        status="shortlisted",
+    )
+
+    result = job_intelligence.get_career_offer_negotiation_advice(
+        application_id
+    )
+
+    assert "PCB" in result
+
+
+def test_career_offer_negotiation_generic_role():
+    application_id = add_test_application()
+
+    _set_offer_negotiation_test_state(
+        application_id,
+        role="Operations Associate",
+        career_goals=[{"completed": True}],
+        notes=[{"text": "Operations experience"}],
+        status="Applied",
+    )
+
+    result = job_intelligence.get_career_offer_negotiation_advice(
+        application_id
+    )
+
+    assert "promotion path" in result
+
+
+def test_career_offer_negotiation_offer_readiness():
+    application_id = add_test_application()
+
+    _set_offer_negotiation_test_state(
+        application_id,
+        role="Python Developer",
+        career_goals=[
+            {"completed": True},
+            {"completed": False},
+        ],
+        notes=[{"text": "Project evidence"}],
+        interview_stage="Final Interview",
+        offer_joining_date="25-09-2026",
+        offer_salary="450000",
+        offer_location="Kolkata",
+        status="offer",
+    )
+
+    result = job_intelligence.get_career_offer_negotiation_advice(
+        application_id
+    )
+
+    assert "Salary Negotiation Priority: HIGH" in result
+    assert "Joining Date Priority: LOW" in result
