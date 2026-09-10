@@ -38,6 +38,7 @@
     get_career_offer_conversion_prediction,
     get_career_rejection_risk_analysis,
     get_career_offer_decision_analysis,
+    get_career_salary_negotiation_advice,
     get_career_offer_negotiation_advice,
     get_career_offer_comparison_analysis,
     get_career_offer_acceptance_analysis,
@@ -300,3 +301,11 @@ def handle_get_career_offer_acceptance_analysis(command):
 
     return get_career_offer_acceptance_analysis(application_id)
 
+
+
+def handle_get_career_salary_negotiation_advice(command):
+    application_id = command[
+        len("career salary negotiation "):
+    ].strip()
+
+    return get_career_salary_negotiation_advice(application_id)

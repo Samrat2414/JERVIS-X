@@ -4018,3 +4018,151 @@ def test_career_offer_acceptance_output_sections():
     assert "Acceptance Readiness Score:" in result
     assert "Before Accepting Checklist:" in result
     assert "Next Action:" in result
+
+
+def test_career_salary_negotiation_not_found():
+    result = job_intelligence.get_career_salary_negotiation_advice(999999)
+
+    assert result == "Job application not found."
+
+
+def test_career_salary_negotiation_python_offer_strong():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["role"] = "Python Developer"
+            application["status"] = "Offer"
+            application["notes"] = [
+                {"text": "Strong Python project evidence"}
+            ]
+            application["interview_stage"] = "Final Interview"
+            application["offer_joining_date"] = "30-09-2026"
+            application["career_goals"] = [
+                {"completed": True},
+                {"completed": True},
+            ]
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_salary_negotiation_advice(
+        application_id
+    )
+
+    assert "Negotiation Readiness Score: 100/100" in result
+    assert "Negotiation Readiness: VERY STRONG" in result
+    assert "Negotiation Strength: HIGH" in result
+    assert "Salary Leverage: HIGH" in result
+    assert "Negotiation Risk Level: LOW" in result
+    assert "Python projects, APIs, SQL, testing, and automation" in result
+
+
+def test_career_salary_negotiation_low_information():
+    application_id = add_test_application()
+
+    result = job_intelligence.get_career_salary_negotiation_advice(
+        application_id
+    )
+
+    assert "Negotiation Readiness: LOW" in result
+    assert "Negotiation Strength: LOW" in result
+    assert "Salary Leverage: LOW" in result
+    assert "Negotiation Risk Level: HIGH" in result
+    assert "Avoid aggressive salary negotiation before a formal offer" in result
+
+
+def test_career_salary_negotiation_interview_stage():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Interview"
+            application["interview_stage"] = "Technical Interview"
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_salary_negotiation_advice(
+        application_id
+    )
+
+    assert "Negotiation Strength: MODERATE" in result
+    assert "Salary Leverage: MODERATE" in result
+    assert "Negotiation Risk Level: MODERATE" in result
+
+
+def test_career_salary_negotiation_data_role():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["role"] = "Data Analyst"
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_salary_negotiation_advice(
+        application_id
+    )
+
+    assert "SQL, analytics, dashboards, and business impact" in result
+
+
+def test_career_salary_negotiation_embedded_role():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["role"] = "Embedded Systems Engineer"
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_salary_negotiation_advice(
+        application_id
+    )
+
+    assert "firmware, debugging, RTOS, and protocol skills" in result
+
+
+def test_career_salary_negotiation_ece_role():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["role"] = "ECE Engineer"
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_salary_negotiation_advice(
+        application_id
+    )
+
+    assert "electronics, PCB, testing, and debugging skills" in result
+
+
+def test_career_salary_negotiation_generic_role():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["role"] = "Operations Engineer"
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_salary_negotiation_advice(
+        application_id
+    )
+
+    assert "role-specific skills and measurable achievements" in result
+    assert "Suggested Strategy:" in result
+    assert "Next Action:" in result

@@ -6217,3 +6217,188 @@ def get_career_offer_acceptance_analysis(application_id):
         "terms, and accept only when the role, compensation, location, and "
         "joining conditions are clear."
     )
+
+def get_career_salary_negotiation_advice(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    role_lower = str(role).lower()
+
+    career_goals = application.get("career_goals", [])
+    notes = application.get("notes", [])
+    interview_stage = application.get("interview_stage")
+    offer_joining_date = application.get("offer_joining_date")
+    status = str(application.get("status", "")).strip().lower()
+
+    if str(interview_stage).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        interview_stage = None
+
+    if str(offer_joining_date).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        offer_joining_date = None
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    score = 30
+
+    if total_goals:
+        score += min(int(career_progress * 0.25), 25)
+
+    if notes:
+        score += 10
+
+    if interview_stage:
+        score += 10
+
+    if status == "shortlisted":
+        score += 5
+    elif status == "interview":
+        score += 10
+    elif status == "offer":
+        score += 15
+
+    if offer_joining_date:
+        score += 10
+
+    score = min(score, 100)
+
+    if score < 45:
+        readiness = "LOW"
+    elif score < 65:
+        readiness = "MODERATE"
+    elif score < 85:
+        readiness = "STRONG"
+    else:
+        readiness = "VERY STRONG"
+
+    if status == "offer":
+        negotiation_strength = "HIGH"
+    elif status == "interview":
+        negotiation_strength = "MODERATE"
+    elif status == "shortlisted":
+        negotiation_strength = "BUILDING"
+    else:
+        negotiation_strength = "LOW"
+
+    if career_progress >= 70 and status == "offer":
+        salary_leverage = "HIGH"
+    elif career_progress >= 40 or status in {"shortlisted", "interview", "offer"}:
+        salary_leverage = "MODERATE"
+    else:
+        salary_leverage = "LOW"
+
+    if status == "offer" and offer_joining_date:
+        risk_level = "LOW"
+    elif status in {"shortlisted", "interview", "offer"}:
+        risk_level = "MODERATE"
+    else:
+        risk_level = "HIGH"
+
+    priorities = []
+
+    if career_progress < 50:
+        priorities.append(
+            "Strengthen evidence of role-relevant skills and achievements"
+        )
+
+    if not notes:
+        priorities.append(
+            "Prepare measurable project, achievement, and impact evidence"
+        )
+
+    if status != "offer":
+        priorities.append(
+            "Avoid aggressive salary negotiation before a formal offer"
+        )
+    else:
+        priorities.append(
+            "Review the full compensation package before negotiating"
+        )
+
+    if "python" in role_lower:
+        priorities.append(
+            "Use Python projects, APIs, SQL, testing, and automation as leverage"
+        )
+    elif "data" in role_lower or "analyst" in role_lower:
+        priorities.append(
+            "Use SQL, analytics, dashboards, and business impact as leverage"
+        )
+    elif "embedded" in role_lower:
+        priorities.append(
+            "Use firmware, debugging, RTOS, and protocol skills as leverage"
+        )
+    elif "electronics" in role_lower or "ece" in role_lower:
+        priorities.append(
+            "Use electronics, PCB, testing, and debugging skills as leverage"
+        )
+    else:
+        priorities.append(
+            "Use role-specific skills and measurable achievements as leverage"
+        )
+
+    priorities.append(
+        "Compare base pay, benefits, location, work mode, and growth opportunity"
+    )
+
+    if status == "offer":
+        strategy = (
+            "Negotiate professionally using role value, evidence, and the "
+            "complete compensation package."
+        )
+    elif status in {"shortlisted", "interview"}:
+        strategy = (
+            "Prepare your salary case now, but wait for stronger hiring "
+            "leverage or a formal offer before negotiating firmly."
+        )
+    else:
+        strategy = (
+            "Focus first on improving application strength and reaching the "
+            "interview or offer stage before salary negotiation."
+        )
+
+    priority_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(priorities, start=1)
+    )
+
+    return (
+        f"JERVIS Career Salary Negotiation Advisor - Application "
+        f"{application_id}\n"
+        "--------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Negotiation Readiness Score: {score}/100\n"
+        f"Negotiation Readiness: {readiness}\n"
+        f"Negotiation Strength: {negotiation_strength}\n"
+        f"Salary Leverage: {salary_leverage}\n"
+        f"Negotiation Risk Level: {risk_level}\n"
+        "Negotiation Priorities:\n"
+        f"{priority_text}\n"
+        f"Suggested Strategy: {strategy}\n"
+        "Next Action: Build a clear compensation case and negotiate only "
+        "when your hiring leverage is strong enough."
+    )
