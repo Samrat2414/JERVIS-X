@@ -39,6 +39,7 @@
     get_career_rejection_risk_analysis,
     get_career_offer_decision_analysis,
     get_career_offer_negotiation_advice,
+    get_career_offer_comparison_analysis,
 )
 
 
@@ -270,3 +271,22 @@ def handle_get_career_offer_negotiation_advice(command):
     ].strip()
 
     return get_career_offer_negotiation_advice(application_id)
+
+
+def handle_get_career_offer_comparison_analysis(command):
+    arguments = command[
+        len("career compare offers "):
+    ].strip().split()
+
+    if len(arguments) != 2:
+        return (
+            "Usage: career compare offers "
+            "<application_id_1> <application_id_2>"
+        )
+
+    application_id_1, application_id_2 = arguments
+
+    return get_career_offer_comparison_analysis(
+        application_id_1,
+        application_id_2,
+    )

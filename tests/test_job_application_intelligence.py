@@ -3689,3 +3689,236 @@ def test_career_offer_negotiation_offer_readiness():
 
     assert "Salary Negotiation Priority: HIGH" in result
     assert "Joining Date Priority: LOW" in result
+
+def _set_offer_comparison_test_state(
+    application_id,
+    role=None,
+    career_goals=None,
+    notes=None,
+    interview_stage=None,
+    offer_joining_date=None,
+    offer_salary=None,
+    offer_location=None,
+    status=None,
+):
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            if role is not None:
+                application["role"] = role
+            if career_goals is not None:
+                application["career_goals"] = career_goals
+            if notes is not None:
+                application["notes"] = notes
+            if interview_stage is not None:
+                application["interview_stage"] = interview_stage
+            if offer_joining_date is not None:
+                application["offer_joining_date"] = offer_joining_date
+            if offer_salary is not None:
+                application["offer_salary"] = offer_salary
+            if offer_location is not None:
+                application["offer_location"] = offer_location
+            if status is not None:
+                application["status"] = status
+            break
+
+    job_intelligence._save(data)
+
+
+def test_career_offer_comparison_first_not_found():
+    application_id = add_test_application()
+
+    result = job_intelligence.get_career_offer_comparison_analysis(
+        999999,
+        application_id,
+    )
+
+    assert "Job application 999999 not found." in result
+
+
+def test_career_offer_comparison_second_not_found():
+    application_id = add_test_application()
+
+    result = job_intelligence.get_career_offer_comparison_analysis(
+        application_id,
+        999999,
+    )
+
+    assert "Job application 999999 not found." in result
+
+
+def test_career_offer_comparison_application_one_wins():
+    application_id_1 = add_test_application()
+    add_job_application("Second Test Company", "Data Analyst")
+    application_id_2 = 2
+
+    _set_offer_comparison_test_state(
+        application_id_1,
+        role="Python Developer",
+        career_goals=[
+            {"completed": True},
+            {"completed": True},
+        ],
+        notes=[{"text": "Strong Python project"}],
+        interview_stage="Final Interview",
+        offer_joining_date="20-09-2026",
+        offer_salary="500000",
+        offer_location="Kolkata",
+        status="offer",
+    )
+
+    _set_offer_comparison_test_state(
+        application_id_2,
+        role="Data Analyst",
+        career_goals=[
+            {"completed": False},
+        ],
+        notes=[],
+        interview_stage="Not Scheduled",
+        offer_joining_date="Not Scheduled",
+        status="Applied",
+    )
+
+    result = job_intelligence.get_career_offer_comparison_analysis(
+        application_id_1,
+        application_id_2,
+    )
+
+    assert f"Recommended Offer: Application {application_id_1}" in result
+    assert "Decision Confidence: VERY HIGH" in result
+
+
+def test_career_offer_comparison_application_two_wins():
+    application_id_1 = add_test_application()
+    add_job_application("Second Test Company", "Data Analyst")
+    application_id_2 = 2
+
+    _set_offer_comparison_test_state(
+        application_id_1,
+        role="Operations Associate",
+        career_goals=[],
+        notes=[],
+        status="Applied",
+    )
+
+    _set_offer_comparison_test_state(
+        application_id_2,
+        role="Embedded Engineer",
+        career_goals=[
+            {"completed": True},
+            {"completed": True},
+        ],
+        notes=[{"text": "Embedded project"}],
+        interview_stage="Final Interview",
+        offer_joining_date="21-09-2026",
+        offer_salary="550000",
+        offer_location="Kolkata",
+        status="offer",
+    )
+
+    result = job_intelligence.get_career_offer_comparison_analysis(
+        application_id_1,
+        application_id_2,
+    )
+
+    assert f"Recommended Offer: Application {application_id_2}" in result
+
+
+def test_career_offer_comparison_tie():
+    application_id_1 = add_test_application()
+    add_job_application("Second Test Company", "Data Analyst")
+    application_id_2 = 2
+
+    _set_offer_comparison_test_state(
+        application_id_1,
+        role="Python Developer",
+        career_goals=[],
+        notes=[],
+        status="Applied",
+    )
+
+    _set_offer_comparison_test_state(
+        application_id_2,
+        role="Data Analyst",
+        career_goals=[],
+        notes=[],
+        status="Applied",
+    )
+
+    result = job_intelligence.get_career_offer_comparison_analysis(
+        application_id_1,
+        application_id_2,
+    )
+
+    assert "Recommended Offer: TIE - MANUAL REVIEW REQUIRED" in result
+    assert "Decision Confidence: LOW" in result
+
+
+def test_career_offer_comparison_moderate_confidence():
+    application_id_1 = add_test_application()
+    add_job_application("Second Test Company", "Data Analyst")
+    application_id_2 = 2
+
+    _set_offer_comparison_test_state(
+        application_id_1,
+        career_goals=[{"completed": True}],
+        notes=[{"text": "Evidence"}],
+        status="Applied",
+    )
+
+    _set_offer_comparison_test_state(
+        application_id_2,
+        career_goals=[{"completed": True}],
+        notes=[],
+        status="Applied",
+    )
+
+    result = job_intelligence.get_career_offer_comparison_analysis(
+        application_id_1,
+        application_id_2,
+    )
+
+    assert "Decision Confidence:" in result
+
+
+def test_career_offer_comparison_joining_readiness():
+    application_id_1 = add_test_application()
+    add_job_application("Second Test Company", "Data Analyst")
+    application_id_2 = 2
+
+    _set_offer_comparison_test_state(
+        application_id_1,
+        status="offer",
+        offer_joining_date="25-09-2026",
+    )
+
+    _set_offer_comparison_test_state(
+        application_id_2,
+        status="offer",
+    )
+
+    result = job_intelligence.get_career_offer_comparison_analysis(
+        application_id_1,
+        application_id_2,
+    )
+
+    assert "Joining Readiness:" in result
+    assert "HIGH" in result
+
+
+def test_career_offer_comparison_output_sections():
+    application_id_1 = add_test_application()
+    add_job_application("Second Test Company", "Data Analyst")
+    application_id_2 = 2
+
+    result = job_intelligence.get_career_offer_comparison_analysis(
+        application_id_1,
+        application_id_2,
+    )
+
+    assert "Career Alignment:" in result
+    assert "Offer Strength:" in result
+    assert "Growth Potential:" in result
+    assert "Recommended Offer:" in result
+

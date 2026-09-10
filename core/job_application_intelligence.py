@@ -5901,3 +5901,206 @@ def get_career_offer_negotiation_advice(application_id):
         "Next Action: Review the written offer and prepare a short, "
         "professional negotiation request focused on your top priorities."
     )
+
+def get_career_offer_comparison_analysis(application_id_1, application_id_2):
+    application_1 = get_job_application(application_id_1)
+    application_2 = get_job_application(application_id_2)
+
+    if application_1 is None:
+        return f"Job application {application_id_1} not found."
+
+    if application_2 is None:
+        return f"Job application {application_id_2} not found."
+
+    def analyze_offer(application):
+        role = application.get("role", "Unknown")
+        career_goals = application.get("career_goals", [])
+        notes = application.get("notes", [])
+        interview_stage = application.get("interview_stage")
+        offer_joining_date = application.get("offer_joining_date")
+        offer_salary = application.get("offer_salary")
+        offer_location = application.get("offer_location")
+        status = str(application.get("status", "")).lower()
+
+        if str(interview_stage).strip().lower() in {
+            "",
+            "none",
+            "not scheduled",
+        }:
+            interview_stage = None
+
+        if str(offer_joining_date).strip().lower() in {
+            "",
+            "none",
+            "not scheduled",
+        }:
+            offer_joining_date = None
+
+        completed_goals = sum(
+            1
+            for goal in career_goals
+            if isinstance(goal, dict) and goal.get("completed")
+        )
+        total_goals = len(career_goals)
+
+        career_progress = (
+            round((completed_goals / total_goals) * 100, 1)
+            if total_goals
+            else 0.0
+        )
+
+        score = 35
+
+        if total_goals:
+            score += min(int(career_progress * 0.25), 25)
+
+        if notes:
+            score += 10
+
+        if interview_stage:
+            score += 10
+
+        if status == "shortlisted":
+            score += 5
+        elif status == "interview":
+            score += 10
+        elif status == "offer":
+            score += 15
+
+        if offer_joining_date:
+            score += 5
+
+        if offer_salary:
+            score += 5
+
+        if offer_location:
+            score += 5
+
+        score = min(score, 100)
+
+        if career_progress >= 70:
+            career_alignment = "STRONG"
+        elif career_progress >= 40:
+            career_alignment = "MODERATE"
+        else:
+            career_alignment = "WEAK"
+
+        if score >= 85:
+            growth_potential = "VERY HIGH"
+        elif score >= 70:
+            growth_potential = "HIGH"
+        elif score >= 50:
+            growth_potential = "MODERATE"
+        else:
+            growth_potential = "LOW"
+
+        if status == "offer" and offer_joining_date:
+            joining_readiness = "HIGH"
+        elif status == "offer" or offer_joining_date:
+            joining_readiness = "MODERATE"
+        else:
+            joining_readiness = "LOW"
+
+        return {
+            "company": application.get("company", "Unknown"),
+            "role": role,
+            "score": score,
+            "career_alignment": career_alignment,
+            "growth_potential": growth_potential,
+            "joining_readiness": joining_readiness,
+            "career_progress": career_progress,
+        }
+
+    offer_1 = analyze_offer(application_1)
+    offer_2 = analyze_offer(application_2)
+
+    if offer_1["score"] > offer_2["score"]:
+        recommended_id = application_id_1
+        recommended = offer_1
+        other = offer_2
+    elif offer_2["score"] > offer_1["score"]:
+        recommended_id = application_id_2
+        recommended = offer_2
+        other = offer_1
+    else:
+        recommended_id = "TIE"
+        recommended = None
+        other = None
+
+    if recommended_id == "TIE":
+        confidence = "LOW"
+        reasons = [
+            "Both offers have the same overall comparison score",
+            "Review compensation, responsibilities, location, and growth manually",
+        ]
+        recommendation_text = "TIE - MANUAL REVIEW REQUIRED"
+    else:
+        difference = abs(offer_1["score"] - offer_2["score"])
+
+        if difference >= 20:
+            confidence = "VERY HIGH"
+        elif difference >= 10:
+            confidence = "HIGH"
+        elif difference >= 5:
+            confidence = "MODERATE"
+        else:
+            confidence = "LOW"
+
+        reasons = []
+
+        if recommended["career_progress"] > other["career_progress"]:
+            reasons.append("Better career-goal alignment")
+
+        if recommended["score"] > other["score"]:
+            reasons.append("Stronger overall offer profile")
+
+        if recommended["growth_potential"] in {"HIGH", "VERY HIGH"}:
+            reasons.append("Better estimated growth potential")
+
+        if recommended["joining_readiness"] == "HIGH":
+            reasons.append("Stronger joining readiness")
+
+        if not reasons:
+            reasons.append("Slightly stronger overall comparison result")
+
+        recommendation_text = f"Application {recommended_id}"
+
+    reason_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(reasons, start=1)
+    )
+
+    return (
+        "JERVIS Career Offer Comparison Analyzer\n"
+        "---------------------------------------\n"
+        f"Application {application_id_1}: "
+        f"{offer_1['company']} - {offer_1['role']}\n"
+        f"Application {application_id_2}: "
+        f"{offer_2['company']} - {offer_2['role']}\n\n"
+        "Career Alignment:\n"
+        f"Application {application_id_1}: "
+        f"{offer_1['career_alignment']}\n"
+        f"Application {application_id_2}: "
+        f"{offer_2['career_alignment']}\n\n"
+        "Offer Strength:\n"
+        f"Application {application_id_1}: "
+        f"{offer_1['score']}/100\n"
+        f"Application {application_id_2}: "
+        f"{offer_2['score']}/100\n\n"
+        "Growth Potential:\n"
+        f"Application {application_id_1}: "
+        f"{offer_1['growth_potential']}\n"
+        f"Application {application_id_2}: "
+        f"{offer_2['growth_potential']}\n\n"
+        "Joining Readiness:\n"
+        f"Application {application_id_1}: "
+        f"{offer_1['joining_readiness']}\n"
+        f"Application {application_id_2}: "
+        f"{offer_2['joining_readiness']}\n\n"
+        f"Recommended Offer: {recommendation_text}\n"
+        f"Decision Confidence: {confidence}\n"
+        "Why:\n"
+        f"{reason_text}\n"
+        "Next Action: Compare compensation, responsibilities, location, "
+        "work mode, and long-term growth before accepting the final offer."
+    )
