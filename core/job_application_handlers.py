@@ -37,6 +37,7 @@
     get_career_application_success_prediction,
     get_career_offer_conversion_prediction,
     get_career_rejection_risk_analysis,
+    get_career_offer_decision_analysis,
 )
 
 
@@ -252,3 +253,11 @@ def handle_get_career_rejection_risk_analysis(command):
     ].strip()
 
     return get_career_rejection_risk_analysis(application_id)
+
+
+def handle_get_career_offer_decision_analysis(command):
+    application_id = command[
+        len("career offer decision "):
+    ].strip()
+
+    return get_career_offer_decision_analysis(application_id)

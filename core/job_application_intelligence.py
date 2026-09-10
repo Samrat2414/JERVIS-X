@@ -5505,3 +5505,196 @@ def get_career_rejection_risk_analysis(application_id):
         "the next hiring stage."
     )
 
+
+def get_career_offer_decision_analysis(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    role_lower = str(role).lower()
+
+    career_goals = application.get("career_goals", [])
+    notes = application.get("notes", [])
+    interview_stage = application.get("interview_stage")
+    offer_joining_date = application.get("offer_joining_date")
+    status = str(application.get("status", "")).lower()
+
+    if str(interview_stage).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        interview_stage = None
+
+    if str(offer_joining_date).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        offer_joining_date = None
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    score = 35
+
+    if total_goals:
+        score += min(int(career_progress * 0.25), 25)
+
+    if notes:
+        score += 10
+
+    if interview_stage:
+        score += 10
+
+    if status == "shortlisted":
+        score += 5
+    elif status == "interview":
+        score += 10
+    elif status == "offer":
+        score += 15
+
+    if offer_joining_date:
+        score += 10
+
+    score = min(score, 100)
+
+    if score < 50:
+        recommendation = "HOLD AND EVALUATE"
+    elif score < 70:
+        recommendation = "NEGOTIATE"
+    elif score < 85:
+        recommendation = "ACCEPT / NEGOTIATE"
+    else:
+        recommendation = "STRONG ACCEPT"
+
+    if career_progress >= 70:
+        career_alignment = "STRONG"
+    elif career_progress >= 40:
+        career_alignment = "MODERATE"
+    else:
+        career_alignment = "WEAK"
+
+    if (
+        "python" in role_lower
+        or "data" in role_lower
+        or "analyst" in role_lower
+        or "embedded" in role_lower
+        or "electronics" in role_lower
+        or "ece" in role_lower
+    ):
+        role_fit = "STRONG" if career_progress >= 50 else "DEVELOPING"
+    else:
+        role_fit = "MODERATE" if career_progress >= 50 else "UNCERTAIN"
+
+    if status == "offer" and offer_joining_date:
+        offer_readiness = "HIGH"
+    elif status == "offer" or offer_joining_date:
+        offer_readiness = "MODERATE"
+    else:
+        offer_readiness = "LOW"
+
+    concerns = []
+    priorities = []
+
+    if career_progress < 50:
+        concerns.append("Career-goal alignment needs improvement")
+        priorities.append(
+            "Confirm that the role supports your long-term career goals"
+        )
+
+    if not notes:
+        concerns.append("Limited evidence for evaluating role quality")
+        priorities.append(
+            "Review responsibilities, projects, learning, and growth scope"
+        )
+
+    if not interview_stage:
+        concerns.append("Limited interview-stage information")
+        priorities.append(
+            "Clarify team, responsibilities, expectations, and work culture"
+        )
+
+    if status != "offer":
+        concerns.append("Application is not recorded at offer stage")
+        priorities.append(
+            "Confirm the written offer before making a final decision"
+        )
+
+    if not offer_joining_date:
+        concerns.append("Joining date is not confirmed")
+        priorities.append(
+            "Confirm joining date, notice requirements, and onboarding plan"
+        )
+
+    if "python" in role_lower:
+        priorities.append(
+            "Evaluate Python work, backend exposure, APIs, databases, and testing"
+        )
+    elif "data" in role_lower or "analyst" in role_lower:
+        priorities.append(
+            "Evaluate analytics work, SQL exposure, BI tools, and growth scope"
+        )
+    elif "embedded" in role_lower:
+        priorities.append(
+            "Evaluate firmware work, hardware exposure, RTOS, and protocols"
+        )
+    elif "electronics" in role_lower or "ece" in role_lower:
+        priorities.append(
+            "Evaluate electronics design, PCB, testing, and debugging exposure"
+        )
+    else:
+        priorities.append(
+            "Evaluate role responsibilities, learning scope, and career growth"
+        )
+
+    priorities.append(
+        "Review compensation, benefits, location, work mode, and growth path"
+    )
+
+    if not concerns:
+        concerns.append("No major offer decision concerns detected")
+
+    concern_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(concerns, start=1)
+    )
+
+    priority_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(priorities, start=1)
+    )
+
+    return (
+        f"JERVIS Career Offer Decision Analyzer - Application "
+        f"{application_id}\n"
+        "-----------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Offer Decision Score: {score}/100\n"
+        f"Decision Recommendation: {recommendation}\n"
+        f"Career Alignment: {career_alignment}\n"
+        f"Role Fit: {role_fit}\n"
+        f"Offer Readiness: {offer_readiness}\n"
+        "Main Concerns:\n"
+        f"{concern_text}\n"
+        "Negotiation Priorities:\n"
+        f"{priority_text}\n"
+        "Next Action: Review the offer against career growth, compensation, "
+        "role quality, and joining conditions before making the final decision."
+    )

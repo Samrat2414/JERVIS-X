@@ -3333,3 +3333,170 @@ def test_career_rejection_risk_no_major_risks():
     assert "Career Goal Risk: LOW" in result
 
 
+
+
+def _set_offer_decision_test_state(
+    application_id,
+    role=None,
+    career_goals=None,
+    notes=None,
+    interview_stage=None,
+    offer_joining_date=None,
+    status=None,
+):
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            if role is not None:
+                application["role"] = role
+            if career_goals is not None:
+                application["career_goals"] = career_goals
+            if notes is not None:
+                application["notes"] = notes
+            if interview_stage is not None:
+                application["interview_stage"] = interview_stage
+            if offer_joining_date is not None:
+                application["offer_joining_date"] = offer_joining_date
+            if status is not None:
+                application["status"] = status
+            break
+
+    job_intelligence._save(data)
+
+
+def test_career_offer_decision_not_found():
+    result = job_intelligence.get_career_offer_decision_analysis(999)
+
+    assert result == "Job application not found."
+
+
+def test_career_offer_decision_python_strong_accept():
+    application_id = add_test_application()
+
+    _set_offer_decision_test_state(
+        application_id,
+        career_goals=[
+            {"completed": True},
+            {"completed": True},
+        ],
+        notes=["Strong Python project"],
+        interview_stage="Final Interview",
+        offer_joining_date="2099-12-31",
+        status="offer",
+    )
+
+    result = job_intelligence.get_career_offer_decision_analysis(
+        application_id
+    )
+
+    assert "Decision Recommendation: STRONG ACCEPT" in result
+    assert "Career Alignment: STRONG" in result
+    assert "Role Fit: STRONG" in result
+    assert "Offer Readiness: HIGH" in result
+    assert "No major offer decision concerns detected" in result
+
+
+def test_career_offer_decision_low_information():
+    application_id = add_test_application()
+
+    _set_offer_decision_test_state(
+        application_id,
+        career_goals=[],
+        notes=[],
+        interview_stage="Not Scheduled",
+        offer_joining_date="Not Scheduled",
+        status="applied",
+    )
+
+    result = job_intelligence.get_career_offer_decision_analysis(
+        application_id
+    )
+
+    assert "Offer Decision Score: 35/100" in result
+    assert "Decision Recommendation: HOLD AND EVALUATE" in result
+    assert "Career Alignment: WEAK" in result
+    assert "Offer Readiness: LOW" in result
+
+
+def test_career_offer_decision_interview_stage():
+    application_id = add_test_application()
+
+    _set_offer_decision_test_state(
+        application_id,
+        career_goals=[
+            {"completed": True},
+            {"completed": False},
+        ],
+        notes=["Project evidence"],
+        interview_stage="Technical Interview",
+        status="interview",
+    )
+
+    result = job_intelligence.get_career_offer_decision_analysis(
+        application_id
+    )
+
+    assert "Career Alignment: MODERATE" in result
+    assert "Role Fit: STRONG" in result
+    assert "Offer Readiness: LOW" in result
+
+
+def test_career_offer_decision_data_role():
+    application_id = add_test_application()
+
+    _set_offer_decision_test_state(
+        application_id,
+        role="Data Analyst",
+    )
+
+    result = job_intelligence.get_career_offer_decision_analysis(
+        application_id
+    )
+
+    assert "Evaluate analytics work, SQL exposure, BI tools" in result
+
+
+def test_career_offer_decision_embedded_role():
+    application_id = add_test_application()
+
+    _set_offer_decision_test_state(
+        application_id,
+        role="Embedded Systems Engineer",
+    )
+
+    result = job_intelligence.get_career_offer_decision_analysis(
+        application_id
+    )
+
+    assert "Evaluate firmware work, hardware exposure, RTOS, and protocols" in result
+
+
+def test_career_offer_decision_ece_role():
+    application_id = add_test_application()
+
+    _set_offer_decision_test_state(
+        application_id,
+        role="Electronics Engineer",
+    )
+
+    result = job_intelligence.get_career_offer_decision_analysis(
+        application_id
+    )
+
+    assert "Evaluate electronics design, PCB, testing, and debugging exposure" in result
+
+
+def test_career_offer_decision_generic_role():
+    application_id = add_test_application()
+
+    _set_offer_decision_test_state(
+        application_id,
+        role="Operations Associate",
+    )
+
+    result = job_intelligence.get_career_offer_decision_analysis(
+        application_id
+    )
+
+    assert "Evaluate role responsibilities, learning scope, and career growth" in result
