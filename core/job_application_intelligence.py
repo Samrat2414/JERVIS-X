@@ -6402,3 +6402,181 @@ def get_career_salary_negotiation_advice(application_id):
         "Next Action: Build a clear compensation case and negotiate only "
         "when your hiring leverage is strong enough."
     )
+
+
+def get_career_compensation_comparison_analysis(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    status = str(application.get("status", "")).strip().lower()
+    notes = application.get("notes", [])
+    interview_stage = application.get("interview_stage")
+    offer_joining_date = application.get("offer_joining_date")
+    offer_location = application.get("offer_location")
+    career_goals = application.get("career_goals", [])
+
+    if str(interview_stage).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        interview_stage = None
+
+    if str(offer_joining_date).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        offer_joining_date = None
+
+    if str(offer_location).strip().lower() in {
+        "",
+        "none",
+        "not specified",
+        "not scheduled",
+    }:
+        offer_location = None
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    score = 30
+
+    if total_goals:
+        score += min(int(career_progress * 0.25), 25)
+
+    if notes:
+        score += 10
+
+    if interview_stage:
+        score += 10
+
+    if status == "shortlisted":
+        score += 5
+    elif status == "interview":
+        score += 10
+    elif status == "offer":
+        score += 15
+
+    if offer_joining_date:
+        score += 5
+
+    if offer_location:
+        score += 5
+
+    score = min(score, 100)
+
+    if score < 45:
+        compensation_fit = "LOW"
+    elif score < 65:
+        compensation_fit = "MODERATE"
+    elif score < 85:
+        compensation_fit = "STRONG"
+    else:
+        compensation_fit = "VERY STRONG"
+
+    if status == "offer":
+        decision = "NEGOTIATE / ACCEPT"
+    elif status in {"interview", "shortlisted"}:
+        decision = "REVIEW"
+    else:
+        decision = "WAIT / BUILD LEVERAGE"
+
+    benefits_value = (
+        "REVIEW FULL PACKAGE"
+        if status == "offer"
+        else "NOT YET CONFIRMED"
+    )
+
+    location_impact = (
+        "AVAILABLE FOR REVIEW"
+        if offer_location
+        else "LOCATION NOT CONFIRMED"
+    )
+
+    if career_progress >= 70:
+        growth_potential = "HIGH"
+    elif career_progress >= 40:
+        growth_potential = "MODERATE"
+    else:
+        growth_potential = "DEVELOPING"
+
+    tradeoffs = []
+
+    if status != "offer":
+        tradeoffs.append(
+            "Formal compensation details may not be available yet"
+        )
+
+    if not offer_location:
+        tradeoffs.append(
+            "Location and relocation impact still need confirmation"
+        )
+
+    if career_progress < 50:
+        tradeoffs.append(
+            "Career readiness can be strengthened before final negotiation"
+        )
+
+    if not notes:
+        tradeoffs.append(
+            "Add evidence about projects, achievements, and role value"
+        )
+
+    if not tradeoffs:
+        tradeoffs.append(
+            "No major compensation comparison concerns detected"
+        )
+
+    priorities = [
+        "Compare base salary, variable pay, bonuses, and benefits",
+        "Evaluate location, work mode, commute, and relocation cost",
+        "Compare learning opportunity, role quality, and career growth",
+        "Review joining conditions, notice period, and offer stability",
+    ]
+
+    tradeoff_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(tradeoffs, start=1)
+    )
+
+    priority_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(priorities, start=1)
+    )
+
+    return (
+        f"JERVIS Career Compensation Comparison Analyzer - Application "
+        f"{application_id}\n"
+        "-------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Compensation Comparison Score: {score}/100\n"
+        f"Compensation Fit: {compensation_fit}\n"
+        f"Benefits Value: {benefits_value}\n"
+        f"Location / Work Mode Impact: {location_impact}\n"
+        f"Growth Potential: {growth_potential}\n"
+        f"Final Recommendation: {decision}\n"
+        "Key Trade-Offs:\n"
+        f"{tradeoff_text}\n"
+        "Comparison Priorities:\n"
+        f"{priority_text}\n"
+        "Next Action: Compare the full compensation package with role "
+        "quality, location, benefits, and long-term career growth."
+    )

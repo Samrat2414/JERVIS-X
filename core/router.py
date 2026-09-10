@@ -49,6 +49,9 @@
     if command.startswith("career salary negotiation "):
         return "JOB_APPLICATION"
 
+    if command.startswith("career compensation compare "):
+        return "JOB_APPLICATION"
+
     if command.startswith("career offer negotiation "):
         return "JOB_APPLICATION"
 
@@ -235,6 +238,9 @@ def get_routing_plan(command):
     elif normalized_command.startswith("career salary negotiation "):
         handler = "job_application_handlers.handle_get_career_salary_negotiation_advice"
 
+    elif normalized_command.startswith("career compensation compare "):
+        handler = "job_application_handlers.handle_get_career_compensation_comparison_analysis"
+
     elif normalized_command.startswith("career offer negotiation "):
         handler = "job_application_handlers.handle_get_career_offer_negotiation_advice"
 
@@ -360,6 +366,8 @@ def route_command(command, handler=None, handlers=None):
         return response
 
     return "Sorry, I don't understand that command yet."
+
+
 
 
 

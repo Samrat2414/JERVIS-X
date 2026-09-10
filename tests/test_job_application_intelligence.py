@@ -4166,3 +4166,154 @@ def test_career_salary_negotiation_generic_role():
     assert "role-specific skills and measurable achievements" in result
     assert "Suggested Strategy:" in result
     assert "Next Action:" in result
+
+
+def test_career_compensation_comparison_not_found():
+    result = job_intelligence.get_career_compensation_comparison_analysis(
+        999999
+    )
+
+    assert result == "Job application not found."
+
+
+def test_career_compensation_comparison_offer_strong():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["notes"] = [
+                {"text": "Strong project and offer evidence"}
+            ]
+            application["interview_stage"] = "Final Interview"
+            application["offer_joining_date"] = "30-09-2026"
+            application["offer_location"] = "Kolkata"
+            application["career_goals"] = [
+                {"completed": True},
+                {"completed": True},
+            ]
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_compensation_comparison_analysis(
+        application_id
+    )
+
+    assert "Compensation Comparison Score: 100/100" in result
+    assert "Compensation Fit: VERY STRONG" in result
+    assert "Benefits Value: REVIEW FULL PACKAGE" in result
+    assert "Location / Work Mode Impact: AVAILABLE FOR REVIEW" in result
+    assert "Growth Potential: HIGH" in result
+    assert "Final Recommendation: NEGOTIATE / ACCEPT" in result
+
+
+def test_career_compensation_comparison_low_information():
+    application_id = add_test_application()
+
+    result = job_intelligence.get_career_compensation_comparison_analysis(
+        application_id
+    )
+
+    assert "Compensation Fit: LOW" in result
+    assert "Benefits Value: NOT YET CONFIRMED" in result
+    assert "Final Recommendation: WAIT / BUILD LEVERAGE" in result
+
+
+def test_career_compensation_comparison_interview():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Interview"
+            application["interview_stage"] = "Technical Interview"
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_compensation_comparison_analysis(
+        application_id
+    )
+
+    assert "Final Recommendation: REVIEW" in result
+
+
+def test_career_compensation_comparison_location_missing():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["offer_location"] = "Not Specified"
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_compensation_comparison_analysis(
+        application_id
+    )
+
+    assert "Location / Work Mode Impact: LOCATION NOT CONFIRMED" in result
+    assert "Location and relocation impact still need confirmation" in result
+
+
+def test_career_compensation_comparison_growth_moderate():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["career_goals"] = [
+                {"completed": True},
+                {"completed": False},
+            ]
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_compensation_comparison_analysis(
+        application_id
+    )
+
+    assert "Growth Potential: MODERATE" in result
+
+
+def test_career_compensation_comparison_growth_developing():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["career_goals"] = [
+                {"completed": False},
+                {"completed": False},
+            ]
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_compensation_comparison_analysis(
+        application_id
+    )
+
+    assert "Growth Potential: DEVELOPING" in result
+
+
+def test_career_compensation_comparison_output_sections():
+    application_id = add_test_application()
+
+    result = job_intelligence.get_career_compensation_comparison_analysis(
+        application_id
+    )
+
+    assert "JERVIS Career Compensation Comparison Analyzer" in result
+    assert "Company:" in result
+    assert "Role:" in result
+    assert "Career Goal Progress:" in result
+    assert "Compensation Comparison Score:" in result
+    assert "Compensation Fit:" in result
+    assert "Key Trade-Offs:" in result
+    assert "Comparison Priorities:" in result
+    assert "Next Action:" in result
