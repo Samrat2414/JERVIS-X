@@ -43,6 +43,7 @@
     get_career_offer_negotiation_advice,
     get_career_offer_comparison_analysis,
     get_career_offer_acceptance_analysis,
+    get_career_offer_decline_analysis,
 )
 
 
@@ -304,6 +305,14 @@ def handle_get_career_offer_acceptance_analysis(command):
 
 
 
+def handle_get_career_offer_decline_analysis(command):
+    application_id = command[len("career decline offer "):].strip()
+
+    if not application_id:
+        return "Usage: career decline offer <application_id>"
+
+    return get_career_offer_decline_analysis(application_id)
+
 def handle_get_career_salary_negotiation_advice(command):
     application_id = command[
         len("career salary negotiation "):
@@ -318,3 +327,5 @@ def handle_get_career_compensation_comparison_analysis(command):
     ].strip()
 
     return get_career_compensation_comparison_analysis(application_id)
+
+

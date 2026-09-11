@@ -4317,3 +4317,210 @@ def test_career_compensation_comparison_output_sections():
     assert "Key Trade-Offs:" in result
     assert "Comparison Priorities:" in result
     assert "Next Action:" in result
+
+
+def test_career_offer_decline_not_found():
+    result = job_intelligence.get_career_offer_decline_analysis("999999")
+
+    assert result == "Job application not found."
+
+
+def test_career_offer_decline_strong_offer():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["notes"] = [
+                {"text": "Strong project and offer evidence"}
+            ]
+            application["interview_stage"] = "Final Interview"
+            application["offer_joining_date"] = "30-09-2026"
+            application["offer_location"] = "Kolkata"
+            application["career_goals"] = [
+                {"completed": True},
+                {"completed": True},
+            ]
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_offer_decline_analysis(
+        application_id
+    )
+
+    assert "Offer Strength Score: 100/100" in result
+    assert "Offer Strength: EXCELLENT" in result
+    assert "Career Alignment: HIGH" in result
+    assert "Decline Risk Level: HIGH" in result
+    assert "Final Recommendation: ACCEPT / NEGOTIATE" in result
+
+
+def test_career_offer_decline_low_strength():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Applied"
+            application["notes"] = []
+            application["interview_stage"] = "Not Scheduled"
+            application["offer_joining_date"] = "Not Scheduled"
+            application["offer_location"] = "Not Specified"
+            application["career_goals"] = []
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_offer_decline_analysis(
+        application_id
+    )
+
+    assert "Offer Strength Score: 30/100" in result
+    assert "Offer Strength: LOW" in result
+    assert "Career Alignment: LOW" in result
+    assert "Decline Risk Level: LOW" in result
+    assert "Final Recommendation: DECLINE" in result
+
+
+def test_career_offer_decline_review_carefully():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Shortlisted"
+            application["notes"] = []
+            application["interview_stage"] = "Not Scheduled"
+            application["offer_joining_date"] = "Not Scheduled"
+            application["offer_location"] = "Not Specified"
+            application["career_goals"] = [
+                {"completed": True},
+                {"completed": False},
+            ]
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_offer_decline_analysis(
+        application_id
+    )
+
+    assert "Offer Strength Score: 47/100" in result
+    assert "Offer Strength: MODERATE" in result
+    assert "Career Alignment: MODERATE" in result
+    assert "Decline Risk Level: MODERATE" in result
+    assert "Final Recommendation: REVIEW CAREFULLY" in result
+
+
+def test_career_offer_decline_negotiate_hold():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Interview"
+            application["notes"] = [
+                {"text": "Relevant project evidence"}
+            ]
+            application["interview_stage"] = "Not Scheduled"
+            application["offer_joining_date"] = "Not Scheduled"
+            application["offer_location"] = "Not Specified"
+            application["career_goals"] = [
+                {"completed": True},
+                {"completed": False},
+            ]
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_offer_decline_analysis(
+        application_id
+    )
+
+    assert "Offer Strength Score: 62/100" in result
+    assert "Offer Strength: MODERATE" in result
+    assert "Decline Risk Level: MODERATE" in result
+    assert "Final Recommendation: NEGOTIATE / HOLD" in result
+
+
+def test_career_offer_decline_placeholder_details():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["notes"] = []
+            application["interview_stage"] = "Not Scheduled"
+            application["offer_joining_date"] = "Not Scheduled"
+            application["offer_location"] = "Not Specified"
+            application["career_goals"] = []
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_offer_decline_analysis(
+        application_id
+    )
+
+    assert "Decline Risk Level: MODERATE" in result
+    assert "Location or work-mode details are not confirmed" in result
+    assert "Joining date is not confirmed" in result
+
+
+def test_career_offer_decline_keep_reasons():
+    application_id = add_test_application()
+    data = job_intelligence._load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["notes"] = [
+                {"text": "Python project evidence"}
+            ]
+            application["offer_location"] = "Kolkata"
+            application["career_goals"] = [
+                {"completed": True},
+                {"completed": False},
+            ]
+            break
+
+    job_intelligence._save(data)
+
+    result = job_intelligence.get_career_offer_decline_analysis(
+        application_id
+    )
+
+    assert "Role shows useful alignment with current career goals" in result
+    assert (
+        "Application includes supporting project or achievement evidence"
+        in result
+    )
+    assert "A formal offer-stage opportunity is already available" in result
+    assert (
+        "Location or work-mode information is available for review"
+        in result
+    )
+
+
+def test_career_offer_decline_output_sections():
+    application_id = add_test_application()
+
+    result = job_intelligence.get_career_offer_decline_analysis(
+        application_id
+    )
+
+    assert "JERVIS Career Offer Decline Advisor" in result
+    assert "Company:" in result
+    assert "Role:" in result
+    assert "Career Goal Progress:" in result
+    assert "Offer Strength Score:" in result
+    assert "Offer Strength:" in result
+    assert "Career Alignment:" in result
+    assert "Decline Risk Level:" in result
+    assert "Reasons To Keep The Offer:" in result
+    assert "Reasons To Decline The Offer:" in result
+    assert "Final Recommendation:" in result
+    assert "Next Action:" in result

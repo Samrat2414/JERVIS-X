@@ -6580,3 +6580,201 @@ def get_career_compensation_comparison_analysis(application_id):
         "Next Action: Compare the full compensation package with role "
         "quality, location, benefits, and long-term career growth."
     )
+
+def get_career_offer_decline_analysis(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    status = str(application.get("status", "")).strip().lower()
+    notes = application.get("notes", [])
+    interview_stage = application.get("interview_stage")
+    offer_joining_date = application.get("offer_joining_date")
+    offer_location = application.get("offer_location")
+    career_goals = application.get("career_goals", [])
+
+    if str(interview_stage).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        interview_stage = None
+
+    if str(offer_joining_date).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        offer_joining_date = None
+
+    if str(offer_location).strip().lower() in {
+        "",
+        "none",
+        "not specified",
+        "not scheduled",
+    }:
+        offer_location = None
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    score = 30
+
+    if total_goals:
+        score += min(int(career_progress * 0.25), 25)
+
+    if notes:
+        score += 10
+
+    if interview_stage:
+        score += 10
+
+    if status == "shortlisted":
+        score += 5
+    elif status == "interview":
+        score += 10
+    elif status == "offer":
+        score += 15
+
+    if offer_joining_date:
+        score += 5
+
+    if offer_location:
+        score += 5
+
+    score = min(score, 100)
+
+    if score < 45:
+        offer_strength = "LOW"
+    elif score < 65:
+        offer_strength = "MODERATE"
+    elif score < 85:
+        offer_strength = "STRONG"
+    else:
+        offer_strength = "EXCELLENT"
+
+    if career_progress >= 70:
+        career_alignment = "HIGH"
+    elif career_progress >= 40:
+        career_alignment = "MODERATE"
+    else:
+        career_alignment = "LOW"
+
+    if status == "offer" and offer_joining_date and offer_location:
+        decline_risk = "HIGH"
+    elif status in {"shortlisted", "interview", "offer"}:
+        decline_risk = "MODERATE"
+    else:
+        decline_risk = "LOW"
+
+    if score >= 80 and status == "offer":
+        recommendation = "ACCEPT / NEGOTIATE"
+    elif score >= 60:
+        recommendation = "NEGOTIATE / HOLD"
+    elif score >= 45:
+        recommendation = "REVIEW CAREFULLY"
+    else:
+        recommendation = "DECLINE"
+
+    reasons_to_keep = []
+
+    if career_progress >= 50:
+        reasons_to_keep.append(
+            "Role shows useful alignment with current career goals"
+        )
+
+    if notes:
+        reasons_to_keep.append(
+            "Application includes supporting project or achievement evidence"
+        )
+
+    if status == "offer":
+        reasons_to_keep.append(
+            "A formal offer-stage opportunity is already available"
+        )
+
+    if offer_location:
+        reasons_to_keep.append(
+            "Location or work-mode information is available for review"
+        )
+
+    if not reasons_to_keep:
+        reasons_to_keep.append(
+            "No strong reason to keep the offer has been confirmed yet"
+        )
+
+    reasons_to_decline = []
+
+    if career_progress < 40:
+        reasons_to_decline.append(
+            "Career alignment appears weak"
+        )
+
+    if not notes:
+        reasons_to_decline.append(
+            "Evidence of project or achievement fit is limited"
+        )
+
+    if status != "offer":
+        reasons_to_decline.append(
+            "A formal offer has not been confirmed"
+        )
+
+    if not offer_location:
+        reasons_to_decline.append(
+            "Location or work-mode details are not confirmed"
+        )
+
+    if not offer_joining_date:
+        reasons_to_decline.append(
+            "Joining date is not confirmed"
+        )
+
+    if not reasons_to_decline:
+        reasons_to_decline.append(
+            "No major decline reason detected"
+        )
+
+    keep_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(reasons_to_keep, start=1)
+    )
+
+    decline_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(reasons_to_decline, start=1)
+    )
+
+    return (
+        f"JERVIS Career Offer Decline Advisor - Application "
+        f"{application_id}\n"
+        "-------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Offer Strength Score: {score}/100\n"
+        f"Offer Strength: {offer_strength}\n"
+        f"Career Alignment: {career_alignment}\n"
+        f"Decline Risk Level: {decline_risk}\n"
+        "Reasons To Keep The Offer:\n"
+        f"{keep_text}\n"
+        "Reasons To Decline The Offer:\n"
+        f"{decline_text}\n"
+        f"Final Recommendation: {recommendation}\n"
+        "Next Action: Review compensation, role quality, location, "
+        "career growth, and available alternatives before declining."
+    )
