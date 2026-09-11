@@ -52,6 +52,9 @@
     if command.startswith("career compensation compare "):
         return "JOB_APPLICATION"
 
+    if command.startswith("career compare offers "):
+        return "JOB_APPLICATION"
+
     if command.startswith("career offer negotiation "):
         return "JOB_APPLICATION"
 
@@ -366,6 +369,8 @@ def route_command(command, handler=None, handlers=None):
         return response
 
     return "Sorry, I don't understand that command yet."
+
+
 
 
 
