@@ -41,6 +41,7 @@ from core.job_application_intelligence import (
     get_promotion_readiness,
     get_salary_growth_analysis,
     get_career_roadmap,
+    get_career_counter_offer_analysis,
     _load,
     _save,
     get_onboarding_plan,
@@ -4524,3 +4525,124 @@ def test_career_offer_decline_output_sections():
     assert "Reasons To Decline The Offer:" in result
     assert "Final Recommendation:" in result
     assert "Next Action:" in result
+
+def test_career_counter_offer_not_found():
+    result = get_career_counter_offer_analysis("99999")
+    assert result == "Job application not found."
+
+
+def test_career_counter_offer_strong_offer():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["interview_stage"] = "Final"
+            application["offer_joining_date"] = "2099-12-31"
+            application["offer_location"] = "Kolkata"
+            application["notes"] = ["Strong Python project experience"]
+            application["career_goals"] = [
+                {"goal": "Python Developer", "completed": True},
+                {"goal": "Backend Development", "completed": True},
+            ]
+            break
+
+    _save(data)
+
+    result = get_career_counter_offer_analysis("1")
+
+    assert "Counter Offer Readiness: READY" in result
+    assert "Final Recommendation: COUNTER" in result
+
+
+def test_career_counter_offer_not_ready():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Applied"
+            application["interview_stage"] = "Not Scheduled"
+            break
+
+    _save(data)
+
+    result = get_career_counter_offer_analysis("1")
+
+    assert "Counter Offer Readiness: NOT READY" in result
+
+
+def test_career_counter_offer_prepare_stage():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Interview"
+            application["interview_stage"] = "Technical"
+            break
+
+    _save(data)
+
+    result = get_career_counter_offer_analysis("1")
+
+    assert "Counter Offer Readiness: PREPARE" in result
+
+
+def test_career_counter_offer_high_urgency():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["offer_joining_date"] = "2099-12-31"
+            break
+
+    _save(data)
+
+    result = get_career_counter_offer_analysis("1")
+
+    assert "Joining Urgency: HIGH" in result
+
+
+def test_career_counter_offer_placeholder_values():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["interview_stage"] = "Not Scheduled"
+            application["offer_joining_date"] = "Not Scheduled"
+            application["offer_location"] = "Not Specified"
+            break
+
+    _save(data)
+
+    result = get_career_counter_offer_analysis("1")
+
+    assert "Joining Urgency: LOW" in result
+
+
+def test_career_counter_offer_strategy_sections():
+    add_test_application()
+    result = get_career_counter_offer_analysis("1")
+
+    assert "Counter Offer Strategy:" in result
+    assert "Negotiation Leverage:" in result
+    assert "Career Alignment:" in result
+
+
+def test_career_counter_offer_output_sections():
+    add_test_application()
+    result = get_career_counter_offer_analysis("1")
+
+    assert "JERVIS Career Counter Offer Advisor" in result
+    assert "Counter Offer Score:" in result
+    assert "Final Recommendation:" in result
+    assert "Next Action:" in result
+
+
+
+

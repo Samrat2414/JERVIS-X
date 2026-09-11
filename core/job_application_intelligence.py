@@ -6778,3 +6778,174 @@ def get_career_offer_decline_analysis(application_id):
         "Next Action: Review compensation, role quality, location, "
         "career growth, and available alternatives before declining."
     )
+
+def get_career_counter_offer_analysis(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    status = str(application.get("status", "")).strip().lower()
+    notes = application.get("notes", [])
+    interview_stage = application.get("interview_stage")
+    offer_joining_date = application.get("offer_joining_date")
+    offer_location = application.get("offer_location")
+    career_goals = application.get("career_goals", [])
+
+    if str(interview_stage).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        interview_stage = None
+
+    if str(offer_joining_date).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        offer_joining_date = None
+
+    if str(offer_location).strip().lower() in {
+        "",
+        "none",
+        "not specified",
+        "not scheduled",
+    }:
+        offer_location = None
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    score = 25
+
+    if total_goals:
+        score += min(int(career_progress * 0.25), 25)
+
+    if notes:
+        score += 10
+
+    if interview_stage:
+        score += 10
+
+    if status == "shortlisted":
+        score += 5
+    elif status == "interview":
+        score += 10
+    elif status == "offer":
+        score += 20
+
+    if offer_joining_date:
+        score += 5
+
+    if offer_location:
+        score += 5
+
+    score = min(score, 100)
+
+    if score < 45:
+        leverage = "LOW"
+    elif score < 65:
+        leverage = "MODERATE"
+    elif score < 85:
+        leverage = "STRONG"
+    else:
+        leverage = "VERY STRONG"
+
+    if career_progress >= 70:
+        career_alignment = "HIGH"
+    elif career_progress >= 40:
+        career_alignment = "MODERATE"
+    else:
+        career_alignment = "LOW"
+
+    if status == "offer":
+        counter_offer_readiness = "READY"
+    elif status in {"interview", "shortlisted"}:
+        counter_offer_readiness = "PREPARE"
+    else:
+        counter_offer_readiness = "NOT READY"
+
+    if status == "offer" and offer_joining_date:
+        urgency = "HIGH"
+    elif status == "offer":
+        urgency = "MODERATE"
+    else:
+        urgency = "LOW"
+
+    if score >= 80 and status == "offer":
+        recommendation = "COUNTER"
+    elif score >= 60 and status == "offer":
+        recommendation = "NEGOTIATE CAREFULLY"
+    elif score >= 45:
+        recommendation = "HOLD / BUILD LEVERAGE"
+    else:
+        recommendation = "ACCEPT CURRENT POSITION / BUILD VALUE"
+
+    strategy = []
+
+    if status == "offer":
+        strategy.append(
+            "Use the written offer as the basis for a professional counter-offer"
+        )
+    else:
+        strategy.append(
+            "Wait for stronger hiring leverage before making a counter-offer"
+        )
+
+    if notes:
+        strategy.append(
+            "Use projects, achievements, and role-relevant evidence as leverage"
+        )
+
+    if career_progress >= 50:
+        strategy.append(
+            "Connect the counter-offer request to long-term role value and growth"
+        )
+
+    if offer_location:
+        strategy.append(
+            "Include location, work mode, commute, or relocation impact in negotiation"
+        )
+
+    if offer_joining_date:
+        strategy.append(
+            "Negotiate before the joining deadline creates unnecessary pressure"
+        )
+
+    strategy_text = "\n".join(
+        f"{index}. {item}"
+        for index, item in enumerate(strategy, start=1)
+    )
+
+    return (
+        f"JERVIS Career Counter Offer Advisor - Application "
+        f"{application_id}\n"
+        "-------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Counter Offer Score: {score}/100\n"
+        f"Negotiation Leverage: {leverage}\n"
+        f"Career Alignment: {career_alignment}\n"
+        f"Counter Offer Readiness: {counter_offer_readiness}\n"
+        f"Joining Urgency: {urgency}\n"
+        "Counter Offer Strategy:\n"
+        f"{strategy_text}\n"
+        f"Final Recommendation: {recommendation}\n"
+        "Next Action: Prepare a realistic counter-offer based on role value, "
+        "market fit, compensation, location, and your current hiring leverage."
+    )

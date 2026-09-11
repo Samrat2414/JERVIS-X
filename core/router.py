@@ -61,6 +61,8 @@
     if command.startswith("career compare offers "):
         return "JOB_APPLICATION"
 
+    if command.startswith("career counter offer "):
+        return "JOB_APPLICATION"
     if command.startswith("career decline offer "):
         return "JOB_APPLICATION"
     if command.startswith("career accept offer "):
@@ -252,6 +254,8 @@ def get_routing_plan(command):
     elif normalized_command.startswith("career compare offers "):
         handler = "job_application_handlers.handle_get_career_offer_comparison_analysis"
 
+    elif normalized_command.startswith("career counter offer "):
+        handler = "job_application_handlers.handle_get_career_counter_offer_analysis"
     elif normalized_command.startswith("career decline offer "):
         handler = "job_application_handlers.handle_get_career_offer_decline_analysis"
     elif normalized_command.startswith("career accept offer "):
@@ -373,6 +377,7 @@ def route_command(command, handler=None, handlers=None):
         return response
 
     return "Sorry, I don't understand that command yet."
+
 
 
 
