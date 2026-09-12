@@ -7389,3 +7389,132 @@ def get_career_offer_followup_analysis(application_id):
         "Next Action: Review the message, replace 'Candidate' with your name, "
         "and send it to HR when appropriate."
     )
+
+def get_career_joining_confirmation_message(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    status = str(application.get("status", "")).strip().lower()
+    offer_joining_date = application.get("offer_joining_date")
+    offer_location = application.get("offer_location")
+    interview_stage = application.get("interview_stage")
+
+    if str(offer_joining_date).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        offer_joining_date = None
+
+    if str(offer_location).strip().lower() in {
+        "",
+        "none",
+        "not specified",
+        "not scheduled",
+    }:
+        offer_location = None
+
+    if str(interview_stage).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        interview_stage = None
+
+    if status == "offer" and offer_joining_date and offer_location:
+        readiness = "READY"
+    elif status == "offer":
+        readiness = "URGENT"
+    else:
+        readiness = "EARLY"
+
+    missing_details = []
+
+    if status != "offer":
+        missing_details.append("Formal offer status is not confirmed")
+
+    if not offer_joining_date:
+        missing_details.append("Joining date is not confirmed")
+
+    if not offer_location:
+        missing_details.append("Joining location or work mode is not confirmed")
+
+    subject = f"Joining Confirmation - {role} at {company}"
+
+    message_parts = [
+        f"Dear Hiring Team at {company},",
+        "",
+        f"Thank you for the opportunity to join {company} as a {role}.",
+    ]
+
+    if offer_joining_date:
+        message_parts.append(
+            f"I am writing to confirm that I will be available to join on "
+            f"{offer_joining_date}."
+        )
+    else:
+        message_parts.append(
+            "Could you please confirm the official joining date?"
+        )
+
+    if offer_location:
+        message_parts.append(
+            f"I also acknowledge the joining location or work arrangement: "
+            f"{offer_location}."
+        )
+    else:
+        message_parts.append(
+            "Please also confirm the joining location or work mode."
+        )
+
+    message_parts.append(
+        "Kindly let me know the reporting time, contact person, required "
+        "documents, and any onboarding formalities I should complete before "
+        "the joining date."
+    )
+
+    if interview_stage:
+        message_parts.append(
+            "I appreciate the support provided throughout the interview and "
+            "selection process."
+        )
+
+    message_parts.extend(
+        [
+            "",
+            "I look forward to joining the team and starting my role.",
+            "",
+            "Best regards,",
+            "Candidate",
+        ]
+    )
+
+    generated_message = "\n".join(message_parts)
+
+    if missing_details:
+        missing_text = "\n".join(
+            f"{index}. {item}"
+            for index, item in enumerate(missing_details, start=1)
+        )
+    else:
+        missing_text = "None"
+
+    return (
+        f"JERVIS Career Joining Confirmation Message Generator - Application "
+        f"{application_id}\n"
+        "-------------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Joining Confirmation Readiness: {readiness}\n"
+        f"Subject: {subject}\n"
+        "Missing / Unconfirmed Details:\n"
+        f"{missing_text}\n"
+        "Generated Joining Confirmation Message:\n"
+        f"{generated_message}\n"
+        "Next Action: Review the message, confirm all joining details, replace "
+        "'Candidate' with your name, and send it to HR."
+    )

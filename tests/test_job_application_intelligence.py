@@ -45,6 +45,7 @@ from core.job_application_intelligence import (
     get_career_negotiation_script,
     get_career_acceptance_message,
     get_career_offer_followup_analysis,
+    get_career_joining_confirmation_message,
     _load,
     _save,
     get_onboarding_plan,
@@ -5010,6 +5011,126 @@ def test_career_offer_followup_output_sections():
     assert "Follow-Up Readiness:" in result
     assert "Pending / Unconfirmed Items:" in result
     assert "Generated Follow-Up Message:" in result
+    assert "Best regards," in result
+    assert "Next Action:" in result
+
+
+def test_career_joining_confirmation_not_found():
+    result = get_career_joining_confirmation_message("99999")
+    assert result == "Job application not found."
+
+
+def test_career_joining_confirmation_ready():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["offer_joining_date"] = "15-09-2026"
+            application["offer_location"] = "Kolkata"
+            break
+
+    _save(data)
+
+    result = get_career_joining_confirmation_message("1")
+
+    assert "Joining Confirmation Readiness: READY" in result
+    assert "Missing / Unconfirmed Details:" in result
+    assert "None" in result
+
+
+def test_career_joining_confirmation_urgent():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["offer_joining_date"] = "Not Scheduled"
+            application["offer_location"] = "Not Specified"
+            break
+
+    _save(data)
+
+    result = get_career_joining_confirmation_message("1")
+
+    assert "Joining Confirmation Readiness: URGENT" in result
+    assert "Joining date is not confirmed" in result
+    assert "Joining location or work mode is not confirmed" in result
+
+
+def test_career_joining_confirmation_early():
+    add_test_application()
+
+    result = get_career_joining_confirmation_message("1")
+
+    assert "Joining Confirmation Readiness: EARLY" in result
+    assert "Formal offer status is not confirmed" in result
+
+
+def test_career_joining_confirmation_joining_date_message():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["offer_joining_date"] = "20-09-2026"
+            application["offer_location"] = "Kolkata"
+            break
+
+    _save(data)
+
+    result = get_career_joining_confirmation_message("1")
+
+    assert (
+        "I am writing to confirm that I will be available to join on "
+        "20-09-2026."
+    ) in result
+
+
+def test_career_joining_confirmation_location_message():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["offer_joining_date"] = "20-09-2026"
+            application["offer_location"] = "Kolkata"
+            break
+
+    _save(data)
+
+    result = get_career_joining_confirmation_message("1")
+
+    assert (
+        "I also acknowledge the joining location or work arrangement: "
+        "Kolkata."
+    ) in result
+
+
+def test_career_joining_confirmation_subject():
+    add_test_application()
+
+    result = get_career_joining_confirmation_message("1")
+
+    assert (
+        "Subject: Joining Confirmation - Python Developer at Test Company"
+        in result
+    )
+
+
+def test_career_joining_confirmation_output_sections():
+    add_test_application()
+
+    result = get_career_joining_confirmation_message("1")
+
+    assert "JERVIS Career Joining Confirmation Message Generator" in result
+    assert "Joining Confirmation Readiness:" in result
+    assert "Missing / Unconfirmed Details:" in result
+    assert "Generated Joining Confirmation Message:" in result
     assert "Best regards," in result
     assert "Next Action:" in result
 

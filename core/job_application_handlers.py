@@ -1,4 +1,4 @@
-﻿from core.job_application_intelligence import (
+from core.job_application_intelligence import (
     get_job_application_report,
     get_job_application_commands,
     search_job_applications,
@@ -47,6 +47,7 @@
     get_career_counter_offer_analysis,
     get_career_negotiation_script,
     get_career_acceptance_message,
+    get_career_joining_confirmation_message,
 )
 
 
@@ -368,3 +369,12 @@ def handle_get_career_offer_followup(command):
         return "Usage: career offer followup <application_id>"
 
     return get_career_offer_followup_analysis(application_id)
+
+
+def handle_get_career_joining_confirmation(command):
+    application_id = command[len("career joining confirmation "):].strip()
+
+    if not application_id:
+        return "Usage: career joining confirmation <application_id>"
+
+    return get_career_joining_confirmation_message(application_id)
