@@ -47,6 +47,7 @@ from core.job_application_intelligence import (
     get_career_offer_followup_analysis,
     get_career_joining_confirmation_message,
     get_career_resignation_letter,
+    get_career_relieving_letter_request,
     _load,
     _save,
     get_onboarding_plan,
@@ -5209,3 +5210,74 @@ def test_career_resignation_letter_next_action():
 
     assert "Next Action:" in result
     assert "send it to your manager or HR" in result
+
+def test_career_relieving_letter_request_not_found():
+    result = get_career_relieving_letter_request("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_relieving_letter_request_header():
+    add_test_application()
+
+    result = get_career_relieving_letter_request("1")
+
+    assert "JERVIS Career Relieving Letter Request Generator" in result
+    assert "Application 1" in result
+
+
+def test_career_relieving_letter_request_company_and_role():
+    add_test_application()
+
+    result = get_career_relieving_letter_request("1")
+
+    assert "Company: Test Company" in result
+    assert "Role: Python Developer" in result
+
+
+def test_career_relieving_letter_request_subject():
+    add_test_application()
+
+    result = get_career_relieving_letter_request("1")
+
+    assert (
+        "Subject: Request for Relieving and Experience Letter - Test Company"
+        in result
+    )
+
+
+def test_career_relieving_letter_request_message_content():
+    add_test_application()
+
+    result = get_career_relieving_letter_request("1")
+
+    assert "request my relieving letter and experience letter" in result
+    assert "exit formalities and handover process" in result
+
+
+def test_career_relieving_letter_request_final_settlement():
+    add_test_application()
+
+    result = get_career_relieving_letter_request("1")
+
+    assert "final settlement formalities" in result
+    assert "clearance" in result
+    assert "documentation" in result
+
+
+def test_career_relieving_letter_request_signature():
+    add_test_application()
+
+    result = get_career_relieving_letter_request("1")
+
+    assert "Best regards," in result
+    assert "Candidate" in result
+
+
+def test_career_relieving_letter_request_next_action():
+    add_test_application()
+
+    result = get_career_relieving_letter_request("1")
+
+    assert "Next Action:" in result
+    assert "send it to HR" in result

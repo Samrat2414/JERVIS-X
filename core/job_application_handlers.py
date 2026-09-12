@@ -49,6 +49,7 @@ from core.job_application_intelligence import (
     get_career_acceptance_message,
     get_career_joining_confirmation_message,
     get_career_resignation_letter,
+    get_career_relieving_letter_request,
 )
 
 
@@ -384,3 +385,14 @@ def handle_get_career_resignation_letter(command):
     if not application_id:
         return "Usage: career resignation letter <application_id>"
     return get_career_resignation_letter(application_id)
+
+
+def handle_get_career_relieving_letter_request(command):
+    application_id = command[
+        len("career relieving letter request "):
+    ].strip()
+
+    if not application_id:
+        return "Usage: career relieving letter request <application_id>"
+
+    return get_career_relieving_letter_request(application_id)

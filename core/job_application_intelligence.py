@@ -7556,3 +7556,40 @@ def get_career_resignation_letter(application_id):
         "Next Action: Review the letter, replace 'Candidate' with your name, "
         "confirm your notice period, and send it to your manager or HR."
     )
+
+def get_career_relieving_letter_request(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+
+    subject = f"Request for Relieving and Experience Letter - {company}"
+
+    message = (
+        "Dear HR,\n\n"
+        f"I am writing to request my relieving letter and experience letter "
+        f"for my role as {role} at {company}.\n\n"
+        "I would be grateful if you could please share the required documents "
+        "after completion of the applicable exit formalities and handover process.\n\n"
+        "Please also let me know if any additional clearance, documentation, "
+        "or final settlement formalities are pending from my side.\n\n"
+        "Thank you for your support and assistance.\n\n"
+        "Best regards,\n"
+        "Candidate"
+    )
+
+    return (
+        f"JERVIS Career Relieving Letter Request Generator - Application "
+        f"{application_id}\n"
+        "-----------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Subject: {subject}\n"
+        "Generated Relieving Letter Request:\n"
+        f"{message}\n"
+        "Next Action: Review the message, replace 'Candidate' with your name, "
+        "confirm your exit formalities, and send it to HR."
+    )
