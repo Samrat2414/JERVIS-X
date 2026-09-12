@@ -6949,3 +6949,192 @@ def get_career_counter_offer_analysis(application_id):
         "Next Action: Prepare a realistic counter-offer based on role value, "
         "market fit, compensation, location, and your current hiring leverage."
     )
+
+def get_career_negotiation_script(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    status = str(application.get("status", "")).strip().lower()
+    notes = application.get("notes", [])
+    interview_stage = application.get("interview_stage")
+    offer_joining_date = application.get("offer_joining_date")
+    offer_location = application.get("offer_location")
+    career_goals = application.get("career_goals", [])
+
+    if str(interview_stage).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        interview_stage = None
+
+    if str(offer_joining_date).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        offer_joining_date = None
+
+    if str(offer_location).strip().lower() in {
+        "",
+        "none",
+        "not specified",
+        "not scheduled",
+    }:
+        offer_location = None
+
+    completed_goals = sum(
+        1
+        for goal in career_goals
+        if isinstance(goal, dict) and goal.get("completed")
+    )
+    total_goals = len(career_goals)
+
+    career_progress = (
+        round((completed_goals / total_goals) * 100, 1)
+        if total_goals
+        else 0.0
+    )
+
+    score = 30
+
+    if total_goals:
+        score += min(int(career_progress * 0.25), 25)
+
+    if notes:
+        score += 10
+
+    if interview_stage:
+        score += 10
+
+    if status == "shortlisted":
+        score += 5
+    elif status == "interview":
+        score += 10
+    elif status == "offer":
+        score += 15
+
+    if offer_joining_date:
+        score += 5
+
+    if offer_location:
+        score += 5
+
+    score = min(score, 100)
+
+    if score < 45:
+        leverage = "LOW"
+    elif score < 65:
+        leverage = "MODERATE"
+    elif score < 85:
+        leverage = "STRONG"
+    else:
+        leverage = "VERY STRONG"
+
+    if status == "offer":
+        script_readiness = "READY"
+    elif status in {"interview", "shortlisted"}:
+        script_readiness = "PREPARE"
+    else:
+        script_readiness = "EARLY"
+
+    if career_progress >= 70:
+        career_alignment = "HIGH"
+    elif career_progress >= 40:
+        career_alignment = "MODERATE"
+    else:
+        career_alignment = "LOW"
+
+    opening = (
+        f"Thank you for the opportunity to join {company} as a {role}. "
+        "I am very interested in the role and appreciate the offer."
+    )
+
+    value_points = []
+
+    if notes:
+        value_points.append(
+            "I can bring relevant project, technical, and practical experience "
+            "that supports the responsibilities of this role."
+        )
+
+    if career_progress >= 50:
+        value_points.append(
+            "The role aligns well with my long-term career development, "
+            "and I am confident I can grow and contribute strongly."
+        )
+
+    if interview_stage:
+        value_points.append(
+            "Based on the interview discussions, I believe my skills match "
+            "the role requirements well."
+        )
+
+    if not value_points:
+        value_points.append(
+            "I am motivated to contribute, learn quickly, and build long-term "
+            "value in this position."
+        )
+
+    value_text = " ".join(value_points)
+
+    location_text = ""
+
+    if offer_location:
+        location_text = (
+            f" I would also like to consider the overall impact of the "
+            f"location or work arrangement ({offer_location})."
+        )
+
+    counter_request = (
+        "Considering the role responsibilities, my skills, and the overall "
+        "value I can bring, I would like to discuss whether there is flexibility "
+        "in the compensation package."
+    )
+
+    if leverage in {"STRONG", "VERY STRONG"}:
+        fallback = (
+            "If the base salary has limited flexibility, I would also be happy "
+            "to discuss benefits, joining support, work mode, performance review "
+            "timing, or other components of the package."
+        )
+    else:
+        fallback = (
+            "I understand there may be budget limitations, so I am open to "
+            "discussing the complete package and finding a balanced solution."
+        )
+
+    closing = (
+        "I remain very interested in the opportunity and hope we can agree on "
+        "a package that works well for both sides."
+    )
+
+    full_script = (
+        f"{opening}\n\n"
+        f"{value_text}{location_text}\n\n"
+        f"{counter_request}\n\n"
+        f"{fallback}\n\n"
+        f"{closing}"
+    )
+
+    return (
+        f"JERVIS Career Offer Negotiation Script Generator - Application "
+        f"{application_id}\n"
+        "--------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Career Goal Progress: {completed_goals}/"
+        f"{total_goals} ({career_progress}%)\n"
+        f"Negotiation Score: {score}/100\n"
+        f"Negotiation Leverage: {leverage}\n"
+        f"Career Alignment: {career_alignment}\n"
+        f"Script Readiness: {script_readiness}\n"
+        "Generated Negotiation Script:\n"
+        f"{full_script}\n"
+        "Next Action: Customize the compensation request with your target "
+        "salary or package before sending or speaking with HR."
+    )

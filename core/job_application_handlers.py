@@ -45,6 +45,7 @@
     get_career_offer_acceptance_analysis,
     get_career_offer_decline_analysis,
     get_career_counter_offer_analysis,
+    get_career_negotiation_script,
 )
 
 
@@ -306,6 +307,14 @@ def handle_get_career_offer_acceptance_analysis(command):
 
 
 
+def handle_get_career_negotiation_script(command):
+    application_id = command[len("career negotiation script "):].strip()
+
+    if not application_id:
+        return "Usage: career negotiation script <application_id>"
+
+    return get_career_negotiation_script(application_id)
+
 def handle_get_career_counter_offer_analysis(command):
     application_id = command[len("career counter offer "):].strip()
 
@@ -336,6 +345,7 @@ def handle_get_career_compensation_comparison_analysis(command):
     ].strip()
 
     return get_career_compensation_comparison_analysis(application_id)
+
 
 
 

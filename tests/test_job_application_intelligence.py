@@ -42,6 +42,7 @@ from core.job_application_intelligence import (
     get_salary_growth_analysis,
     get_career_roadmap,
     get_career_counter_offer_analysis,
+    get_career_negotiation_script,
     _load,
     _save,
     get_onboarding_plan,
@@ -4646,3 +4647,129 @@ def test_career_counter_offer_output_sections():
 
 
 
+
+
+
+def test_career_negotiation_script_not_found():
+    result = get_career_negotiation_script("99999")
+    assert result == "Job application not found."
+
+
+def test_career_negotiation_script_offer_ready():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            break
+
+    _save(data)
+
+    result = get_career_negotiation_script("1")
+
+    assert "Script Readiness: READY" in result
+
+
+def test_career_negotiation_script_interview_prepare():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Interview"
+            application["interview_stage"] = "Technical Interview"
+            break
+
+    _save(data)
+
+    result = get_career_negotiation_script("1")
+
+    assert "Script Readiness: PREPARE" in result
+    assert "Based on the interview discussions" in result
+
+
+def test_career_negotiation_script_applied_early():
+    add_test_application()
+
+    result = get_career_negotiation_script("1")
+
+    assert "Script Readiness: EARLY" in result
+
+
+def test_career_negotiation_script_placeholder_values():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["interview_stage"] = "Not Scheduled"
+            application["offer_joining_date"] = "Not Scheduled"
+            application["offer_location"] = "Not Specified"
+            break
+
+    _save(data)
+
+    result = get_career_negotiation_script("1")
+
+    assert "Script Readiness: EARLY" in result
+    assert "(Not Specified)" not in result
+
+
+def test_career_negotiation_script_strong_leverage():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["notes"] = ["Strong Python project experience"]
+            application["interview_stage"] = "Final Interview"
+            application["offer_joining_date"] = "30-12-2026"
+            application["offer_location"] = "Kolkata"
+            application["career_goals"] = [
+                {"goal": "Python Developer", "completed": True},
+                {"goal": "Backend Developer", "completed": True},
+            ]
+            break
+
+    _save(data)
+
+    result = get_career_negotiation_script("1")
+
+    assert "Negotiation Leverage: VERY STRONG" in result
+    assert "If the base salary has limited flexibility" in result
+
+
+def test_career_negotiation_script_default_value_point():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["notes"] = []
+            application["career_goals"] = []
+            application["interview_stage"] = None
+            break
+
+    _save(data)
+
+    result = get_career_negotiation_script("1")
+
+    assert (
+        "I am motivated to contribute, learn quickly, and build long-term "
+        "value in this position."
+    ) in result
+
+
+def test_career_negotiation_script_output_sections():
+    add_test_application()
+
+    result = get_career_negotiation_script("1")
+
+    assert "JERVIS Career Offer Negotiation Script Generator" in result
+    assert "Negotiation Score:" in result
+    assert "Negotiation Leverage:" in result
+    assert "Career Alignment:" in result
+    assert "Generated Negotiation Script:" in result
+    assert "Next Action:" in result

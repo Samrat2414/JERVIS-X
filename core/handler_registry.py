@@ -46,6 +46,7 @@ HANDLERS = {
     "job_application_handlers.handle_get_career_offer_negotiation_advice": job_application_handlers.handle_get_career_offer_negotiation_advice,
     "job_application_handlers.handle_get_career_offer_comparison_analysis": job_application_handlers.handle_get_career_offer_comparison_analysis,
     "job_application_handlers.handle_get_career_offer_acceptance_analysis": job_application_handlers.handle_get_career_offer_acceptance_analysis,
+    "job_application_handlers.handle_get_career_negotiation_script": job_application_handlers.handle_get_career_negotiation_script,
     "job_application_handlers.handle_get_career_counter_offer_analysis": job_application_handlers.handle_get_career_counter_offer_analysis,
     "job_application_handlers.handle_get_career_offer_decline_analysis": job_application_handlers.handle_get_career_offer_decline_analysis,
 
@@ -64,6 +65,7 @@ HANDLERS = {
 
 def get_handler(name):
     return HANDLERS.get(name)
+
 
 
 
