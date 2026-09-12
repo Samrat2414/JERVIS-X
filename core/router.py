@@ -61,6 +61,8 @@ def classify_command(command):
     if command.startswith("career compare offers "):
         return "JOB_APPLICATION"
 
+    if command.startswith("career resignation letter "):
+        return "JOB_APPLICATION"
     if command.startswith("career joining confirmation "):
         return "JOB_APPLICATION"
     if command.startswith("career offer followup "):
@@ -262,6 +264,8 @@ def get_routing_plan(command):
     elif normalized_command.startswith("career compare offers "):
         handler = "job_application_handlers.handle_get_career_offer_comparison_analysis"
 
+    elif normalized_command.startswith("career resignation letter "):
+        handler = "job_application_handlers.handle_get_career_resignation_letter"
     elif normalized_command.startswith("career joining confirmation "):
         handler = "job_application_handlers.handle_get_career_joining_confirmation"
     elif normalized_command.startswith("career offer followup "):

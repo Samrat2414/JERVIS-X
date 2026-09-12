@@ -7518,3 +7518,41 @@ def get_career_joining_confirmation_message(application_id):
         "Next Action: Review the message, confirm all joining details, replace "
         "'Candidate' with your name, and send it to HR."
     )
+
+def get_career_resignation_letter(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+
+    subject = f"Resignation from {role} Position - {company}"
+
+    message = (
+        f"Dear Manager,\n\n"
+        f"Please accept this letter as formal notice of my resignation from "
+        f"my position as {role} at {company}.\n\n"
+        "I am grateful for the opportunities, support, and experience I have "
+        "received during my time with the organization.\n\n"
+        "Please let me know the required notice period, handover process, and "
+        "any exit formalities I should complete.\n\n"
+        "I will do my best to ensure a smooth transition of my responsibilities.\n\n"
+        "Thank you for your support and understanding.\n\n"
+        "Best regards,\n"
+        "Candidate"
+    )
+
+    return (
+        f"JERVIS Career Resignation Letter Generator - Application "
+        f"{application_id}\n"
+        "-----------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Subject: {subject}\n"
+        "Generated Resignation Letter:\n"
+        f"{message}\n"
+        "Next Action: Review the letter, replace 'Candidate' with your name, "
+        "confirm your notice period, and send it to your manager or HR."
+    )

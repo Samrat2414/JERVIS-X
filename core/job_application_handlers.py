@@ -48,6 +48,7 @@ from core.job_application_intelligence import (
     get_career_negotiation_script,
     get_career_acceptance_message,
     get_career_joining_confirmation_message,
+    get_career_resignation_letter,
 )
 
 
@@ -378,3 +379,8 @@ def handle_get_career_joining_confirmation(command):
         return "Usage: career joining confirmation <application_id>"
 
     return get_career_joining_confirmation_message(application_id)
+def handle_get_career_resignation_letter(command):
+    application_id = command[len("career resignation letter "):].strip()
+    if not application_id:
+        return "Usage: career resignation letter <application_id>"
+    return get_career_resignation_letter(application_id)

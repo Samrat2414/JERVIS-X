@@ -46,6 +46,7 @@ from core.job_application_intelligence import (
     get_career_acceptance_message,
     get_career_offer_followup_analysis,
     get_career_joining_confirmation_message,
+    get_career_resignation_letter,
     _load,
     _save,
     get_onboarding_plan,
@@ -5134,3 +5135,77 @@ def test_career_joining_confirmation_output_sections():
     assert "Best regards," in result
     assert "Next Action:" in result
 
+
+def test_career_resignation_letter_not_found():
+    result = get_career_resignation_letter("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_resignation_letter_header():
+    add_test_application()
+
+    result = get_career_resignation_letter("1")
+
+    assert "JERVIS Career Resignation Letter Generator" in result
+    assert "Application 1" in result
+
+
+def test_career_resignation_letter_company_and_role():
+    add_test_application()
+
+    result = get_career_resignation_letter("1")
+
+    assert "Company: Test Company" in result
+    assert "Role: Python Developer" in result
+
+
+def test_career_resignation_letter_subject():
+    add_test_application()
+
+    result = get_career_resignation_letter("1")
+
+    assert (
+        "Subject: Resignation from Python Developer Position - Test Company"
+        in result
+    )
+
+
+def test_career_resignation_letter_message_content():
+    add_test_application()
+
+    result = get_career_resignation_letter("1")
+
+    assert (
+        "Please accept this letter as formal notice of my resignation"
+        in result
+    )
+    assert "I will do my best to ensure a smooth transition" in result
+
+
+def test_career_resignation_letter_notice_period():
+    add_test_application()
+
+    result = get_career_resignation_letter("1")
+
+    assert "required notice period" in result
+    assert "handover process" in result
+    assert "exit formalities" in result
+
+
+def test_career_resignation_letter_signature():
+    add_test_application()
+
+    result = get_career_resignation_letter("1")
+
+    assert "Best regards," in result
+    assert "Candidate" in result
+
+
+def test_career_resignation_letter_next_action():
+    add_test_application()
+
+    result = get_career_resignation_letter("1")
+
+    assert "Next Action:" in result
+    assert "send it to your manager or HR" in result
