@@ -1,4 +1,4 @@
-﻿import os
+import os
 import math
 import threading
 from datetime import datetime
@@ -201,6 +201,7 @@ from core.process_manager import (
     get_running_processes,
     search_processes,
     terminate_process_by_pid,
+    format_processes,
 )
 from core.storage_analyzer import (
     get_disk_report,
@@ -505,7 +506,7 @@ class JervisApp(ctk.CTk):
 
         self.status_label = ctk.CTkLabel(
             self.sidebar,
-            text="â— ONLINE",
+            text="● ONLINE",
             font=("Arial", 14, "bold"),
         )
         self.status_label.pack(pady=(0, 25))
@@ -568,7 +569,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkLabel(
             self.sidebar,
-            text="JERVIS X\nStep 84 â€¢ Career Intelligence",
+            text="JERVIS X\nStep 84 • Career Intelligence",
             font=("Arial", 11),
         ).pack(
             side="bottom",
@@ -942,7 +943,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             input_frame,
-            text="ðŸŽ™ Mic",
+            text="🎙 Mic",
             width=110,
             height=45,
             command=self.start_voice_command,
@@ -1057,7 +1058,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             add_frame,
-            text="âž• Add Task",
+            text="➕ Add Task",
             width=130,
             height=44,
             command=self.gui_add_task,
@@ -1129,7 +1130,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             controls,
-            text="âœ“ Complete",
+            text="✓ Complete",
             width=120,
             height=42,
             command=self.gui_complete_task,
@@ -1142,7 +1143,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             controls,
-            text="â†» Refresh",
+            text="↻ Refresh",
             width=110,
             height=42,
             command=self.refresh_tasks_page,
@@ -1155,7 +1156,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             controls,
-            text="ðŸ—‘ Clear Completed",
+            text="🗑 Clear Completed",
             width=160,
             height=42,
             command=self.gui_clear_completed_tasks,
@@ -1285,7 +1286,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             add_frame,
-            text="âž• Save Note",
+            text="➕ Save Note",
             width=130,
             height=44,
             command=self.gui_save_note,
@@ -1363,7 +1364,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             controls,
-            text="ðŸ”Ž Search",
+            text="🔎 Search",
             width=110,
             height=42,
             command=self.gui_search_notes,
@@ -1376,7 +1377,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             controls,
-            text="â†» Refresh",
+            text="↻ Refresh",
             width=110,
             height=42,
             command=self.refresh_notes_page,
@@ -1520,7 +1521,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             add_frame,
-            text="âž• Add Reminder",
+            text="➕ Add Reminder",
             width=150,
             height=44,
             command=self.gui_add_reminder,
@@ -1592,7 +1593,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             controls,
-            text="âœ“ Complete",
+            text="✓ Complete",
             width=120,
             height=42,
             command=self.gui_complete_reminder,
@@ -1605,7 +1606,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             controls,
-            text="â†» Refresh",
+            text="↻ Refresh",
             width=110,
             height=42,
             command=self.refresh_reminders_page,
@@ -1981,7 +1982,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             search_frame,
-            text="ðŸ”Ž Search",
+            text="🔎 Search",
             width=110,
             height=42,
             command=self.gui_search_files,
@@ -1994,7 +1995,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             search_frame,
-            text="ðŸ“‚ Open Match",
+            text="📂 Open Match",
             width=130,
             height=42,
             command=self.gui_open_matching_file,
@@ -2064,7 +2065,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             filter_frame,
-            text="ðŸ“„ Show Files",
+            text="📄 Show Files",
             width=120,
             height=40,
             command=self.gui_filter_files,
@@ -2136,7 +2137,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             create_frame,
-            text="ðŸ“„ Create Text File",
+            text="📄 Create Text File",
             width=145,
             height=42,
             command=self.gui_create_text_file,
@@ -2149,7 +2150,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             create_frame,
-            text="ðŸ“ Create Folder",
+            text="📁 Create Folder",
             width=135,
             height=42,
             command=self.gui_create_folder,
@@ -2342,7 +2343,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             search_frame,
-            text="ðŸ”Ž Search",
+            text="🔎 Search",
             width=110,
             height=42,
             command=self.gui_search_history,
@@ -2355,7 +2356,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             search_frame,
-            text="â†» Refresh",
+            text="↻ Refresh",
             width=110,
             height=42,
             command=self.refresh_history_page,
@@ -2368,7 +2369,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             search_frame,
-            text="ðŸ—‘ Clear History",
+            text="🗑 Clear History",
             width=140,
             height=42,
             command=self.gui_clear_history,
@@ -2550,7 +2551,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             search_frame,
-            text="ðŸŒ¦ Get Weather",
+            text="🌦 Get Weather",
             width=140,
             height=44,
             command=self.gui_fetch_weather,
@@ -2563,7 +2564,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             search_frame,
-            text="â†» Refresh",
+            text="↻ Refresh",
             width=110,
             height=44,
             command=self.gui_refresh_weather,
@@ -2604,7 +2605,7 @@ class JervisApp(ctk.CTk):
         self.weather_temp_card = self.create_info_card(
             page,
             "TEMPERATURE",
-            "-- Â°C",
+            "-- °C",
         )
         self.weather_temp_card["frame"].grid(
             row=4,
@@ -2617,7 +2618,7 @@ class JervisApp(ctk.CTk):
         self.weather_feels_card = self.create_info_card(
             page,
             "FEELS LIKE",
-            "-- Â°C",
+            "-- °C",
         )
         self.weather_feels_card["frame"].grid(
             row=5,
@@ -2744,10 +2745,10 @@ class JervisApp(ctk.CTk):
             text=str(data["condition"]),
         )
         self.weather_temp_card["value"].configure(
-            text=f"{data['temperature']} Â°C",
+            text=f"{data['temperature']} °C",
         )
         self.weather_feels_card["value"].configure(
-            text=f"{data['feels_like']} Â°C",
+            text=f"{data['feels_like']} °C",
         )
         self.weather_humidity_card["value"].configure(
             text=f"{data['humidity']} %",
@@ -2764,7 +2765,7 @@ class JervisApp(ctk.CTk):
             f"weather {city}",
             (
                 f"{data['condition']}, "
-                f"{data['temperature']}Â°C, "
+                f"{data['temperature']}°C, "
                 f"humidity {data['humidity']}%, "
                 f"wind {data['wind_speed']} km/h"
             ),
@@ -2831,7 +2832,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             search_frame,
-            text="ðŸ“° Get News",
+            text="📰 Get News",
             width=130,
             height=44,
             command=self.gui_fetch_news,
@@ -2844,7 +2845,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             search_frame,
-            text="â†» Refresh",
+            text="↻ Refresh",
             width=110,
             height=44,
             command=self.gui_refresh_news,
@@ -3010,7 +3011,7 @@ class JervisApp(ctk.CTk):
         self.last_news_topic = topic
 
         self.news_title_label.configure(
-            text=f"LATEST HEADLINES â€” {topic.upper()}",
+            text=f"LATEST HEADLINES — {topic.upper()}",
         )
         self._set_news_output(result)
         self.news_status_label.configure(
@@ -3060,21 +3061,21 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             search_frame,
-            text="ðŸŒ Google",
+            text="🌐 Google",
             height=42,
             command=self.gui_google_search,
         ).grid(row=1, column=0, padx=(15, 5), pady=(5, 15), sticky="ew")
 
         ctk.CTkButton(
             search_frame,
-            text="ðŸ”Ž Web Search",
+            text="🔎 Web Search",
             height=42,
             command=self.gui_web_search,
         ).grid(row=1, column=1, padx=5, pady=(5, 15), sticky="ew")
 
         ctk.CTkButton(
             search_frame,
-            text="â–¶ YouTube",
+            text="▶ YouTube",
             height=42,
             command=self.gui_youtube_search,
         ).grid(row=1, column=2, padx=(5, 15), pady=(5, 15), sticky="ew")
@@ -3207,10 +3208,10 @@ class JervisApp(ctk.CTk):
             row=0, column=0, columnspan=2, padx=15, pady=(15, 8), sticky="w"
         )
         for i, (label, func) in enumerate([
-            ("ðŸ”Š Volume Up", volume_up),
-            ("ðŸ”‰ Volume Down", volume_down),
-            ("ðŸ”‡ Mute", mute_volume),
-            ("ðŸ”ˆ Unmute", unmute_volume),
+            ("🔊 Volume Up", volume_up),
+            ("🔉 Volume Down", volume_down),
+            ("🔇 Mute", mute_volume),
+            ("🔈 Unmute", unmute_volume),
         ]):
             ctk.CTkButton(
                 audio, text=label, height=40,
@@ -3224,10 +3225,10 @@ class JervisApp(ctk.CTk):
             row=0, column=0, columnspan=2, padx=15, pady=(15, 8), sticky="w"
         )
         for i, (label, func) in enumerate([
-            ("â˜€ Brightness Up", brightness_up),
-            ("ðŸŒ™ Brightness Down", brightness_down),
-            ("ðŸ–¥ Display Settings", open_display_settings),
-            ("ðŸ”Š Sound Settings", open_sound_settings),
+            ("☀ Brightness Up", brightness_up),
+            ("🌙 Brightness Down", brightness_down),
+            ("🖥 Display Settings", open_display_settings),
+            ("🔊 Sound Settings", open_sound_settings),
         ]):
             ctk.CTkButton(
                 display, text=label, height=40,
@@ -3242,14 +3243,14 @@ class JervisApp(ctk.CTk):
         ).grid(row=0, column=0, columnspan=4, padx=15, pady=(15, 8), sticky="w")
 
         for i, (label, func) in enumerate([
-            ("ðŸ“¸ Screenshot", take_screenshot),
-            ("ðŸ”‹ Battery", battery_status),
-            ("ðŸ“¶ Wi-Fi Status", wifi_status),
-            ("ðŸ’» System Info", system_info),
-            ("âš™ Windows Settings", open_windows_settings),
-            ("ðŸ“¶ Wi-Fi Settings", open_wifi_settings),
+            ("📸 Screenshot", take_screenshot),
+            ("🔋 Battery", battery_status),
+            ("📶 Wi-Fi Status", wifi_status),
+            ("💻 System Info", system_info),
+            ("⚙ Windows Settings", open_windows_settings),
+            ("📶 Wi-Fi Settings", open_wifi_settings),
             ("Bluetooth Settings", open_bluetooth_settings),
-            ("ðŸ“Š Task Manager", open_task_manager),
+            ("📊 Task Manager", open_task_manager),
         ]):
             ctk.CTkButton(
                 utilities, text=label, height=40,
@@ -3265,7 +3266,7 @@ class JervisApp(ctk.CTk):
             row=0, column=0, padx=15, pady=15, sticky="w"
         )
         ctk.CTkButton(
-            security, text="ðŸ”’ Lock PC", width=160, height=40,
+            security, text="🔒 Lock PC", width=160, height=40,
             command=self.gui_lock_pc,
         ).grid(row=0, column=1, padx=15, pady=15)
 
@@ -3375,7 +3376,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             button_frame,
-            text="â†» Refresh",
+            text="↻ Refresh",
             height=40,
             command=self.gui_refresh_clipboard,
         ).grid(row=0, column=0, padx=(0, 5), sticky="ew")
@@ -3412,7 +3413,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             copy_frame,
-            text="ðŸ“‹ Copy to Clipboard",
+            text="📋 Copy to Clipboard",
             height=40,
             command=self.gui_copy_clipboard,
         ).grid(
@@ -3444,7 +3445,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             history_buttons,
-            text="â†» Refresh History",
+            text="↻ Refresh History",
             width=130,
             command=self.gui_refresh_clipboard_history,
         ).grid(row=0, column=0, padx=5)
@@ -3685,7 +3686,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             page,
-            text="ðŸ” Generate Password",
+            text="🔐 Generate Password",
             height=46,
             command=self.gui_generate_password,
         ).grid(
@@ -3746,7 +3747,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             result_frame,
-            text="ðŸ“‹ Copy Password",
+            text="📋 Copy Password",
             height=42,
             command=self.gui_copy_generated_password,
         ).grid(
@@ -7940,7 +7941,7 @@ class JervisApp(ctk.CTk):
 
         self.security_new_pin_entry = ctk.CTkEntry(
             change_frame,
-            placeholder_text="New PIN (4â€“8 digits)",
+            placeholder_text="New PIN (4–8 digits)",
             show="*",
             height=42,
         )
@@ -10185,7 +10186,7 @@ class JervisApp(ctk.CTk):
             self.net_status_label.configure(
                 text=(
                     f"Network refreshed: "
-                    f"{health.get('status', 'Unknown')} â€¢ "
+                    f"{health.get('status', 'Unknown')} • "
                     f"{'Connected' if health.get('internet') else 'Disconnected'}"
                 )
             )
@@ -10443,8 +10444,8 @@ class JervisApp(ctk.CTk):
 
             self.maintenance_refresh_label.configure(
                 text=(
-                    f"{result.get('status', 'Unknown')} â€¢ "
-                    f"Network: {result.get('network_status', 'Unknown')} â€¢ "
+                    f"{result.get('status', 'Unknown')} • "
+                    f"Network: {result.get('network_status', 'Unknown')} • "
                     f"Battery: {battery_text}"
                 )
             )
@@ -10636,8 +10637,8 @@ class JervisApp(ctk.CTk):
 
             self.security_refresh_label.configure(
                 text=(
-                    f"{result.get('status', 'Unknown')} â€¢ "
-                    f"Score {result.get('score', 0)}/100 â€¢ "
+                    f"{result.get('status', 'Unknown')} • "
+                    f"Score {result.get('score', 0)}/100 • "
                     f"PIN {'Enabled' if result.get('pin_enabled') else 'Disabled'}"
                 )
             )
@@ -10892,8 +10893,8 @@ class JervisApp(ctk.CTk):
 
             self.alert_int_refresh_label.configure(
                 text=(
-                    f"{result.get('status', 'Unknown')} â€¢ "
-                    f"{result.get('total_alerts', 0)} active â€¢ "
+                    f"{result.get('status', 'Unknown')} • "
+                    f"{result.get('total_alerts', 0)} active • "
                     f"Notifications {result.get('notifications', 'Unknown')}"
                 )
             )
@@ -11182,8 +11183,8 @@ class JervisApp(ctk.CTk):
 
             self.backup_refresh_label.configure(
                 text=(
-                    f"{result.get('status', 'Unknown')} â€¢ "
-                    f"{result.get('backup_count', 0)} backup(s) â€¢ "
+                    f"{result.get('status', 'Unknown')} • "
+                    f"{result.get('backup_count', 0)} backup(s) • "
                     f"Recovery {'Ready' if result.get('recovery_ready') else 'Not Ready'}"
                 )
             )
@@ -11474,8 +11475,8 @@ class JervisApp(ctk.CTk):
 
             self.auto_int_refresh_label.configure(
                 text=(
-                    f"{result.get('status', 'Unknown')} â€¢ "
-                    f"{result.get('action_count', 0)} actions â€¢ "
+                    f"{result.get('status', 'Unknown')} • "
+                    f"{result.get('action_count', 0)} actions • "
                     f"{tasks.get('pending', 0)} pending task(s)"
                 )
             )
@@ -11762,8 +11763,8 @@ class JervisApp(ctk.CTk):
 
             self.usage_refresh_label.configure(
                 text=(
-                    f"{result.get('status', 'Unknown')} â€¢ "
-                    f"{result.get('total_commands', 0)} commands â€¢ "
+                    f"{result.get('status', 'Unknown')} • "
+                    f"{result.get('total_commands', 0)} commands • "
                     f"{result.get('diversity_percent', 0)}% diversity"
                 )
             )
@@ -12005,7 +12006,7 @@ class JervisApp(ctk.CTk):
             result = self._display_intent_analysis(command)
             self.intent_refresh_label.configure(
                 text=(
-                    f"Analyzed safely â€¢ {result.get('intent', 'unknown')} â€¢ "
+                    f"Analyzed safely • {result.get('intent', 'unknown')} • "
                     f"{result.get('confidence', 0)}% confidence"
                 )
             )
@@ -12030,8 +12031,8 @@ class JervisApp(ctk.CTk):
 
             self.intent_refresh_label.configure(
                 text=(
-                    f"{status.get('status', 'Unknown')} â€¢ "
-                    f"Score {status.get('score', 0)}/100 â€¢ "
+                    f"{status.get('status', 'Unknown')} • "
+                    f"Score {status.get('score', 0)}/100 • "
                     f"AI fallback "
                     f"{'ready' if status.get('ai_fallback_ready') else 'unavailable'}"
                 )
@@ -12284,8 +12285,8 @@ class JervisApp(ctk.CTk):
 
             self.memory_int_refresh_label.configure(
                 text=(
-                    f"{result.get('status', 'Unknown')} â€¢ "
-                    f"{result.get('total_items', 0)} stored item(s) â€¢ "
+                    f"{result.get('status', 'Unknown')} • "
+                    f"{result.get('total_items', 0)} stored item(s) • "
                     f"Recall {'ready' if result.get('recall_ready') else 'not ready'}"
                 )
             )
@@ -12561,9 +12562,9 @@ class JervisApp(ctk.CTk):
 
             self.productivity_refresh_label.configure(
                 text=(
-                    f"{result.get('status', 'Unknown')} â€¢ "
-                    f"{result.get('pending_tasks', 0)} pending â€¢ "
-                    f"{result.get('completion_rate', 0)}% completion â€¢ "
+                    f"{result.get('status', 'Unknown')} • "
+                    f"{result.get('pending_tasks', 0)} pending • "
+                    f"{result.get('completion_rate', 0)}% completion • "
                     f"{result.get('command_diversity', 0)}% command diversity"
                 )
             )
@@ -12962,9 +12963,9 @@ class JervisApp(ctk.CTk):
 
             self.assistant_refresh_label.configure(
                 text=(
-                    f"{result.get('status', 'Unknown')} â€¢ "
-                    f"Score {result.get('score', 0)}/100 â€¢ "
-                    f"{result.get('critical_alerts', 0)} critical alert(s) â€¢ "
+                    f"{result.get('status', 'Unknown')} • "
+                    f"Score {result.get('score', 0)}/100 • "
+                    f"{result.get('critical_alerts', 0)} critical alert(s) • "
                     f"{result.get('pending_tasks', 0)} pending task(s)"
                 )
             )
@@ -13230,8 +13231,8 @@ class JervisApp(ctk.CTk):
 
             self.context_refresh_label.configure(
                 text=(
-                    f"{status.get('status', 'Unknown')} â€¢ "
-                    f"Score {status.get('score', 0)}/100 â€¢ "
+                    f"{status.get('status', 'Unknown')} • "
+                    f"Score {status.get('score', 0)}/100 • "
                     f"{status.get('meaningful_contexts', 0)} meaningful "
                     f"context(s)"
                 )
@@ -13546,7 +13547,7 @@ class JervisApp(ctk.CTk):
             )
 
             recommendation_text = "\n".join(
-                f"• {item}" for item in recommendations
+                f"- {item}" for item in recommendations
             )
             self.resume_recommendations_label.configure(
                 text=f"Recommendations:\n{recommendation_text or '--'}"
@@ -13696,7 +13697,7 @@ class JervisApp(ctk.CTk):
             )
 
             recommendation_text = "\n".join(
-                f"• {item}" for item in recommendations
+                f"- {item}" for item in recommendations
             )
             self.portfolio_recommendations_label.configure(
                 text=f"Recommendations:\n{recommendation_text or '--'}"
@@ -13960,8 +13961,8 @@ class JervisApp(ctk.CTk):
 
             self.career_refresh_label.configure(
                 text=(
-                    f"{result.get('status', 'Unknown')} â€¢ "
-                    f"Score {result.get('score', 0)}/100 â€¢ "
+                    f"{result.get('status', 'Unknown')} • "
+                    f"Score {result.get('score', 0)}/100 • "
                     f"Target: {result.get('target_role', 'Not Set')}"
                 )
             )
@@ -14291,8 +14292,8 @@ class JervisApp(ctk.CTk):
 
             self.learning_refresh_label.configure(
                 text=(
-                    f"{result.get('status', 'Unknown')} â€¢ "
-                    f"Score {result.get('score', 0)}/100 â€¢ "
+                    f"{result.get('status', 'Unknown')} • "
+                    f"Score {result.get('score', 0)}/100 • "
                     f"{result.get('total_skills', 0)} skill(s)"
                 )
             )
@@ -14419,7 +14420,7 @@ class JervisApp(ctk.CTk):
             self._set_goal_intelligence_box(self.goal_recommendations_box,
                 "\n".join(f"- {x}" for x in recs) or "- No additional goal recommendation is currently available.")
             self.goal_refresh_label.configure(
-                text=f"{r.get('status','Unknown')} â€¢ Score {r.get('score',0)}/100 â€¢ {r.get('active_goals',0)} active goal(s)")
+                text=f"{r.get('status','Unknown')} • Score {r.get('score',0)}/100 • {r.get('active_goals',0)} active goal(s)")
         except Exception as error:
             self.goal_refresh_label.configure(text=f"Goal Intelligence error: {error}")
 
@@ -14607,8 +14608,8 @@ class JervisApp(ctk.CTk):
 
             self.decision_refresh_label.configure(
                 text=(
-                    f"{result.get('status', 'Unknown')} â€¢ "
-                    f"Score {result.get('score', 0)}/100 â€¢ "
+                    f"{result.get('status', 'Unknown')} • "
+                    f"Score {result.get('score', 0)}/100 • "
                     f"{result.get('total_decisions', 0)} ranked decision(s)"
                 )
             )
@@ -15111,8 +15112,8 @@ class JervisApp(ctk.CTk):
 
             self.battery_status_label.configure(
                 text=(
-                    f"{info.get('percent', 0)}% â€¢ "
-                    f"{source} â€¢ "
+                    f"{info.get('percent', 0)}% • "
+                    f"{source} • "
                     f"{efficiency.get('status', 'Unknown')}"
                 )
             )
@@ -16176,7 +16177,7 @@ class JervisApp(ctk.CTk):
 
         self.voice_button = ctk.CTkButton(
             page,
-            text="ðŸŽ™ LISTEN ONCE",
+            text="🎙 LISTEN ONCE",
             width=280,
             height=58,
             font=("Arial", 16, "bold"),
@@ -16188,7 +16189,7 @@ class JervisApp(ctk.CTk):
 
         self.continuous_button = ctk.CTkButton(
             page,
-            text="â–¶ START CONTINUOUS VOICE",
+            text="▶ START CONTINUOUS VOICE",
             width=280,
             height=58,
             font=("Arial", 16, "bold"),
@@ -16200,7 +16201,7 @@ class JervisApp(ctk.CTk):
 
         self.wake_word_button = ctk.CTkButton(
             page,
-            text="â–¶ START WAKE WORD MODE",
+            text="▶ START WAKE WORD MODE",
             width=280,
             height=58,
             font=("Arial", 16, "bold"),
@@ -16404,7 +16405,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             controls,
-            text="ðŸ’¾ Save Settings",
+            text="💾 Save Settings",
             width=150,
             height=44,
             command=self.gui_save_settings,
@@ -16417,7 +16418,7 @@ class JervisApp(ctk.CTk):
 
         ctk.CTkButton(
             controls,
-            text="â†º Reset Defaults",
+            text="↺ Reset Defaults",
             width=150,
             height=44,
             command=self.gui_reset_settings,
@@ -16946,7 +16947,7 @@ class JervisApp(ctk.CTk):
 
             self.voice_button.configure(
                 state="normal",
-                text="ðŸŽ™ LISTEN ONCE",
+                text="🎙 LISTEN ONCE",
             )
 
     def start_voice_command(self):
@@ -16998,7 +16999,7 @@ class JervisApp(ctk.CTk):
         self.continuous_voice_enabled = True
 
         self.continuous_button.configure(
-            text="â–  STOP CONTINUOUS VOICE",
+            text="■ STOP CONTINUOUS VOICE",
         )
 
         self.voice_status_label.configure(
@@ -17080,7 +17081,7 @@ class JervisApp(ctk.CTk):
 
                 self.voice_button.configure(
                     state="normal",
-                    text="ðŸŽ™ LISTEN ONCE",
+                    text="🎙 LISTEN ONCE",
                 )
 
             return
@@ -17129,7 +17130,7 @@ class JervisApp(ctk.CTk):
         )
 
         self.continuous_button.configure(
-            text="â–¶ START CONTINUOUS VOICE",
+            text="▶ START CONTINUOUS VOICE",
         )
 
         self.voice_status_label.configure(
@@ -17142,7 +17143,7 @@ class JervisApp(ctk.CTk):
 
         self.voice_button.configure(
             state="normal",
-            text="ðŸŽ™ LISTEN ONCE",
+            text="🎙 LISTEN ONCE",
         )
 
     def toggle_wake_word_mode(self):
@@ -17165,7 +17166,7 @@ class JervisApp(ctk.CTk):
 
         self.wake_word_enabled = True
         self.wake_word_button.configure(
-            text="â–  STOP WAKE WORD MODE",
+            text="■ STOP WAKE WORD MODE",
         )
         self.voice_status_label.configure(
             text='Status: Waiting for "Hey Jervis"...',
@@ -17332,7 +17333,7 @@ class JervisApp(ctk.CTk):
         self.wake_word_busy = False
         self.set_orb_state("IDLE")
         self.wake_word_button.configure(
-            text="â–¶ START WAKE WORD MODE",
+            text="▶ START WAKE WORD MODE",
         )
         self.voice_status_label.configure(text="Status: Ready")
         self.voice_text_label.configure(
@@ -17358,7 +17359,7 @@ class JervisApp(ctk.CTk):
 
         self.add_message(
             "JERVIS",
-            f"â° {message}",
+            f"⏰ {message}",
         )
         self.add_history(
             "REMINDER",
@@ -17477,6 +17478,7 @@ def run_gui():
 
 if __name__ == "__main__":
     run_gui()
+
 
 
 
