@@ -43,6 +43,7 @@ from core.job_application_intelligence import (
     get_career_roadmap,
     get_career_counter_offer_analysis,
     get_career_negotiation_script,
+    get_career_acceptance_message,
     _load,
     _save,
     get_onboarding_plan,
@@ -4772,4 +4773,118 @@ def test_career_negotiation_script_output_sections():
     assert "Negotiation Leverage:" in result
     assert "Career Alignment:" in result
     assert "Generated Negotiation Script:" in result
+    assert "Next Action:" in result
+
+
+
+def test_career_acceptance_message_not_found():
+    result = get_career_acceptance_message("99999")
+    assert result == "Job application not found."
+
+
+def test_career_acceptance_message_offer_ready():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["offer_joining_date"] = "15-09-2026"
+            application["offer_location"] = "Kolkata"
+            break
+
+    _save(data)
+
+    result = get_career_acceptance_message("1")
+
+    assert "Acceptance Readiness: READY" in result
+    assert "Missing / Unconfirmed Details:" in result
+    assert "None" in result
+
+
+def test_career_acceptance_message_prepare_stage():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Interview"
+            application["interview_stage"] = "Final Interview"
+            break
+
+    _save(data)
+
+    result = get_career_acceptance_message("1")
+
+    assert "Acceptance Readiness: PREPARE" in result
+    assert "I appreciated the interview process" in result
+
+
+def test_career_acceptance_message_early_stage():
+    add_test_application()
+
+    result = get_career_acceptance_message("1")
+
+    assert "Acceptance Readiness: EARLY" in result
+    assert "Formal offer status is not confirmed" in result
+
+
+def test_career_acceptance_message_missing_offer_details():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["offer_joining_date"] = "Not Scheduled"
+            application["offer_location"] = "Not Specified"
+            break
+
+    _save(data)
+
+    result = get_career_acceptance_message("1")
+
+    assert "Joining date is not confirmed" in result
+    assert "Location or work mode is not confirmed" in result
+
+
+def test_career_acceptance_message_confirmed_joining_details():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["offer_joining_date"] = "20-09-2026"
+            application["offer_location"] = "Kolkata"
+            break
+
+    _save(data)
+
+    result = get_career_acceptance_message("1")
+
+    assert "I confirm my availability to join on 20-09-2026." in result
+    assert (
+        "I also acknowledge the confirmed location or work arrangement: "
+        "Kolkata."
+    ) in result
+
+
+def test_career_acceptance_message_subject():
+    add_test_application()
+
+    result = get_career_acceptance_message("1")
+
+    assert "Subject: Offer Acceptance - Python Developer at Test Company" in result
+
+
+def test_career_acceptance_message_output_sections():
+    add_test_application()
+
+    result = get_career_acceptance_message("1")
+
+    assert "JERVIS Career Offer Acceptance Message Generator" in result
+    assert "Acceptance Readiness:" in result
+    assert "Generated Acceptance Message:" in result
+    assert "Best regards," in result
     assert "Next Action:" in result

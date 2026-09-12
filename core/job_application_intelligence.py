@@ -7138,3 +7138,124 @@ def get_career_negotiation_script(application_id):
         "Next Action: Customize the compensation request with your target "
         "salary or package before sending or speaking with HR."
     )
+
+
+def get_career_acceptance_message(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    status = str(application.get("status", "")).strip().lower()
+    offer_joining_date = application.get("offer_joining_date")
+    offer_location = application.get("offer_location")
+    interview_stage = application.get("interview_stage")
+
+    if str(offer_joining_date).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        offer_joining_date = None
+
+    if str(offer_location).strip().lower() in {
+        "",
+        "none",
+        "not specified",
+        "not scheduled",
+    }:
+        offer_location = None
+
+    if str(interview_stage).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        interview_stage = None
+
+    if status == "offer":
+        readiness = "READY"
+    elif status in {"interview", "shortlisted"}:
+        readiness = "PREPARE"
+    else:
+        readiness = "EARLY"
+
+    missing_details = []
+
+    if status != "offer":
+        missing_details.append("Formal offer status is not confirmed")
+
+    if not offer_joining_date:
+        missing_details.append("Joining date is not confirmed")
+
+    if not offer_location:
+        missing_details.append("Location or work mode is not confirmed")
+
+    subject = f"Offer Acceptance - {role} at {company}"
+
+    message_parts = [
+        f"Dear Hiring Team at {company},",
+        "",
+        f"Thank you for offering me the position of {role} at {company}. "
+        "I am pleased to accept the opportunity and appreciate the confidence "
+        "you have shown in me.",
+    ]
+
+    if offer_joining_date:
+        message_parts.append(
+            f"I confirm my availability to join on {offer_joining_date}."
+        )
+
+    if offer_location:
+        message_parts.append(
+            f"I also acknowledge the confirmed location or work arrangement: "
+            f"{offer_location}."
+        )
+
+    if interview_stage:
+        message_parts.append(
+            "I appreciated the interview process and the opportunity to learn "
+            "more about the role and the team."
+        )
+
+    message_parts.extend(
+        [
+            "",
+            "Please let me know if there are any documents, onboarding steps, "
+            "or formalities I should complete before joining.",
+            "",
+            "I look forward to contributing to the team and starting this new "
+            "chapter with the organization.",
+            "",
+            "Best regards,",
+            "Candidate",
+        ]
+    )
+
+    generated_message = "\n".join(message_parts)
+
+    if missing_details:
+        warning_text = "\n".join(
+            f"{index}. {item}"
+            for index, item in enumerate(missing_details, start=1)
+        )
+    else:
+        warning_text = "None"
+
+    return (
+        f"JERVIS Career Offer Acceptance Message Generator - Application "
+        f"{application_id}\n"
+        "---------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Acceptance Readiness: {readiness}\n"
+        f"Subject: {subject}\n"
+        "Missing / Unconfirmed Details:\n"
+        f"{warning_text}\n"
+        "Generated Acceptance Message:\n"
+        f"{generated_message}\n"
+        "Next Action: Review the message, confirm all offer details, and "
+        "replace 'Candidate' with your name before sending."
+    )
