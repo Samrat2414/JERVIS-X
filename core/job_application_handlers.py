@@ -359,3 +359,12 @@ def handle_get_career_compensation_comparison_analysis(command):
 
 
 
+from core.job_application_intelligence import get_career_offer_followup_analysis
+
+def handle_get_career_offer_followup(command):
+    application_id = command[len("career offer followup "):].strip()
+
+    if not application_id:
+        return "Usage: career offer followup <application_id>"
+
+    return get_career_offer_followup_analysis(application_id)

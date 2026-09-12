@@ -1,4 +1,4 @@
-﻿from datetime import datetime, timedelta
+from datetime import datetime, timedelta
 
 from pathlib import Path
 
@@ -44,6 +44,7 @@ from core.job_application_intelligence import (
     get_career_counter_offer_analysis,
     get_career_negotiation_script,
     get_career_acceptance_message,
+    get_career_offer_followup_analysis,
     _load,
     _save,
     get_onboarding_plan,
@@ -4888,3 +4889,127 @@ def test_career_acceptance_message_output_sections():
     assert "Generated Acceptance Message:" in result
     assert "Best regards," in result
     assert "Next Action:" in result
+
+def test_career_offer_followup_not_found():
+    result = get_career_offer_followup_analysis("99999")
+    assert result == "Job application not found."
+
+
+def test_career_offer_followup_ready_for_offer():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["offer_joining_date"] = "15-09-2026"
+            application["offer_location"] = "Kolkata"
+            application["follow_up_required"] = False
+            break
+
+    _save(data)
+
+    result = get_career_offer_followup_analysis("1")
+
+    assert "Follow-Up Readiness: FOLLOW-UP READY" in result
+    assert "Pending / Unconfirmed Items:" in result
+    assert "None" in result
+
+
+def test_career_offer_followup_urgent():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["offer_joining_date"] = "15-09-2026"
+            application["offer_location"] = "Kolkata"
+            application["follow_up_required"] = True
+            break
+
+    _save(data)
+
+    result = get_career_offer_followup_analysis("1")
+
+    assert "Follow-Up Readiness: URGENT" in result
+
+
+def test_career_offer_followup_early_stage():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Interview"
+            break
+
+    _save(data)
+
+    result = get_career_offer_followup_analysis("1")
+
+    assert "Follow-Up Readiness: EARLY" in result
+    assert "Formal offer is not yet confirmed" in result
+
+
+def test_career_offer_followup_missing_joining_date():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["offer_joining_date"] = "Not Scheduled"
+            application["offer_location"] = "Kolkata"
+            break
+
+    _save(data)
+
+    result = get_career_offer_followup_analysis("1")
+
+    assert "Joining date is not confirmed" in result
+    assert "Could you please confirm the expected joining date" in result
+
+
+def test_career_offer_followup_missing_location():
+    application_id = add_test_application()
+    data = _load()
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            application["status"] = "Offer"
+            application["offer_joining_date"] = "20-09-2026"
+            application["offer_location"] = "Not Specified"
+            break
+
+    _save(data)
+
+    result = get_career_offer_followup_analysis("1")
+
+    assert "Location or work mode is not confirmed" in result
+    assert "confirmation of the location or work mode" in result
+
+
+def test_career_offer_followup_subject():
+    add_test_application()
+
+    result = get_career_offer_followup_analysis("1")
+
+    assert (
+        "Subject: Follow-Up Regarding Python Developer Offer - Test Company"
+        in result
+    )
+
+
+def test_career_offer_followup_output_sections():
+    add_test_application()
+
+    result = get_career_offer_followup_analysis("1")
+
+    assert "JERVIS Career Offer Follow-Up Message Generator" in result
+    assert "Follow-Up Readiness:" in result
+    assert "Pending / Unconfirmed Items:" in result
+    assert "Generated Follow-Up Message:" in result
+    assert "Best regards," in result
+    assert "Next Action:" in result
+

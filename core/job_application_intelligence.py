@@ -7259,3 +7259,133 @@ def get_career_acceptance_message(application_id):
         "Next Action: Review the message, confirm all offer details, and "
         "replace 'Candidate' with your name before sending."
     )
+
+def get_career_offer_followup_analysis(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    status = str(application.get("status", "")).strip().lower()
+    offer_joining_date = application.get("offer_joining_date")
+    offer_location = application.get("offer_location")
+    follow_up_required = application.get("follow_up_required")
+    follow_up_date = application.get("follow_up_date")
+
+    if str(offer_joining_date).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        offer_joining_date = None
+
+    if str(offer_location).strip().lower() in {
+        "",
+        "none",
+        "not specified",
+        "not scheduled",
+    }:
+        offer_location = None
+
+    if str(follow_up_date).strip().lower() in {
+        "",
+        "none",
+        "not scheduled",
+    }:
+        follow_up_date = None
+
+    if status == "offer":
+        readiness = "FOLLOW-UP READY"
+    elif status in {"interview", "shortlisted"}:
+        readiness = "EARLY"
+    else:
+        readiness = "EARLY"
+
+    if follow_up_required and status == "offer":
+        readiness = "URGENT"
+
+    pending_items = []
+
+    if status != "offer":
+        pending_items.append("Formal offer is not yet confirmed")
+
+    if not offer_joining_date:
+        pending_items.append("Joining date is not confirmed")
+
+    if not offer_location:
+        pending_items.append("Location or work mode is not confirmed")
+
+    if follow_up_date:
+        pending_items.append(f"Scheduled follow-up date: {follow_up_date}")
+
+    subject = f"Follow-Up Regarding {role} Offer - {company}"
+
+    message_parts = [
+        f"Dear Hiring Team at {company},",
+        "",
+        f"I hope you are doing well. I am writing to follow up regarding the "
+        f"{role} opportunity at {company}.",
+    ]
+
+    if status == "offer":
+        message_parts.append(
+            "Thank you again for extending the offer. I remain very interested "
+            "in the opportunity and would appreciate any update regarding the "
+            "next steps."
+        )
+    else:
+        message_parts.append(
+            "I remain very interested in the opportunity and wanted to check "
+            "whether there are any updates regarding the hiring process."
+        )
+
+    if not offer_joining_date:
+        message_parts.append(
+            "Could you please confirm the expected joining date when convenient?"
+        )
+
+    if not offer_location:
+        message_parts.append(
+            "I would also appreciate confirmation of the location or work mode."
+        )
+
+    message_parts.extend(
+        [
+            "",
+            "Please let me know if you need any additional information or "
+            "documents from my side.",
+            "",
+            "Thank you for your time and consideration.",
+            "",
+            "Best regards,",
+            "Candidate",
+        ]
+    )
+
+    generated_message = "\n".join(message_parts)
+
+    if pending_items:
+        pending_text = "\n".join(
+            f"{index}. {item}"
+            for index, item in enumerate(pending_items, start=1)
+        )
+    else:
+        pending_text = "None"
+
+    return (
+        f"JERVIS Career Offer Follow-Up Message Generator - Application "
+        f"{application_id}\n"
+        "---------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Follow-Up Readiness: {readiness}\n"
+        f"Subject: {subject}\n"
+        "Pending / Unconfirmed Items:\n"
+        f"{pending_text}\n"
+        "Generated Follow-Up Message:\n"
+        f"{generated_message}\n"
+        "Next Action: Review the message, replace 'Candidate' with your name, "
+        "and send it to HR when appropriate."
+    )

@@ -1,4 +1,4 @@
-﻿def classify_command(command):
+def classify_command(command):
     command = command.strip().lower()
 
     if "interview" in command:
@@ -61,6 +61,8 @@
     if command.startswith("career compare offers "):
         return "JOB_APPLICATION"
 
+    if command.startswith("career offer followup "):
+        return "JOB_APPLICATION"
     if command.startswith("career acceptance message "):
         return "JOB_APPLICATION"
     if command.startswith("career negotiation script "):
@@ -258,6 +260,8 @@ def get_routing_plan(command):
     elif normalized_command.startswith("career compare offers "):
         handler = "job_application_handlers.handle_get_career_offer_comparison_analysis"
 
+    elif normalized_command.startswith("career offer followup "):
+        handler = "job_application_handlers.handle_get_career_offer_followup"
     elif normalized_command.startswith("career acceptance message "):
         handler = "job_application_handlers.handle_get_career_acceptance_message"
     elif normalized_command.startswith("career negotiation script "):
@@ -385,6 +389,9 @@ def route_command(command, handler=None, handlers=None):
         return response
 
     return "Sorry, I don't understand that command yet."
+
+
+
 
 
 
