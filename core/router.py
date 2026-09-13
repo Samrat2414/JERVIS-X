@@ -61,6 +61,8 @@ def classify_command(command):
     if command.startswith("career compare offers "):
         return "JOB_APPLICATION"
 
+    if command.startswith("career experience certificate request "):
+        return "JOB_APPLICATION"
     if command.startswith("career relieving letter request "):
         return "JOB_APPLICATION"
     if command.startswith("career resignation letter "):
@@ -266,6 +268,8 @@ def get_routing_plan(command):
     elif normalized_command.startswith("career compare offers "):
         handler = "job_application_handlers.handle_get_career_offer_comparison_analysis"
 
+    elif normalized_command.startswith("career experience certificate request "):
+        handler = "job_application_handlers.handle_get_career_experience_certificate_request"
     elif normalized_command.startswith("career relieving letter request "):
         handler = "job_application_handlers.handle_get_career_relieving_letter_request"
     elif normalized_command.startswith("career resignation letter "):

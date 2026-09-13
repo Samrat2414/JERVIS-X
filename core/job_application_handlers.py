@@ -50,6 +50,7 @@ from core.job_application_intelligence import (
     get_career_joining_confirmation_message,
     get_career_resignation_letter,
     get_career_relieving_letter_request,
+    get_career_experience_certificate_request,
 )
 
 
@@ -396,3 +397,14 @@ def handle_get_career_relieving_letter_request(command):
         return "Usage: career relieving letter request <application_id>"
 
     return get_career_relieving_letter_request(application_id)
+
+
+def handle_get_career_experience_certificate_request(command):
+    application_id = command[
+        len("career experience certificate request "):
+    ].strip()
+
+    if not application_id:
+        return "Usage: career experience certificate request <application_id>"
+
+    return get_career_experience_certificate_request(application_id)

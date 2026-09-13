@@ -7593,3 +7593,41 @@ def get_career_relieving_letter_request(application_id):
         "Next Action: Review the message, replace 'Candidate' with your name, "
         "confirm your exit formalities, and send it to HR."
     )
+
+def get_career_experience_certificate_request(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+
+    subject = f"Request for Experience Certificate - {company}"
+
+    message = (
+        "Dear HR,\n\n"
+        f"I am writing to request an experience certificate for my role as "
+        f"{role} at {company}.\n\n"
+        "I would be grateful if the certificate could include my designation, "
+        "employment period, and a brief confirmation of my work experience "
+        "with the organization.\n\n"
+        "Please let me know if any additional information, clearance, or "
+        "documentation is required from my side to process the request.\n\n"
+        "Thank you for your support and assistance.\n\n"
+        "Best regards,\n"
+        "Candidate"
+    )
+
+    return (
+        f"JERVIS Career Experience Certificate Request Generator - Application "
+        f"{application_id}\n"
+        "--------------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Subject: {subject}\n"
+        "Generated Experience Certificate Request:\n"
+        f"{message}\n"
+        "Next Action: Review the message, replace 'Candidate' with your name, "
+        "confirm your employment details, and send it to HR."
+    )
