@@ -51,6 +51,7 @@ from core.job_application_intelligence import (
     get_career_resignation_letter,
     get_career_relieving_letter_request,
     get_career_experience_certificate_request,
+    get_career_employment_verification_request,
 )
 
 
@@ -408,3 +409,14 @@ def handle_get_career_experience_certificate_request(command):
         return "Usage: career experience certificate request <application_id>"
 
     return get_career_experience_certificate_request(application_id)
+
+
+def handle_get_career_employment_verification_request(command):
+    application_id = command[
+        len("career employment verification request "):
+    ].strip()
+
+    if not application_id:
+        return "Usage: career employment verification request <application_id>"
+
+    return get_career_employment_verification_request(application_id)

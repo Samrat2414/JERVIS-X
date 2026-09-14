@@ -49,6 +49,7 @@ from core.job_application_intelligence import (
     get_career_resignation_letter,
     get_career_relieving_letter_request,
     get_career_experience_certificate_request,
+    get_career_employment_verification_request,
     _load,
     _save,
     get_onboarding_plan,
@@ -5351,6 +5352,80 @@ def test_career_experience_certificate_request_next_action():
     add_test_application()
 
     result = get_career_experience_certificate_request("1")
+
+    assert "Next Action:" in result
+    assert "confirm your employment details" in result
+    assert "send it to HR" in result
+
+def test_career_employment_verification_request_not_found():
+    result = get_career_employment_verification_request("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_employment_verification_request_header():
+    add_test_application()
+
+    result = get_career_employment_verification_request("1")
+
+    assert "JERVIS Career Employment Verification Request Generator" in result
+    assert "Application 1" in result
+
+
+def test_career_employment_verification_request_company_and_role():
+    add_test_application()
+
+    result = get_career_employment_verification_request("1")
+
+    assert "Company: Test Company" in result
+    assert "Role: Python Developer" in result
+
+
+def test_career_employment_verification_request_subject():
+    add_test_application()
+
+    result = get_career_employment_verification_request("1")
+
+    assert (
+        "Subject: Request for Employment Verification - Test Company"
+        in result
+    )
+
+
+def test_career_employment_verification_request_message_content():
+    add_test_application()
+
+    result = get_career_employment_verification_request("1")
+
+    assert "request employment verification" in result
+    assert "designation" in result
+    assert "employment period" in result
+    assert "employment status" in result
+
+
+def test_career_employment_verification_request_background_check():
+    add_test_application()
+
+    result = get_career_employment_verification_request("1")
+
+    assert "background verification purposes" in result
+    assert "additional authorization" in result
+    assert "documentation" in result
+
+
+def test_career_employment_verification_request_signature():
+    add_test_application()
+
+    result = get_career_employment_verification_request("1")
+
+    assert "Best regards," in result
+    assert "Candidate" in result
+
+
+def test_career_employment_verification_request_next_action():
+    add_test_application()
+
+    result = get_career_employment_verification_request("1")
 
     assert "Next Action:" in result
     assert "confirm your employment details" in result
