@@ -9741,3 +9741,101 @@ def get_career_background_verification_closure_risk(application_id):
         f"{risk_text}\n"
         f"Recommendation: {recommendation}"
     )
+
+
+def get_career_background_verification_closure_dashboard(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    closure_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+    history = application.get(
+        "background_verification_closure_history",
+        [],
+    )
+
+    total_changes = len(history)
+
+    reopened_count = sum(
+        1
+        for entry in history
+        if entry.get("to_status") == "Reopened"
+    )
+
+    pending_count = sum(
+        1
+        for entry in history
+        if entry.get("to_status") == "Pending Confirmation"
+    )
+
+    closure_count = sum(
+        1
+        for entry in history
+        if entry.get("to_status") == "Closed"
+    )
+
+    if closure_status == "Closed" and reopened_count == 0:
+        risk_score = 0
+        risk_level = "Low"
+        stability = "Stable"
+        priority = "Low"
+        decision = "SAFE TO MONITOR"
+        next_step = "Monitor the remaining onboarding process."
+    elif closure_status == "Reopened":
+        risk_score = min(50 + (reopened_count * 15), 100)
+        risk_level = "High"
+        stability = "Unstable"
+        priority = "High"
+        decision = "ACTION REQUIRED"
+        next_step = (
+            "Review the reopening reason and resolve any remaining "
+            "verification requirement."
+        )
+    elif closure_status == "Pending Confirmation":
+        risk_score = min(25 + (pending_count * 10), 100)
+        risk_level = "Medium"
+        stability = "Pending"
+        priority = "Medium"
+        decision = "CONFIRM CLOSURE"
+        next_step = (
+            "Obtain final confirmation before treating the verification "
+            "case as fully closed."
+        )
+    else:
+        risk_score = min(
+            15 + (reopened_count * 15) + (pending_count * 10),
+            100,
+        )
+        risk_level = "Medium" if risk_score < 60 else "High"
+        stability = "Open"
+        priority = "Medium" if risk_score < 60 else "High"
+        decision = "MONITOR CLOSURE"
+        next_step = (
+            "Continue monitoring the verification closure process and "
+            "complete any remaining requirements."
+        )
+
+    return (
+        f"JERVIS Career Background Verification Closure Dashboard "
+        f"- Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Total History Changes: {total_changes}\n"
+        f"Closure Events: {closure_count}\n"
+        f"Pending Confirmation Events: {pending_count}\n"
+        f"Reopened Events: {reopened_count}\n"
+        f"Risk Score: {risk_score}/100\n"
+        f"Risk Level: {risk_level}\n"
+        f"Closure Stability: {stability}\n"
+        f"Action Priority: {priority}\n"
+        f"Decision: {decision}\n"
+        f"Next Step: {next_step}"
+    )
