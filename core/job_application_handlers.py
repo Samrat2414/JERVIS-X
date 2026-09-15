@@ -55,6 +55,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_readiness,
     get_career_background_verification_risk,
     get_career_background_verification_progress,
+    get_career_background_submission_readiness,
     get_career_background_documents,
     update_career_background_document,
 )
@@ -495,3 +496,18 @@ def handle_get_career_background_verification_progress(command):
         )
 
     return get_career_background_verification_progress(application_id)
+
+
+
+def handle_get_career_background_submission_readiness(command):
+    application_id = command[
+        len("career background submission readiness "):
+    ].strip()
+
+    if not application_id:
+        return (
+            "Usage: career background submission readiness "
+            "<application_id>"
+        )
+
+    return get_career_background_submission_readiness(application_id)

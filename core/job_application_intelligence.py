@@ -8094,3 +8094,127 @@ def get_career_background_verification_progress(application_id):
         f"{priority_text}\n"
         f"Next Action: {next_action}"
     )
+
+
+
+def get_career_background_submission_readiness(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+
+    default_documents = {
+        "Identity Proof": "Pending",
+        "Education Certificates": "Pending",
+        "Address Proof": "Pending",
+        "Employment Documents": "Pending",
+        "Relieving / Experience Letters": "Pending",
+    }
+
+    stored_documents = application.get(
+        "background_verification_documents",
+        {},
+    )
+
+    documents = {
+        **default_documents,
+        **stored_documents,
+    }
+
+    ready_documents = [
+        document
+        for document, status in documents.items()
+        if str(status).lower() == "ready"
+    ]
+    pending_documents = [
+        document
+        for document, status in documents.items()
+        if str(status).lower() == "pending"
+    ]
+    missing_documents = [
+        document
+        for document, status in documents.items()
+        if str(status).lower() == "missing"
+    ]
+
+    total = len(documents)
+    ready_count = len(ready_documents)
+    pending_count = len(pending_documents)
+    missing_count = len(missing_documents)
+
+    completion = round(
+        (ready_count / total) * 100
+    ) if total else 0
+
+    if completion == 100 and missing_count == 0:
+        submission_status = "Ready"
+    else:
+        submission_status = "Not Ready"
+
+    blockers = []
+
+    for document in missing_documents:
+        blockers.append(
+            f"Missing document: {document}"
+        )
+
+    for document in pending_documents:
+        blockers.append(
+            f"Pending document: {document}"
+        )
+
+    if not blockers:
+        blockers.append(
+            "No document blockers detected."
+        )
+
+    blockers_text = "\n".join(
+        f"- {blocker}" for blocker in blockers
+    )
+
+    if submission_status == "Ready":
+        recommendation = (
+            "Review document names, dates, and personal details for "
+            "accuracy before final submission."
+        )
+        next_action = (
+            "Perform a final document review and submit the background "
+            "verification package when requested."
+        )
+    elif missing_count:
+        recommendation = (
+            "Resolve all missing documents before attempting final "
+            "background verification submission."
+        )
+        next_action = (
+            "Obtain the missing documents first, then complete all "
+            "remaining pending documents."
+        )
+    else:
+        recommendation = (
+            "Complete all pending documents before final submission."
+        )
+        next_action = (
+            "Mark each required pending document as Ready after verifying "
+            "that it is complete and accurate."
+        )
+
+    return (
+        f"JERVIS Career Background Verification Submission Readiness Advisor "
+        f"- Application {application_id}\n"
+        "--------------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Submission Status: {submission_status}\n"
+        f"Completion: {completion}%\n"
+        f"Documents Ready: {ready_count}/{total}\n"
+        f"Pending: {pending_count}\n"
+        f"Missing: {missing_count}\n"
+        "Submission Blockers:\n"
+        f"{blockers_text}\n"
+        f"Recommendation: {recommendation}\n"
+        f"Next Action: {next_action}"
+    )

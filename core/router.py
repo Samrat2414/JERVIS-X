@@ -65,6 +65,8 @@ def classify_command(command):
         return "JOB_APPLICATION"
     if command.startswith("career background documents "):
         return "JOB_APPLICATION"
+    if command.startswith("career background submission readiness "):
+        return "JOB_APPLICATION"
     if command.startswith("career background verification progress "):
         return "JOB_APPLICATION"
     if command.startswith("career background verification risk "):
@@ -284,6 +286,8 @@ def get_routing_plan(command):
         handler = "job_application_handlers.handle_update_career_background_document"
     elif normalized_command.startswith("career background documents "):
         handler = "job_application_handlers.handle_get_career_background_documents"
+    elif normalized_command.startswith("career background submission readiness "):
+        handler = "job_application_handlers.handle_get_career_background_submission_readiness"
     elif normalized_command.startswith("career background verification progress "):
         handler = "job_application_handlers.handle_get_career_background_verification_progress"
     elif normalized_command.startswith("career background verification risk "):

@@ -53,6 +53,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_readiness,
     get_career_background_verification_risk,
     get_career_background_verification_progress,
+    get_career_background_submission_readiness,
     get_career_background_documents,
     update_career_background_document,
     _load,
@@ -5831,3 +5832,88 @@ def test_career_background_verification_progress_complete():
     assert "Blocker Level: Low" in result
     assert "All tracked verification documents are ready." in result
     assert "prepare the final verification submission" in result
+
+
+
+def test_career_background_submission_readiness_not_found():
+    result = get_career_background_submission_readiness("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_submission_readiness_default():
+    add_test_application()
+
+    result = get_career_background_submission_readiness("1")
+
+    assert "Submission Status: Not Ready" in result
+    assert "Completion: 0%" in result
+    assert "Documents Ready: 0/5" in result
+    assert "Pending: 5" in result
+    assert "Missing: 0" in result
+    assert "Pending document: Identity Proof" in result
+
+
+def test_career_background_submission_readiness_partial():
+    add_test_application()
+
+    update_career_background_document(
+        "1",
+        "Identity Proof",
+        "Ready",
+    )
+
+    result = get_career_background_submission_readiness("1")
+
+    assert "Submission Status: Not Ready" in result
+    assert "Completion: 20%" in result
+    assert "Documents Ready: 1/5" in result
+    assert "Pending: 4" in result
+    assert "Missing: 0" in result
+
+
+def test_career_background_submission_readiness_missing_document():
+    add_test_application()
+
+    update_career_background_document(
+        "1",
+        "Address Proof",
+        "Missing",
+    )
+
+    result = get_career_background_submission_readiness("1")
+
+    assert "Submission Status: Not Ready" in result
+    assert "Missing: 1" in result
+    assert "Missing document: Address Proof" in result
+    assert "Resolve all missing documents" in result
+    assert "Obtain the missing documents first" in result
+
+
+def test_career_background_submission_readiness_complete():
+    add_test_application()
+
+    documents = (
+        "Identity Proof",
+        "Education Certificates",
+        "Address Proof",
+        "Employment Documents",
+        "Relieving / Experience Letters",
+    )
+
+    for document in documents:
+        update_career_background_document(
+            "1",
+            document,
+            "Ready",
+        )
+
+    result = get_career_background_submission_readiness("1")
+
+    assert "Submission Status: Ready" in result
+    assert "Completion: 100%" in result
+    assert "Documents Ready: 5/5" in result
+    assert "Pending: 0" in result
+    assert "Missing: 0" in result
+    assert "No document blockers detected." in result
+    assert "Perform a final document review" in result
