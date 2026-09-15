@@ -9629,3 +9629,115 @@ def get_career_background_verification_closure_action_plan(application_id):
         f"Recommended Action: {action}\n"
         f"Next Step: {next_step}"
     )
+
+
+def get_career_background_verification_closure_risk(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    current_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+    history = application.get(
+        "background_verification_closure_history",
+        [],
+    )
+
+    risk_score = 0
+    risk_factors = []
+
+    reopened_count = sum(
+        1
+        for entry in history
+        if entry.get("to_status") == "Reopened"
+    )
+
+    pending_count = sum(
+        1
+        for entry in history
+        if entry.get("to_status") == "Pending Confirmation"
+    )
+
+    closure_count = sum(
+        1
+        for entry in history
+        if entry.get("to_status") == "Closed"
+    )
+
+    if current_status == "Reopened":
+        risk_score += 50
+        risk_factors.append("Closure case is currently reopened.")
+
+    if current_status == "Pending Confirmation":
+        risk_score += 25
+        risk_factors.append("Final closure confirmation is pending.")
+
+    risk_score += min(reopened_count * 15, 30)
+
+    if reopened_count:
+        risk_factors.append(
+            f"Closure was reopened {reopened_count} time(s)."
+        )
+
+    if pending_count > 1:
+        risk_score += 10
+        risk_factors.append(
+            "Multiple pending confirmation events were recorded."
+        )
+
+    if closure_count == 0 and current_status != "Closed":
+        risk_score += 15
+        risk_factors.append("No successful closure event has been recorded.")
+
+    risk_score = min(risk_score, 100)
+
+    if risk_score >= 60:
+        risk_level = "High"
+    elif risk_score >= 30:
+        risk_level = "Medium"
+    else:
+        risk_level = "Low"
+
+    if not risk_factors:
+        risk_factors.append(
+            "No significant closure risk factors were detected."
+        )
+
+    if risk_level == "High":
+        recommendation = (
+            "Contact the verification or HR team promptly and resolve "
+            "any remaining closure requirement."
+        )
+    elif risk_level == "Medium":
+        recommendation = (
+            "Monitor the case closely and obtain confirmation of any "
+            "remaining closure requirement."
+        )
+    else:
+        recommendation = (
+            "Keep the closure confirmation for your records and continue "
+            "monitoring the remaining onboarding process."
+        )
+
+    risk_text = "\n".join(
+        f"- {factor}" for factor in risk_factors
+    )
+
+    return (
+        f"JERVIS Career Background Verification Closure Risk "
+        f"- Application {application_id}\n"
+        "------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Current Closure Status: {current_status}\n"
+        f"Risk Score: {risk_score}/100\n"
+        f"Risk Level: {risk_level}\n"
+        "Risk Factors:\n"
+        f"{risk_text}\n"
+        f"Recommendation: {recommendation}"
+    )

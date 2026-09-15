@@ -70,6 +70,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_closure_history,
     get_career_background_verification_closure_analytics,
     get_career_background_verification_closure_action_plan,
+    get_career_background_verification_closure_risk,
     generate_career_background_verification_closure_message,
     update_career_background_verification_closure,
     update_career_background_verification_escalation_response,
@@ -809,6 +810,23 @@ def handle_get_career_background_verification_closure_action_plan(command):
         )
 
     return get_career_background_verification_closure_action_plan(
+        application_id
+    )
+
+
+
+def handle_get_career_background_verification_closure_risk(command):
+    application_id = command[
+        len("career background verification closure risk "):
+    ].strip()
+
+    if not application_id:
+        return (
+            "Usage: career background verification closure risk "
+            "<application_id>"
+        )
+
+    return get_career_background_verification_closure_risk(
         application_id
     )
 
