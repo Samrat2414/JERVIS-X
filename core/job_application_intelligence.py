@@ -8218,3 +8218,123 @@ def get_career_background_submission_readiness(application_id):
         f"Recommendation: {recommendation}\n"
         f"Next Action: {next_action}"
     )
+
+
+
+def get_career_background_verification_completion(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+
+    status = application.get(
+        "background_verification_status",
+        "Not Submitted",
+    )
+
+    status_progress = {
+        "Not Submitted": 0,
+        "Submitted": 25,
+        "In Review": 50,
+        "Additional Documents Requested": 60,
+        "Cleared": 100,
+    }
+
+    progress = status_progress.get(status, 0)
+
+    if status == "Cleared":
+        completion_state = "Complete"
+        next_action = (
+            "Background verification is cleared. Keep the verification "
+            "confirmation and continue with the joining process."
+        )
+    elif status == "Additional Documents Requested":
+        completion_state = "Action Required"
+        next_action = (
+            "Provide the requested additional documents as soon as possible "
+            "and confirm submission with the employer."
+        )
+    elif status == "In Review":
+        completion_state = "In Progress"
+        next_action = (
+            "Monitor the verification process and remain available for "
+            "document or information requests."
+        )
+    elif status == "Submitted":
+        completion_state = "In Progress"
+        next_action = (
+            "Confirm that the submission was received and wait for the "
+            "verification review to begin."
+        )
+    else:
+        completion_state = "Not Started"
+        next_action = (
+            "Complete the required documents and submit the background "
+            "verification package."
+        )
+
+    return (
+        f"JERVIS Career Background Verification Completion Tracker - "
+        f"Application {application_id}\n"
+        "-----------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Verification Status: {status}\n"
+        f"Completion State: {completion_state}\n"
+        f"Verification Progress: {progress}%\n"
+        f"Next Action: {next_action}"
+    )
+
+
+def update_career_background_verification_status(application_id, status):
+    status = str(status).strip()
+
+    valid_statuses = {
+        "not submitted": "Not Submitted",
+        "submitted": "Submitted",
+        "in review": "In Review",
+        "additional documents requested": "Additional Documents Requested",
+        "cleared": "Cleared",
+    }
+
+    normalized_status = valid_statuses.get(status.lower())
+
+    if normalized_status is None:
+        return (
+            "Invalid background verification status. Use: Not Submitted, "
+            "Submitted, In Review, Additional Documents Requested, Cleared"
+        )
+
+    data = _load()
+
+    try:
+        application_id = int(application_id)
+    except (TypeError, ValueError):
+        return "Invalid application ID."
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            previous_status = application.get(
+                "background_verification_status",
+                "Not Submitted",
+            )
+
+            if previous_status == normalized_status:
+                return (
+                    f"Background verification is already {normalized_status} "
+                    f"for application {application_id}."
+                )
+
+            application["background_verification_status"] = normalized_status
+            _save(data)
+
+            return (
+                f"Background verification status updated from "
+                f"{previous_status} to {normalized_status} for application "
+                f"{application_id}."
+            )
+
+    return "Job application not found."

@@ -54,6 +54,8 @@ from core.job_application_intelligence import (
     get_career_background_verification_risk,
     get_career_background_verification_progress,
     get_career_background_submission_readiness,
+    get_career_background_verification_completion,
+    update_career_background_verification_status,
     get_career_background_documents,
     update_career_background_document,
     _load,
@@ -5917,3 +5919,146 @@ def test_career_background_submission_readiness_complete():
     assert "Missing: 0" in result
     assert "No document blockers detected." in result
     assert "Perform a final document review" in result
+
+
+
+def test_career_background_verification_completion_not_found():
+    result = get_career_background_verification_completion("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_completion_default():
+    add_test_application()
+
+    result = get_career_background_verification_completion("1")
+
+    assert "Verification Status: Not Submitted" in result
+    assert "Completion State: Not Started" in result
+    assert "Verification Progress: 0%" in result
+    assert "submit the background verification package" in result
+
+
+def test_career_background_verification_status_submitted():
+    add_test_application()
+
+    result = update_career_background_verification_status(
+        "1",
+        "Submitted",
+    )
+
+    assert (
+        result
+        == "Background verification status updated from Not Submitted "
+        "to Submitted for application 1."
+    )
+
+    tracker = get_career_background_verification_completion("1")
+
+    assert "Verification Status: Submitted" in tracker
+    assert "Completion State: In Progress" in tracker
+    assert "Verification Progress: 25%" in tracker
+
+
+def test_career_background_verification_status_in_review():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "In Review",
+    )
+
+    result = get_career_background_verification_completion("1")
+
+    assert "Verification Status: In Review" in result
+    assert "Completion State: In Progress" in result
+    assert "Verification Progress: 50%" in result
+
+
+def test_career_background_verification_status_additional_documents():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Additional Documents Requested",
+    )
+
+    result = get_career_background_verification_completion("1")
+
+    assert "Verification Status: Additional Documents Requested" in result
+    assert "Completion State: Action Required" in result
+    assert "Verification Progress: 60%" in result
+    assert "Provide the requested additional documents" in result
+
+
+def test_career_background_verification_status_cleared():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Cleared",
+    )
+
+    result = get_career_background_verification_completion("1")
+
+    assert "Verification Status: Cleared" in result
+    assert "Completion State: Complete" in result
+    assert "Verification Progress: 100%" in result
+    assert "continue with the joining process" in result
+
+
+def test_career_background_verification_status_case_insensitive():
+    add_test_application()
+
+    result = update_career_background_verification_status(
+        "1",
+        "in review",
+    )
+
+    assert "to In Review for application 1." in result
+
+
+def test_career_background_verification_status_invalid():
+    add_test_application()
+
+    result = update_career_background_verification_status(
+        "1",
+        "Unknown",
+    )
+
+    assert result.startswith(
+        "Invalid background verification status."
+    )
+
+
+def test_career_background_verification_status_invalid_id():
+    result = update_career_background_verification_status(
+        "abc",
+        "Submitted",
+    )
+
+    assert result == "Invalid application ID."
+
+
+def test_career_background_verification_status_application_not_found():
+    result = update_career_background_verification_status(
+        "999",
+        "Submitted",
+    )
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_status_already_same():
+    add_test_application()
+
+    result = update_career_background_verification_status(
+        "1",
+        "Not Submitted",
+    )
+
+    assert (
+        result
+        == "Background verification is already Not Submitted "
+        "for application 1."
+    )

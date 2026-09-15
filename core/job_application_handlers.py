@@ -56,6 +56,8 @@ from core.job_application_intelligence import (
     get_career_background_verification_risk,
     get_career_background_verification_progress,
     get_career_background_submission_readiness,
+    get_career_background_verification_completion,
+    update_career_background_verification_status,
     get_career_background_documents,
     update_career_background_document,
 )
@@ -511,3 +513,39 @@ def handle_get_career_background_submission_readiness(command):
         )
 
     return get_career_background_submission_readiness(application_id)
+
+
+
+def handle_get_career_background_verification_completion(command):
+    application_id = command[
+        len("career background verification completion "):
+    ].strip()
+
+    if not application_id:
+        return (
+            "Usage: career background verification completion "
+            "<application_id>"
+        )
+
+    return get_career_background_verification_completion(application_id)
+
+
+def handle_update_career_background_verification_status(command):
+    payload = command[
+        len("career background verification status "):
+    ].strip()
+
+    parts = [part.strip() for part in payload.split("|")]
+
+    if len(parts) != 2 or not all(parts):
+        return (
+            "Usage: career background verification status "
+            "<application_id> | <status>"
+        )
+
+    application_id, status = parts
+
+    return update_career_background_verification_status(
+        application_id,
+        status,
+    )
