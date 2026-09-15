@@ -64,6 +64,8 @@ from core.job_application_intelligence import (
     get_career_background_verification_escalation_response,
     get_career_background_verification_resolution,
     get_career_background_verification_resolution_message,
+    get_career_background_verification_closure,
+    update_career_background_verification_closure,
     update_career_background_verification_escalation_response,
     get_career_background_documents,
     update_career_background_document,
@@ -6698,4 +6700,86 @@ def test_career_background_verification_resolution_message_resolved():
         in result
     )
     assert "Thank you for confirming the resolution" in result
+
+
+def test_career_background_verification_closure_not_found():
+    result = get_career_background_verification_closure("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_closure_default_open():
+    add_test_application()
+
+    result = get_career_background_verification_closure("1")
+
+    assert "Closure Status: Open" in result
+    assert "Closure Readiness: Not Ready" in result
+    assert "Verification Status: Not Submitted" in result
+
+
+def test_career_background_verification_closure_pending_confirmation():
+    add_test_application()
+
+    update_result = update_career_background_verification_closure(
+        "1",
+        "Pending Confirmation",
+    )
+    result = get_career_background_verification_closure("1")
+
+    assert "updated to Pending Confirmation" in update_result
+    assert "Closure Status: Pending Confirmation" in result
+    assert "Closure Readiness: Pending" in result
+
+
+def test_career_background_verification_closure_closed():
+    add_test_application()
+
+    update_career_background_verification_closure(
+        "1",
+        "Closed",
+    )
+    result = get_career_background_verification_closure("1")
+
+    assert "Closure Status: Closed" in result
+    assert "Closure Readiness: Complete" in result
+    assert "Keep the verification closure confirmation" in result
+
+
+def test_career_background_verification_closure_reopened():
+    add_test_application()
+
+    update_career_background_verification_closure(
+        "1",
+        "Reopened",
+    )
+    result = get_career_background_verification_closure("1")
+
+    assert "Closure Status: Reopened" in result
+    assert "Closure Readiness: Action Required" in result
+    assert "Review why the verification case was reopened" in result
+
+
+def test_career_background_verification_closure_invalid_status():
+    add_test_application()
+
+    result = update_career_background_verification_closure(
+        "1",
+        "Unknown",
+    )
+
+    assert (
+        result
+        == "Invalid closure status. Use: Open, Pending Confirmation, "
+        "Closed, or Reopened."
+    )
+
+
+def test_career_background_verification_closure_update_not_found():
+    result = update_career_background_verification_closure(
+        "999",
+        "Closed",
+    )
+
+    assert result == "Job application not found."
 

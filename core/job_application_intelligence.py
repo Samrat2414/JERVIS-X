@@ -9172,3 +9172,117 @@ def get_career_background_verification_resolution_message(application_id):
         f"{message}"
     )
 
+
+def update_career_background_verification_closure(
+    application_id,
+    closure_status,
+):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    valid_statuses = (
+        "Open",
+        "Pending Confirmation",
+        "Closed",
+        "Reopened",
+    )
+
+    if closure_status not in valid_statuses:
+        return (
+            "Invalid closure status. Use: Open, Pending Confirmation, "
+            "Closed, or Reopened."
+        )
+
+    data = _load()
+
+    for item in data.get("applications", []):
+        if str(item.get("id")) == str(application_id):
+            item["background_verification_closure_status"] = closure_status
+            _save(data)
+
+            return (
+                f"Background verification closure status for application "
+                f"{application_id} updated to {closure_status}."
+            )
+
+    return "Job application not found."
+
+
+def get_career_background_verification_closure(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    verification_status = application.get(
+        "background_verification_status",
+        "Not Submitted",
+    )
+    response_status = application.get(
+        "background_verification_escalation_response",
+        "Not Received",
+    )
+    closure_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+
+    if closure_status == "Open":
+        closure_readiness = "Not Ready"
+        recommended_action = (
+            "Continue monitoring the verification and resolution process."
+        )
+        next_action = (
+            "Resolve outstanding verification issues before closing the case."
+        )
+    elif closure_status == "Pending Confirmation":
+        closure_readiness = "Pending"
+        recommended_action = (
+            "Confirm final verification or resolution status with the "
+            "HR/background verification team."
+        )
+        next_action = (
+            "Close the case after receiving final confirmation."
+        )
+    elif closure_status == "Closed":
+        closure_readiness = "Complete"
+        recommended_action = (
+            "Keep the verification closure confirmation for your records."
+        )
+        next_action = (
+            "Monitor the remaining onboarding or joining process."
+        )
+    elif closure_status == "Reopened":
+        closure_readiness = "Action Required"
+        recommended_action = (
+            "Review why the verification case was reopened and address "
+            "the new requirement."
+        )
+        next_action = (
+            "Complete the requested action and track the case until closure."
+        )
+    else:
+        closure_readiness = "Review Required"
+        recommended_action = (
+            "Confirm the current closure status with the verification team."
+        )
+        next_action = "Update the closure tracker with the confirmed status."
+
+    return (
+        f"JERVIS Career Background Verification Closure Tracker - "
+        f"Application {application_id}\n"
+        "---------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Verification Status: {verification_status}\n"
+        f"Escalation Response Status: {response_status}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Closure Readiness: {closure_readiness}\n"
+        f"Recommended Action: {recommended_action}\n"
+        f"Next Action: {next_action}"
+    )
+
