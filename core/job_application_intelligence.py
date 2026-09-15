@@ -8758,3 +8758,110 @@ def get_career_background_verification_escalation(application_id):
         f"Next Action: {next_action}"
     )
 
+def get_career_background_verification_escalation_message(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    status = application.get(
+        "background_verification_status",
+        "Not Submitted",
+    )
+
+    if status == "Not Submitted":
+        message_type = "Submission Assistance Request"
+        subject = "Background Verification Submission Assistance"
+        message = (
+            "Dear HR / Background Verification Team,\n\n"
+            f"I am writing regarding the background verification for my "
+            f"{role} application at {company}.\n\n"
+            "I have not yet completed the verification submission and "
+            "would appreciate confirmation of the required documents and "
+            "submission process. Please let me know if there are any "
+            "specific instructions I should follow.\n\n"
+            "Thank you for your assistance.\n\n"
+            "Best regards"
+        )
+    elif status == "Submitted":
+        message_type = "Verification Status Escalation"
+        subject = "Background Verification Status Update Request"
+        message = (
+            "Dear HR / Background Verification Team,\n\n"
+            f"I am writing to follow up regarding the background "
+            f"verification for my {role} application at {company}.\n\n"
+            "I have already submitted the required documents and would "
+            "appreciate an update on the current verification status. "
+            "Please let me know if any additional information or "
+            "documentation is required from my side.\n\n"
+            "Thank you for your assistance.\n\n"
+            "Best regards"
+        )
+    elif status == "In Review":
+        message_type = "Verification Review Follow-Up"
+        subject = "Background Verification Review Follow-Up"
+        message = (
+            "Dear Background Verification Team,\n\n"
+            f"I am following up regarding the background verification "
+            f"for my {role} application at {company}.\n\n"
+            "I understand that the verification is currently under review. "
+            "I would appreciate any available update on the progress and "
+            "will be happy to provide additional information if required.\n\n"
+            "Thank you for your time and assistance.\n\n"
+            "Best regards"
+        )
+    elif status == "Additional Documents Requested":
+        message_type = "Additional Documents Response"
+        subject = "Background Verification Additional Documents"
+        message = (
+            "Dear HR / Background Verification Team,\n\n"
+            f"I am writing regarding the additional documents requested "
+            f"for the background verification of my {role} application "
+            f"at {company}.\n\n"
+            "I am addressing the requested documentation and would like "
+            "to confirm that all required items are provided correctly. "
+            "Please let me know if anything further is required to "
+            "continue the verification process.\n\n"
+            "Thank you for your assistance.\n\n"
+            "Best regards"
+        )
+    elif status == "Cleared":
+        message_type = "Verification Clearance Acknowledgement"
+        subject = "Background Verification Clearance Acknowledgement"
+        message = (
+            "Dear HR / Background Verification Team,\n\n"
+            f"Thank you for confirming the successful completion of the "
+            f"background verification for my {role} application at "
+            f"{company}.\n\n"
+            "I appreciate your assistance throughout the verification "
+            "process. Please let me know if any further action is required "
+            "from my side for joining or onboarding.\n\n"
+            "Best regards"
+        )
+    else:
+        message_type = "Verification Status Clarification"
+        subject = "Background Verification Status Clarification"
+        message = (
+            "Dear HR / Background Verification Team,\n\n"
+            f"I am writing regarding the background verification for my "
+            f"{role} application at {company}.\n\n"
+            "I would appreciate clarification of the current verification "
+            "status and any action required from my side.\n\n"
+            "Thank you for your assistance.\n\n"
+            "Best regards"
+        )
+
+    return (
+        f"JERVIS Career Background Verification Escalation Message "
+        f"Generator - Application {application_id}\n"
+        "----------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Verification Status: {status}\n"
+        f"Message Type: {message_type}\n"
+        f"Subject: {subject}\n\n"
+        f"{message}"
+    )
+

@@ -60,6 +60,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_follow_up_message,
     get_career_background_verification_delay_risk,
     get_career_background_verification_escalation,
+    get_career_background_verification_escalation_message,
     get_career_background_documents,
     update_career_background_document,
     _load,
@@ -6393,4 +6394,87 @@ def test_career_background_verification_escalation_cleared():
     assert "Escalation Level: None" in result
     assert "Escalation Required: No" in result
     assert "no active issue requiring escalation" in result
+
+def test_career_background_verification_escalation_message_not_found():
+    result = get_career_background_verification_escalation_message("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_escalation_message_not_submitted():
+    add_test_application()
+
+    result = get_career_background_verification_escalation_message("1")
+
+    assert "Verification Status: Not Submitted" in result
+    assert "Message Type: Submission Assistance Request" in result
+    assert "Subject: Background Verification Submission Assistance" in result
+    assert "required documents and submission process" in result
+
+
+def test_career_background_verification_escalation_message_submitted():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Submitted",
+    )
+
+    result = get_career_background_verification_escalation_message("1")
+
+    assert "Verification Status: Submitted" in result
+    assert "Message Type: Verification Status Escalation" in result
+    assert "Subject: Background Verification Status Update Request" in result
+    assert "already submitted the required documents" in result
+
+
+def test_career_background_verification_escalation_message_in_review():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "In Review",
+    )
+
+    result = get_career_background_verification_escalation_message("1")
+
+    assert "Verification Status: In Review" in result
+    assert "Message Type: Verification Review Follow-Up" in result
+    assert "Subject: Background Verification Review Follow-Up" in result
+    assert "currently under review" in result
+
+
+def test_career_background_verification_escalation_message_additional_documents():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Additional Documents Requested",
+    )
+
+    result = get_career_background_verification_escalation_message("1")
+
+    assert "Verification Status: Additional Documents Requested" in result
+    assert "Message Type: Additional Documents Response" in result
+    assert "Subject: Background Verification Additional Documents" in result
+    assert "additional documents requested" in result
+
+
+def test_career_background_verification_escalation_message_cleared():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Cleared",
+    )
+
+    result = get_career_background_verification_escalation_message("1")
+
+    assert "Verification Status: Cleared" in result
+    assert "Message Type: Verification Clearance Acknowledgement" in result
+    assert (
+        "Subject: Background Verification Clearance Acknowledgement"
+        in result
+    )
+    assert "successful completion" in result
 
