@@ -58,6 +58,7 @@ HANDLERS = {
     "job_application_handlers.handle_get_career_background_verification_escalation_response": job_application_handlers.handle_get_career_background_verification_escalation_response,
     "job_application_handlers.handle_update_career_background_verification_closure": job_application_handlers.handle_update_career_background_verification_closure,
     "job_application_handlers.handle_get_career_background_verification_closure_message": job_application_handlers.handle_get_career_background_verification_closure_message,
+    "job_application_handlers.handle_get_career_background_verification_closure_history": job_application_handlers.handle_get_career_background_verification_closure_history,
     "job_application_handlers.handle_get_career_background_verification_closure": job_application_handlers.handle_get_career_background_verification_closure,
     "job_application_handlers.handle_get_career_background_verification_resolution_message": job_application_handlers.handle_get_career_background_verification_resolution_message,
     "job_application_handlers.handle_get_career_background_verification_resolution": job_application_handlers.handle_get_career_background_verification_resolution,
@@ -92,6 +93,7 @@ HANDLERS = {
 
 def get_handler(name):
     return HANDLERS.get(name)
+
 
 
 

@@ -9199,7 +9199,28 @@ def update_career_background_verification_closure(
 
     for item in data.get("applications", []):
         if str(item.get("id")) == str(application_id):
+            previous_status = item.get(
+                "background_verification_closure_status",
+                "Open",
+            )
+
             item["background_verification_closure_status"] = closure_status
+
+            closure_history = item.setdefault(
+                "background_verification_closure_history",
+                [],
+            )
+
+            closure_history.append(
+                {
+                    "from_status": previous_status,
+                    "to_status": closure_status,
+                    "changed_at": datetime.now().strftime(
+                        "%d-%m-%Y %H:%M"
+                    ),
+                }
+            )
+
             _save(data)
 
             return (
@@ -9383,3 +9404,56 @@ def generate_career_background_verification_closure_message(application_id):
         f"{message}"
     )
 
+
+
+
+def get_career_background_verification_closure_history(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    current_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+    history = application.get(
+        "background_verification_closure_history",
+        [],
+    )
+
+    if not history:
+        return (
+            f"JERVIS Career Background Verification Closure History "
+            f"- Application {application_id}\n"
+            "-------------------------------------------------------\n"
+            f"Company: {company}\n"
+            f"Role: {role}\n"
+            f"Current Closure Status: {current_status}\n"
+            "History: No closure history recorded."
+        )
+
+    history_lines = []
+
+    for index, entry in enumerate(history, start=1):
+        from_status = entry.get("from_status", "Unknown")
+        to_status = entry.get("to_status", "Unknown")
+        changed_at = entry.get("changed_at", "Unknown")
+
+        history_lines.append(
+            f"{index}. {from_status} -> {to_status} | {changed_at}"
+        )
+
+    return (
+        f"JERVIS Career Background Verification Closure History "
+        f"- Application {application_id}\n"
+        "-------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Current Closure Status: {current_status}\n"
+        f"Total Changes: {len(history)}\n\n"
+        "Closure History:\n"
+        + "\n".join(history_lines)
+    )
