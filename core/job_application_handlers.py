@@ -54,6 +54,7 @@ from core.job_application_intelligence import (
     get_career_employment_verification_request,
     get_career_background_verification_readiness,
     get_career_background_verification_risk,
+    get_career_background_verification_progress,
     get_career_background_documents,
     update_career_background_document,
 )
@@ -479,3 +480,18 @@ def handle_update_career_background_document(command):
         document,
         status,
     )
+
+
+
+def handle_get_career_background_verification_progress(command):
+    application_id = command[
+        len("career background verification progress "):
+    ].strip()
+
+    if not application_id:
+        return (
+            "Usage: career background verification progress "
+            "<application_id>"
+        )
+
+    return get_career_background_verification_progress(application_id)

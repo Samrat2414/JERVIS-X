@@ -52,6 +52,7 @@ from core.job_application_intelligence import (
     get_career_employment_verification_request,
     get_career_background_verification_readiness,
     get_career_background_verification_risk,
+    get_career_background_verification_progress,
     get_career_background_documents,
     update_career_background_document,
     _load,
@@ -5731,3 +5732,102 @@ def test_career_background_document_already_pending():
         "Identity Proof is already marked as Pending "
         "for application 1."
     ) == result
+
+
+
+def test_career_background_verification_progress_not_found():
+    result = get_career_background_verification_progress("999")
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_progress_default():
+    add_test_application()
+
+    result = get_career_background_verification_progress("1")
+
+    assert "Progress Score: 0%" in result
+    assert "Documents Ready: 0/5" in result
+    assert "Pending: 5" in result
+    assert "Missing: 0" in result
+    assert "Blocker Level: Moderate" in result
+    assert "Complete pending document: Identity Proof" in result
+
+
+def test_career_background_verification_progress_partial():
+    add_test_application()
+    update_career_background_document(
+        "1",
+        "Identity Proof",
+        "Ready",
+    )
+
+    result = get_career_background_verification_progress("1")
+
+    assert "Progress Score: 20%" in result
+    assert "Documents Ready: 1/5" in result
+    assert "Pending: 4" in result
+    assert "Blocker Level: Moderate" in result
+
+
+def test_career_background_verification_progress_missing():
+    add_test_application()
+    update_career_background_document(
+        "1",
+        "Address Proof",
+        "Missing",
+    )
+
+    result = get_career_background_verification_progress("1")
+
+    assert "Missing: 1" in result
+    assert "Blocker Level: Moderate" in result
+    assert "Resolve missing document: Address Proof" in result
+    assert "Resolve the missing verification documents first" in result
+
+
+def test_career_background_verification_progress_high_blocker():
+    add_test_application()
+    update_career_background_document(
+        "1",
+        "Identity Proof",
+        "Missing",
+    )
+    update_career_background_document(
+        "1",
+        "Address Proof",
+        "Missing",
+    )
+
+    result = get_career_background_verification_progress("1")
+
+    assert "Missing: 2" in result
+    assert "Blocker Level: High" in result
+
+
+def test_career_background_verification_progress_complete():
+    add_test_application()
+
+    documents = [
+        "Identity Proof",
+        "Education Certificates",
+        "Address Proof",
+        "Employment Documents",
+        "Relieving / Experience Letters",
+    ]
+
+    for document in documents:
+        update_career_background_document(
+            "1",
+            document,
+            "Ready",
+        )
+
+    result = get_career_background_verification_progress("1")
+
+    assert "Progress Score: 100%" in result
+    assert "Documents Ready: 5/5" in result
+    assert "Pending: 0" in result
+    assert "Missing: 0" in result
+    assert "Blocker Level: Low" in result
+    assert "All tracked verification documents are ready." in result
+    assert "prepare the final verification submission" in result

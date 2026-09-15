@@ -7980,3 +7980,117 @@ def update_career_background_document(application_id, document, status):
             )
 
     return "Job application not found."
+
+
+
+def get_career_background_verification_progress(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+
+    default_documents = {
+        "Identity Proof": "Pending",
+        "Education Certificates": "Pending",
+        "Address Proof": "Pending",
+        "Employment Documents": "Pending",
+        "Relieving / Experience Letters": "Pending",
+    }
+
+    stored_documents = application.get(
+        "background_verification_documents",
+        {},
+    )
+
+    documents = {
+        **default_documents,
+        **stored_documents,
+    }
+
+    ready_documents = [
+        document
+        for document, status in documents.items()
+        if str(status).lower() == "ready"
+    ]
+    pending_documents = [
+        document
+        for document, status in documents.items()
+        if str(status).lower() == "pending"
+    ]
+    missing_documents = [
+        document
+        for document, status in documents.items()
+        if str(status).lower() == "missing"
+    ]
+
+    total = len(documents)
+    ready_count = len(ready_documents)
+    pending_count = len(pending_documents)
+    missing_count = len(missing_documents)
+
+    progress_score = round(
+        (ready_count / total) * 100
+    ) if total else 0
+
+    if missing_count >= 2:
+        blocker_level = "High"
+    elif missing_count == 1 or pending_count >= 3:
+        blocker_level = "Moderate"
+    else:
+        blocker_level = "Low"
+
+    priority_actions = []
+
+    for document in missing_documents:
+        priority_actions.append(
+            f"Resolve missing document: {document}"
+        )
+
+    for document in pending_documents:
+        priority_actions.append(
+            f"Complete pending document: {document}"
+        )
+
+    if not priority_actions:
+        priority_actions.append(
+            "All tracked verification documents are ready."
+        )
+
+    priority_text = "\n".join(
+        f"- {action}" for action in priority_actions
+    )
+
+    if progress_score == 100:
+        next_action = (
+            "All tracked documents are ready. Review them for accuracy "
+            "and prepare the final verification submission."
+        )
+    elif missing_count:
+        next_action = (
+            "Resolve the missing verification documents first, then "
+            "complete the remaining pending documents."
+        )
+    else:
+        next_action = (
+            "Complete the pending verification documents to improve "
+            "background verification readiness."
+        )
+
+    return (
+        f"JERVIS Career Background Verification Progress Analyzer - "
+        f"Application {application_id}\n"
+        "-----------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Progress Score: {progress_score}%\n"
+        f"Documents Ready: {ready_count}/{total}\n"
+        f"Pending: {pending_count}\n"
+        f"Missing: {missing_count}\n"
+        f"Blocker Level: {blocker_level}\n"
+        "Priority Actions:\n"
+        f"{priority_text}\n"
+        f"Next Action: {next_action}"
+    )

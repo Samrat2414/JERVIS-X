@@ -48,6 +48,7 @@ HANDLERS = {
     "job_application_handlers.handle_get_career_offer_acceptance_analysis": job_application_handlers.handle_get_career_offer_acceptance_analysis,
             "job_application_handlers.handle_update_career_background_document": job_application_handlers.handle_update_career_background_document,
     "job_application_handlers.handle_get_career_background_documents": job_application_handlers.handle_get_career_background_documents,
+    "job_application_handlers.handle_get_career_background_verification_progress": job_application_handlers.handle_get_career_background_verification_progress,
     "job_application_handlers.handle_get_career_background_verification_risk": job_application_handlers.handle_get_career_background_verification_risk,
     "job_application_handlers.handle_get_career_background_verification_readiness": job_application_handlers.handle_get_career_background_verification_readiness,
     "job_application_handlers.handle_get_career_employment_verification_request": job_application_handlers.handle_get_career_employment_verification_request,
