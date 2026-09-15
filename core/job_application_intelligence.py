@@ -8865,3 +8865,124 @@ def get_career_background_verification_escalation_message(application_id):
         f"{message}"
     )
 
+
+def update_career_background_verification_escalation_response(
+    application_id,
+    response_status,
+):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    valid_statuses = {
+        "Not Received",
+        "Received",
+        "Action Required",
+        "Resolved",
+    }
+
+    normalized_status = response_status.strip().title()
+
+    if normalized_status not in valid_statuses:
+        return (
+            "Invalid escalation response status. Use: Not Received, "
+            "Received, Action Required, or Resolved."
+        )
+
+    data = _load()
+
+    for item in data["applications"]:
+        if str(item.get("id")) == str(application_id):
+            item["background_verification_escalation_response"] = (
+                normalized_status
+            )
+            _save(data)
+
+            return (
+                "Background verification escalation response updated to "
+                f"{normalized_status}."
+            )
+
+    return "Job application not found."
+
+
+def get_career_background_verification_escalation_response(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    verification_status = application.get(
+        "background_verification_status",
+        "Not Submitted",
+    )
+    response_status = application.get(
+        "background_verification_escalation_response",
+        "Not Received",
+    )
+
+    if response_status == "Not Received":
+        follow_up_state = "Pending"
+        recommended_action = (
+            "Continue monitoring for a response from HR or the "
+            "background verification team."
+        )
+        next_action = (
+            "Send a professional follow-up if there is still no response "
+            "after a reasonable waiting period."
+        )
+    elif response_status == "Received":
+        follow_up_state = "Response Received"
+        recommended_action = (
+            "Review the response carefully and identify whether any "
+            "additional action is required."
+        )
+        next_action = (
+            "Complete any instructions provided by HR or the background "
+            "verification team."
+        )
+    elif response_status == "Action Required":
+        follow_up_state = "Immediate Action Required"
+        recommended_action = (
+            "Address the requested information or documentation as soon "
+            "as possible."
+        )
+        next_action = (
+            "Complete the requested action and confirm completion with "
+            "HR or the background verification team."
+        )
+    elif response_status == "Resolved":
+        follow_up_state = "Resolved"
+        recommended_action = (
+            "Keep the response and resolution confirmation for your records."
+        )
+        next_action = (
+            "Continue monitoring the overall verification or onboarding "
+            "process."
+        )
+    else:
+        follow_up_state = "Review Required"
+        recommended_action = (
+            "Review the escalation response status and confirm the latest "
+            "communication."
+        )
+        next_action = (
+            "Update the response tracker with the correct current status."
+        )
+
+    return (
+        f"JERVIS Career Background Verification Escalation Response "
+        f"Tracker - Application {application_id}\n"
+        "----------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Verification Status: {verification_status}\n"
+        f"Escalation Response Status: {response_status}\n"
+        f"Follow-Up State: {follow_up_state}\n"
+        f"Recommended Action: {recommended_action}\n"
+        f"Next Action: {next_action}"
+    )
+

@@ -63,6 +63,8 @@ from core.job_application_intelligence import (
     get_career_background_verification_delay_risk,
     get_career_background_verification_escalation,
     get_career_background_verification_escalation_message,
+    get_career_background_verification_escalation_response,
+    update_career_background_verification_escalation_response,
     get_career_background_documents,
     update_career_background_document,
 )
@@ -632,5 +634,42 @@ def handle_get_career_background_verification_escalation_message(command):
 
     return get_career_background_verification_escalation_message(
         application_id
+    )
+
+
+def handle_get_career_background_verification_escalation_response(command):
+    application_id = command[
+        len("career background verification escalation response "):
+    ].strip()
+
+    if not application_id:
+        return (
+            "Usage: career background verification escalation response "
+            "<application_id>"
+        )
+
+    return get_career_background_verification_escalation_response(
+        application_id
+    )
+
+
+def handle_update_career_background_verification_escalation_response(command):
+    payload = command[
+        len("career background verification escalation response update "):
+    ].strip()
+
+    parts = [part.strip() for part in payload.split("|")]
+
+    if len(parts) != 2 or not all(parts):
+        return (
+            "Usage: career background verification escalation response "
+            "update <application_id> | <status>"
+        )
+
+    application_id, response_status = parts
+
+    return update_career_background_verification_escalation_response(
+        application_id,
+        response_status,
     )
 

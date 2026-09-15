@@ -61,6 +61,8 @@ from core.job_application_intelligence import (
     get_career_background_verification_delay_risk,
     get_career_background_verification_escalation,
     get_career_background_verification_escalation_message,
+    get_career_background_verification_escalation_response,
+    update_career_background_verification_escalation_response,
     get_career_background_documents,
     update_career_background_document,
     _load,
@@ -6477,4 +6479,88 @@ def test_career_background_verification_escalation_message_cleared():
         in result
     )
     assert "successful completion" in result
+
+def test_career_background_verification_escalation_response_not_found():
+    result = get_career_background_verification_escalation_response("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_escalation_response_default():
+    add_test_application()
+
+    result = get_career_background_verification_escalation_response("1")
+
+    assert "Escalation Response Status: Not Received" in result
+    assert "Follow-Up State: Pending" in result
+    assert "Continue monitoring for a response" in result
+
+
+def test_career_background_verification_escalation_response_received():
+    add_test_application()
+
+    update_result = update_career_background_verification_escalation_response(
+        "1",
+        "Received",
+    )
+    result = get_career_background_verification_escalation_response("1")
+
+    assert (
+        update_result
+        == "Background verification escalation response updated to Received."
+    )
+    assert "Escalation Response Status: Received" in result
+    assert "Follow-Up State: Response Received" in result
+    assert "Review the response carefully" in result
+
+
+def test_career_background_verification_escalation_response_action_required():
+    add_test_application()
+
+    update_career_background_verification_escalation_response(
+        "1",
+        "Action Required",
+    )
+    result = get_career_background_verification_escalation_response("1")
+
+    assert "Escalation Response Status: Action Required" in result
+    assert "Follow-Up State: Immediate Action Required" in result
+    assert "Address the requested information or documentation" in result
+
+
+def test_career_background_verification_escalation_response_resolved():
+    add_test_application()
+
+    update_career_background_verification_escalation_response(
+        "1",
+        "Resolved",
+    )
+    result = get_career_background_verification_escalation_response("1")
+
+    assert "Escalation Response Status: Resolved" in result
+    assert "Follow-Up State: Resolved" in result
+    assert "resolution confirmation for your records" in result
+
+
+def test_career_background_verification_escalation_response_invalid_status():
+    add_test_application()
+
+    result = update_career_background_verification_escalation_response(
+        "1",
+        "Waiting",
+    )
+
+    assert result == (
+        "Invalid escalation response status. Use: Not Received, "
+        "Received, Action Required, or Resolved."
+    )
+
+
+def test_career_background_verification_escalation_response_update_not_found():
+    result = update_career_background_verification_escalation_response(
+        "999",
+        "Received",
+    )
+
+    assert result == "Job application not found."
 
