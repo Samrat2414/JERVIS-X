@@ -59,6 +59,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_completion,
     update_career_background_verification_status,
     get_career_background_verification_follow_up,
+    get_career_background_verification_follow_up_message,
     get_career_background_documents,
     update_career_background_document,
 )
@@ -565,3 +566,20 @@ def handle_get_career_background_verification_follow_up(command):
         )
 
     return get_career_background_verification_follow_up(application_id)
+
+
+
+def handle_get_career_background_verification_follow_up_message(command):
+    application_id = command[
+        len("career background verification follow up message "):
+    ].strip()
+
+    if not application_id:
+        return (
+            "Usage: career background verification follow up message "
+            "<application_id>"
+        )
+
+    return get_career_background_verification_follow_up_message(
+        application_id
+    )

@@ -57,6 +57,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_completion,
     update_career_background_verification_status,
     get_career_background_verification_follow_up,
+    get_career_background_verification_follow_up_message,
     get_career_background_documents,
     update_career_background_document,
     _load,
@@ -6145,3 +6146,86 @@ def test_career_background_verification_follow_up_cleared():
     assert "Follow-Up Priority: Low" in result
     assert "No verification follow-up is currently required" in result
     assert "joining or onboarding step" in result
+
+
+
+def test_career_background_verification_follow_up_message_not_found():
+    result = get_career_background_verification_follow_up_message("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_follow_up_message_not_submitted():
+    add_test_application()
+
+    result = get_career_background_verification_follow_up_message("1")
+
+    assert "Verification Status: Not Submitted" in result
+    assert "Message Type: Pre-Submission Guidance" in result
+    assert "Subject: Background Verification Document Submission" in result
+    assert "Dear Test Company Team" in result
+    assert "Python Developer position" in result
+
+
+def test_career_background_verification_follow_up_message_submitted():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Submitted",
+    )
+
+    result = get_career_background_verification_follow_up_message("1")
+
+    assert "Verification Status: Submitted" in result
+    assert "Message Type: Submission Confirmation Follow-Up" in result
+    assert "Subject: Background Verification Submission Confirmation" in result
+    assert "received successfully" in result
+
+
+def test_career_background_verification_follow_up_message_in_review():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "In Review",
+    )
+
+    result = get_career_background_verification_follow_up_message("1")
+
+    assert "Verification Status: In Review" in result
+    assert "Message Type: Verification Status Follow-Up" in result
+    assert "Subject: Background Verification Status Update" in result
+    assert "politely follow up" in result
+
+
+def test_career_background_verification_follow_up_message_additional_documents():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Additional Documents Requested",
+    )
+
+    result = get_career_background_verification_follow_up_message("1")
+
+    assert "Verification Status: Additional Documents Requested" in result
+    assert "Message Type: Additional Document Submission Follow-Up" in result
+    assert "Subject: Additional Background Verification Documents" in result
+    assert "requested documents promptly" in result
+
+
+def test_career_background_verification_follow_up_message_cleared():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Cleared",
+    )
+
+    result = get_career_background_verification_follow_up_message("1")
+
+    assert "Verification Status: Cleared" in result
+    assert "Message Type: Verification Clearance Acknowledgement" in result
+    assert "Subject: Background Verification Clearance" in result
+    assert "joining or onboarding process" in result

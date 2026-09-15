@@ -8425,3 +8425,102 @@ def get_career_background_verification_follow_up(application_id):
         f"Recommended Action: {action}\n"
         f"Message Guidance: {message_guidance}"
     )
+
+
+
+def get_career_background_verification_follow_up_message(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    status = application.get(
+        "background_verification_status",
+        "Not Submitted",
+    )
+
+    if status == "Not Submitted":
+        message_type = "Pre-Submission Guidance"
+        subject = "Background Verification Document Submission"
+        message = (
+            f"Dear {company} Team,\n\n"
+            f"I am preparing the required background verification documents "
+            f"for the {role} position. Please let me know if there are any "
+            f"specific documents or submission instructions I should follow.\n\n"
+            f"Thank you for your guidance.\n"
+            f"Best regards"
+        )
+    elif status == "Submitted":
+        message_type = "Submission Confirmation Follow-Up"
+        subject = "Background Verification Submission Confirmation"
+        message = (
+            f"Dear {company} Team,\n\n"
+            f"I am writing to confirm that my background verification "
+            f"documents for the {role} position have been received "
+            f"successfully. Please let me know if any additional information "
+            f"or documents are required from my side.\n\n"
+            f"Thank you for your assistance.\n"
+            f"Best regards"
+        )
+    elif status == "In Review":
+        message_type = "Verification Status Follow-Up"
+        subject = "Background Verification Status Update"
+        message = (
+            f"Dear {company} Team,\n\n"
+            f"I would like to politely follow up regarding the status of my "
+            f"background verification for the {role} position. Please let me "
+            f"know if the verification is progressing normally or if any "
+            f"additional information is required from my side.\n\n"
+            f"Thank you for your time and support.\n"
+            f"Best regards"
+        )
+    elif status == "Additional Documents Requested":
+        message_type = "Additional Document Submission Follow-Up"
+        subject = "Additional Background Verification Documents"
+        message = (
+            f"Dear {company} Team,\n\n"
+            f"I am following up regarding the additional documents requested "
+            f"for my background verification for the {role} position. "
+            f"I will provide the requested documents promptly. Please confirm "
+            f"once they have been received and let me know if anything else "
+            f"is required.\n\n"
+            f"Thank you for your assistance.\n"
+            f"Best regards"
+        )
+    elif status == "Cleared":
+        message_type = "Verification Clearance Acknowledgement"
+        subject = "Background Verification Clearance"
+        message = (
+            f"Dear {company} Team,\n\n"
+            f"Thank you for confirming the completion of my background "
+            f"verification for the {role} position. I appreciate your support "
+            f"throughout the process and look forward to the next steps in "
+            f"the joining or onboarding process.\n\n"
+            f"Best regards"
+        )
+    else:
+        message_type = "Verification Status Clarification"
+        subject = "Background Verification Status Clarification"
+        message = (
+            f"Dear {company} Team,\n\n"
+            f"I would like to request clarification regarding the current "
+            f"status of my background verification for the {role} position. "
+            f"Please let me know if any action or information is required "
+            f"from my side.\n\n"
+            f"Thank you for your assistance.\n"
+            f"Best regards"
+        )
+
+    return (
+        f"JERVIS Career Background Verification Follow-Up Message Generator "
+        f"- Application {application_id}\n"
+        "-------------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Verification Status: {status}\n"
+        f"Message Type: {message_type}\n"
+        f"Subject: {subject}\n\n"
+        f"{message}"
+    )
