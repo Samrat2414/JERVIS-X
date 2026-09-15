@@ -9457,3 +9457,85 @@ def get_career_background_verification_closure_history(application_id):
         "Closure History:\n"
         + "\n".join(history_lines)
     )
+
+
+def get_career_background_verification_closure_analytics(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    current_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+    history = application.get(
+        "background_verification_closure_history",
+        [],
+    )
+
+    total_changes = len(history)
+
+    reopened_count = sum(
+        1
+        for entry in history
+        if entry.get("to_status") == "Reopened"
+    )
+
+    closure_attempts = sum(
+        1
+        for entry in history
+        if entry.get("to_status") == "Closed"
+    )
+
+    pending_count = sum(
+        1
+        for entry in history
+        if entry.get("to_status") == "Pending Confirmation"
+    )
+
+    if current_status == "Closed" and reopened_count == 0:
+        stability = "Stable"
+        recommended_action = (
+            "Keep the closure confirmation for your records and "
+            "monitor the remaining onboarding process."
+        )
+    elif current_status == "Closed" and reopened_count > 0:
+        stability = "Previously Reopened"
+        recommended_action = (
+            "Review the previous reopening events and keep all final "
+            "verification records available."
+        )
+    elif current_status == "Reopened":
+        stability = "Unstable"
+        recommended_action = (
+            "Address the reopened verification requirement before "
+            "considering the case fully closed."
+        )
+    elif current_status == "Pending Confirmation":
+        stability = "Pending"
+        recommended_action = (
+            "Obtain final confirmation before treating the case as closed."
+        )
+    else:
+        stability = "In Progress"
+        recommended_action = (
+            "Continue monitoring the verification process until closure."
+        )
+
+    return (
+        f"JERVIS Career Background Verification Closure Analytics "
+        f"- Application {application_id}\n"
+        "-----------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Current Closure Status: {current_status}\n"
+        f"Total History Changes: {total_changes}\n"
+        f"Closure Attempts: {closure_attempts}\n"
+        f"Pending Confirmation Events: {pending_count}\n"
+        f"Reopened Events: {reopened_count}\n"
+        f"Closure Stability: {stability}\n"
+        f"Recommended Action: {recommended_action}"
+    )
