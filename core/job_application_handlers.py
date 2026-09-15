@@ -67,6 +67,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_resolution,
     get_career_background_verification_resolution_message,
     get_career_background_verification_closure,
+    generate_career_background_verification_closure_message,
     update_career_background_verification_closure,
     update_career_background_verification_escalation_response,
     get_career_background_documents,
@@ -740,3 +741,20 @@ def handle_update_career_background_verification_closure(command):
         closure_status,
     )
 
+
+
+
+def handle_get_career_background_verification_closure_message(command):
+    application_id = command[
+        len("career background verification closure message "):
+    ].strip()
+
+    if not application_id:
+        return (
+            "Usage: career background verification closure message "
+            "<application_id>"
+        )
+
+    return generate_career_background_verification_closure_message(
+        application_id
+    )

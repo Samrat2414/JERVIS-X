@@ -1,4 +1,4 @@
-﻿import csv
+import csv
 import json
 import os
 import sys
@@ -9284,5 +9284,102 @@ def get_career_background_verification_closure(application_id):
         f"Closure Readiness: {closure_readiness}\n"
         f"Recommended Action: {recommended_action}\n"
         f"Next Action: {next_action}"
+    )
+
+
+
+def generate_career_background_verification_closure_message(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    verification_status = application.get(
+        "background_verification_status",
+        "Not Submitted",
+    )
+    response_status = application.get(
+        "background_verification_escalation_response",
+        "Not Received",
+    )
+    closure_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+
+    if closure_status == "Open":
+        message_type = "Closure Follow-up"
+        subject = f"Follow-up on Background Verification Closure - {role}"
+        message = (
+            f"Dear Hiring Team,\n\n"
+            f"I am writing to follow up regarding the background "
+            f"verification process for my {role} application at {company}. "
+            f"Please let me know if any remaining action or documentation "
+            f"is required from my side before the case can be closed.\n\n"
+            f"Best regards"
+        )
+
+    elif closure_status == "Pending Confirmation":
+        message_type = "Closure Confirmation Request"
+        subject = f"Background Verification Closure Confirmation - {role}"
+        message = (
+            f"Dear Hiring Team,\n\n"
+            f"I am writing to request confirmation regarding the closure "
+            f"of my background verification process for the {role} "
+            f"position at {company}. Please let me know whether the process "
+            f"has been completed or if any further action is required "
+            f"from my side.\n\n"
+            f"Best regards"
+        )
+
+    elif closure_status == "Closed":
+        message_type = "Closure Acknowledgement"
+        subject = f"Background Verification Closure Acknowledgement - {role}"
+        message = (
+            f"Dear Hiring Team,\n\n"
+            f"Thank you for confirming the completion and closure of the "
+            f"background verification process for my {role} application "
+            f"at {company}. Please let me know if there are any further "
+            f"onboarding or joining steps required from my side.\n\n"
+            f"Best regards"
+        )
+
+    elif closure_status == "Reopened":
+        message_type = "Reopened Case Response"
+        subject = f"Background Verification Case Reopened - {role}"
+        message = (
+            f"Dear Hiring Team,\n\n"
+            f"I understand that the background verification case for my "
+            f"{role} application at {company} has been reopened. Please "
+            f"share the reason and any additional information or documents "
+            f"required from my side.\n\n"
+            f"Best regards"
+        )
+
+    else:
+        message_type = "Closure Status Review"
+        subject = f"Background Verification Closure Status Review - {role}"
+        message = (
+            f"Dear Hiring Team,\n\n"
+            f"I am writing to confirm the current background verification "
+            f"closure status for my {role} application at {company}. "
+            f"Please let me know if any action is required from my side.\n\n"
+            f"Best regards"
+        )
+
+    return (
+        f"JERVIS Career Background Verification Closure Message Generator "
+        f"- Application {application_id}\n"
+        "---------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Verification Status: {verification_status}\n"
+        f"Escalation Response Status: {response_status}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Message Type: {message_type}\n"
+        f"Subject: {subject}\n\n"
+        f"{message}"
     )
 
