@@ -8524,3 +8524,119 @@ def get_career_background_verification_follow_up_message(application_id):
         f"Subject: {subject}\n\n"
         f"{message}"
     )
+
+
+
+def get_career_background_verification_delay_risk(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    status = application.get(
+        "background_verification_status",
+        "Not Submitted",
+    )
+
+    if status == "Not Submitted":
+        risk_score = 70
+        risk_level = "High"
+        risk_factor = (
+            "Background verification has not been submitted, so the "
+            "verification process cannot begin."
+        )
+        recommendation = (
+            "Complete and submit all required verification documents "
+            "as soon as possible."
+        )
+        next_action = (
+            "Review the document checklist and submit the verification "
+            "package."
+        )
+    elif status == "Submitted":
+        risk_score = 35
+        risk_level = "Moderate"
+        risk_factor = (
+            "Documents are submitted but verification review may not "
+            "have started yet."
+        )
+        recommendation = (
+            "Confirm receipt of the submitted documents and monitor "
+            "for a verification update."
+        )
+        next_action = (
+            "Follow up professionally if no acknowledgement or status "
+            "update is received."
+        )
+    elif status == "In Review":
+        risk_score = 25
+        risk_level = "Low"
+        risk_factor = (
+            "Verification is actively under review, but additional "
+            "information could still be requested."
+        )
+        recommendation = (
+            "Monitor the verification process and remain available "
+            "for employer requests."
+        )
+        next_action = (
+            "Wait for the review outcome and respond promptly to any "
+            "verification request."
+        )
+    elif status == "Additional Documents Requested":
+        risk_score = 80
+        risk_level = "High"
+        risk_factor = (
+            "Additional documents are required and unresolved requests "
+            "can delay verification completion."
+        )
+        recommendation = (
+            "Provide all requested additional documents immediately "
+            "and confirm receipt."
+        )
+        next_action = (
+            "Resolve the outstanding document request before waiting "
+            "for further verification progress."
+        )
+    elif status == "Cleared":
+        risk_score = 0
+        risk_level = "Low"
+        risk_factor = (
+            "Background verification is cleared and no active "
+            "verification delay is detected."
+        )
+        recommendation = (
+            "Keep the clearance confirmation for your records."
+        )
+        next_action = (
+            "Continue with the joining or onboarding process."
+        )
+    else:
+        risk_score = 50
+        risk_level = "Moderate"
+        risk_factor = (
+            "The current verification status is unclear."
+        )
+        recommendation = (
+            "Confirm the current verification stage with the employer."
+        )
+        next_action = (
+            "Request a verification status clarification before taking "
+            "further action."
+        )
+
+    return (
+        f"JERVIS Career Background Verification Delay Risk Analyzer - "
+        f"Application {application_id}\n"
+        "----------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Verification Status: {status}\n"
+        f"Delay Risk Score: {risk_score}/100\n"
+        f"Delay Risk Level: {risk_level}\n"
+        f"Risk Factor: {risk_factor}\n"
+        f"Recommendation: {recommendation}\n"
+        f"Next Action: {next_action}"
+    )

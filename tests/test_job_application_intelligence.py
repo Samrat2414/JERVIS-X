@@ -58,6 +58,7 @@ from core.job_application_intelligence import (
     update_career_background_verification_status,
     get_career_background_verification_follow_up,
     get_career_background_verification_follow_up_message,
+    get_career_background_verification_delay_risk,
     get_career_background_documents,
     update_career_background_document,
     _load,
@@ -6229,3 +6230,85 @@ def test_career_background_verification_follow_up_message_cleared():
     assert "Message Type: Verification Clearance Acknowledgement" in result
     assert "Subject: Background Verification Clearance" in result
     assert "joining or onboarding process" in result
+
+
+
+def test_career_background_verification_delay_risk_not_found():
+    result = get_career_background_verification_delay_risk("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_delay_risk_not_submitted():
+    add_test_application()
+
+    result = get_career_background_verification_delay_risk("1")
+
+    assert "Verification Status: Not Submitted" in result
+    assert "Delay Risk Score: 70/100" in result
+    assert "Delay Risk Level: High" in result
+    assert "verification process cannot begin" in result
+
+
+def test_career_background_verification_delay_risk_submitted():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Submitted",
+    )
+
+    result = get_career_background_verification_delay_risk("1")
+
+    assert "Verification Status: Submitted" in result
+    assert "Delay Risk Score: 35/100" in result
+    assert "Delay Risk Level: Moderate" in result
+    assert "verification review may not have started yet" in result
+
+
+def test_career_background_verification_delay_risk_in_review():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "In Review",
+    )
+
+    result = get_career_background_verification_delay_risk("1")
+
+    assert "Verification Status: In Review" in result
+    assert "Delay Risk Score: 25/100" in result
+    assert "Delay Risk Level: Low" in result
+    assert "actively under review" in result
+
+
+def test_career_background_verification_delay_risk_additional_documents():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Additional Documents Requested",
+    )
+
+    result = get_career_background_verification_delay_risk("1")
+
+    assert "Verification Status: Additional Documents Requested" in result
+    assert "Delay Risk Score: 80/100" in result
+    assert "Delay Risk Level: High" in result
+    assert "unresolved requests can delay" in result
+
+
+def test_career_background_verification_delay_risk_cleared():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Cleared",
+    )
+
+    result = get_career_background_verification_delay_risk("1")
+
+    assert "Verification Status: Cleared" in result
+    assert "Delay Risk Score: 0/100" in result
+    assert "Delay Risk Level: Low" in result
+    assert "no active verification delay" in result
