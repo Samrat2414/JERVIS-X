@@ -9839,3 +9839,79 @@ def get_career_background_verification_closure_dashboard(application_id):
         f"Decision: {decision}\n"
         f"Next Step: {next_step}"
     )
+
+
+def get_career_background_verification_closure_recommendation(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    closure_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+    history = application.get(
+        "background_verification_closure_history",
+        [],
+    )
+
+    reopened_count = sum(
+        1
+        for entry in history
+        if entry.get("to_status") == "Reopened"
+    )
+
+    pending_count = sum(
+        1
+        for entry in history
+        if entry.get("to_status") == "Pending Confirmation"
+    )
+
+    if closure_status == "Closed" and reopened_count == 0:
+        recommendation_level = "Low"
+        recommendation = (
+            "Keep the closure confirmation for your records and continue "
+            "monitoring the remaining onboarding process."
+        )
+        next_action = "No immediate closure action is required."
+    elif closure_status == "Reopened":
+        recommendation_level = "High"
+        recommendation = (
+            "Resolve the reopened verification case as soon as possible "
+            "and confirm all outstanding requirements."
+        )
+        next_action = (
+            "Contact HR or the verification team and review the "
+            "reopening reason."
+        )
+    elif closure_status == "Pending Confirmation":
+        recommendation_level = "Medium"
+        recommendation = (
+            "Obtain final closure confirmation before considering the "
+            "background verification fully complete."
+        )
+        next_action = "Request or verify the final closure confirmation."
+    else:
+        recommendation_level = (
+            "High" if reopened_count > 0 or pending_count > 1 else "Medium"
+        )
+        recommendation = (
+            "Continue monitoring the closure process and complete any "
+            "remaining verification requirements."
+        )
+        next_action = "Check the current verification closure progress."
+
+    return (
+        f"JERVIS Career Background Verification Closure Recommendation "
+        f"- Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Recommendation Level: {recommendation_level}\n"
+        f"Recommendation: {recommendation}\n"
+        f"Next Action: {next_action}"
+    )
