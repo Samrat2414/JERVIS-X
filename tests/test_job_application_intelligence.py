@@ -50,6 +50,7 @@ from core.job_application_intelligence import (
     get_career_relieving_letter_request,
     get_career_experience_certificate_request,
     get_career_employment_verification_request,
+    get_career_background_verification_readiness,
     _load,
     _save,
     get_onboarding_plan,
@@ -5430,3 +5431,81 @@ def test_career_employment_verification_request_next_action():
     assert "Next Action:" in result
     assert "confirm your employment details" in result
     assert "send it to HR" in result
+
+
+def test_career_background_verification_readiness_not_found():
+    result = get_career_background_verification_readiness("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_readiness_header():
+    add_test_application()
+
+    result = get_career_background_verification_readiness("1")
+
+    assert "JERVIS Career Background Verification Readiness Analyzer" in result
+    assert "Application 1" in result
+
+
+def test_career_background_verification_readiness_company_role_status():
+    add_test_application()
+
+    result = get_career_background_verification_readiness("1")
+
+    assert "Company: Test Company" in result
+    assert "Role: Python Developer" in result
+    assert "Application Status: Applied" in result
+
+
+def test_career_background_verification_readiness_score():
+    add_test_application()
+
+    result = get_career_background_verification_readiness("1")
+
+    assert "Readiness Score: 80/100" in result
+    assert "Readiness Level: High" in result
+
+
+def test_career_background_verification_readiness_checks():
+    add_test_application()
+
+    result = get_career_background_verification_readiness("1")
+
+    assert "Company information: Available" in result
+    assert "Role / designation information: Available" in result
+    assert "Application / employment timeline reference: Available" in result
+    assert "Application status: Available (Applied)" in result
+    assert "Supporting notes / HR communication: Not available" in result
+
+
+def test_career_background_verification_readiness_documents():
+    add_test_application()
+
+    result = get_career_background_verification_readiness("1")
+
+    assert "Government-issued identity proof" in result
+    assert "Education certificates and mark sheets" in result
+    assert "Relieving / experience letters" in result
+    assert "Current address and contact details" in result
+
+
+def test_career_background_verification_readiness_recommendations():
+    add_test_application()
+
+    result = get_career_background_verification_readiness("1")
+
+    assert "Recommendations:" in result
+    assert "employment history consistent" in result
+    assert "supporting documents" in result
+    assert "HR contact details" in result
+
+
+def test_career_background_verification_readiness_next_action():
+    add_test_application()
+
+    result = get_career_background_verification_readiness("1")
+
+    assert "Next Action:" in result
+    assert "resolve any inconsistencies" in result
+    assert "background verification begins" in result

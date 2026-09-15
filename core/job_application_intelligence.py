@@ -7668,3 +7668,88 @@ def get_career_employment_verification_request(application_id):
         "Next Action: Review the message, replace 'Candidate' with your name, "
         "confirm your employment details, and send it to HR."
     )
+
+def get_career_background_verification_readiness(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    status = application.get("status", "Unknown")
+
+    checks = []
+    score = 0
+
+    if company and company != "Unknown":
+        checks.append("Company information: Available")
+        score += 20
+    else:
+        checks.append("Company information: Missing")
+
+    if role and role != "Unknown":
+        checks.append("Role / designation information: Available")
+        score += 20
+    else:
+        checks.append("Role / designation information: Missing")
+
+    applied_date = application.get("applied_date")
+    if applied_date:
+        checks.append("Application / employment timeline reference: Available")
+        score += 20
+    else:
+        checks.append("Application / employment timeline reference: Missing")
+
+    if status and status != "Unknown":
+        checks.append(f"Application status: Available ({status})")
+        score += 20
+    else:
+        checks.append("Application status: Missing")
+
+    notes = application.get("notes", [])
+    if notes:
+        checks.append("Supporting notes / HR communication: Available")
+        score += 20
+    else:
+        checks.append("Supporting notes / HR communication: Not available")
+
+    if score >= 80:
+        readiness = "High"
+    elif score >= 60:
+        readiness = "Moderate"
+    else:
+        readiness = "Low"
+
+    missing_items = [
+        "Government-issued identity proof",
+        "Education certificates and mark sheets",
+        "Previous employment documents, if applicable",
+        "Relieving / experience letters, if applicable",
+        "Current address and contact details",
+    ]
+
+    checks_text = "\n".join(f"- {item}" for item in checks)
+    missing_text = "\n".join(f"- {item}" for item in missing_items)
+
+    return (
+        f"JERVIS Career Background Verification Readiness Analyzer - Application "
+        f"{application_id}\n"
+        "-----------------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Application Status: {status}\n"
+        f"Readiness Score: {score}/100\n"
+        f"Readiness Level: {readiness}\n"
+        "Application Data Checks:\n"
+        f"{checks_text}\n"
+        "Documents / Details to Verify Before Background Check:\n"
+        f"{missing_text}\n"
+        "Recommendations:\n"
+        "- Keep names, dates, education details, and employment history consistent.\n"
+        "- Prepare clear copies of supporting documents.\n"
+        "- Confirm previous employer and HR contact details where applicable.\n"
+        "- Review all submitted application information for accuracy.\n"
+        "Next Action: Gather the listed documents, verify your application details, "
+        "and resolve any inconsistencies before background verification begins."
+    )
