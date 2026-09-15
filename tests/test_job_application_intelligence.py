@@ -62,6 +62,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_escalation,
     get_career_background_verification_escalation_message,
     get_career_background_verification_escalation_response,
+    get_career_background_verification_resolution,
     update_career_background_verification_escalation_response,
     get_career_background_documents,
     update_career_background_document,
@@ -6563,4 +6564,66 @@ def test_career_background_verification_escalation_response_update_not_found():
     )
 
     assert result == "Job application not found."
+
+
+def test_career_background_verification_resolution_not_found():
+    result = get_career_background_verification_resolution("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_resolution_not_received():
+    add_test_application()
+
+    result = get_career_background_verification_resolution("1")
+
+    assert "Escalation Response Status: Not Received" in result
+    assert "Resolution Status: Pending Response" in result
+    assert "Priority: Medium" in result
+    assert "Continue following up with HR" in result
+
+
+def test_career_background_verification_resolution_received():
+    add_test_application()
+    update_career_background_verification_escalation_response(
+        "1",
+        "Received",
+    )
+
+    result = get_career_background_verification_resolution("1")
+
+    assert "Escalation Response Status: Received" in result
+    assert "Resolution Status: Review Required" in result
+    assert "Priority: Medium" in result
+    assert "Review the received response carefully" in result
+
+
+def test_career_background_verification_resolution_action_required():
+    add_test_application()
+    update_career_background_verification_escalation_response(
+        "1",
+        "Action Required",
+    )
+
+    result = get_career_background_verification_resolution("1")
+
+    assert "Escalation Response Status: Action Required" in result
+    assert "Resolution Status: Action Required" in result
+    assert "Priority: High" in result
+    assert "Complete the requested information or documentation" in result
+
+
+def test_career_background_verification_resolution_resolved():
+    add_test_application()
+    update_career_background_verification_escalation_response(
+        "1",
+        "Resolved",
+    )
+
+    result = get_career_background_verification_resolution("1")
+
+    assert "Escalation Response Status: Resolved" in result
+    assert "Resolution Status: Resolved" in result
+    assert "Priority: Low" in result
+    assert "Keep the resolution confirmation" in result
 

@@ -8986,3 +8986,89 @@ def get_career_background_verification_escalation_response(application_id):
         f"Next Action: {next_action}"
     )
 
+def get_career_background_verification_resolution(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    verification_status = application.get(
+        "background_verification_status",
+        "Not Submitted",
+    )
+    response_status = application.get(
+        "background_verification_escalation_response",
+        "Not Received",
+    )
+
+    if response_status == "Not Received":
+        resolution_status = "Pending Response"
+        priority = "Medium"
+        recommended_action = (
+            "Continue following up with HR or the background verification "
+            "team until a response is received."
+        )
+        next_action = (
+            "Send a professional follow-up or escalation if the response "
+            "remains delayed."
+        )
+    elif response_status == "Received":
+        resolution_status = "Review Required"
+        priority = "Medium"
+        recommended_action = (
+            "Review the received response carefully and identify any "
+            "instructions, questions, or document requests."
+        )
+        next_action = (
+            "Complete any required action and update the escalation "
+            "response status accordingly."
+        )
+    elif response_status == "Action Required":
+        resolution_status = "Action Required"
+        priority = "High"
+        recommended_action = (
+            "Complete the requested information or documentation as soon "
+            "as possible to prevent further verification delays."
+        )
+        next_action = (
+            "Submit the requested items, confirm completion with HR or the "
+            "background verification team, and track their response."
+        )
+    elif response_status == "Resolved":
+        resolution_status = "Resolved"
+        priority = "Low"
+        recommended_action = (
+            "Keep the resolution confirmation and related communication "
+            "for your records."
+        )
+        next_action = (
+            "Continue monitoring the overall background verification and "
+            "onboarding process."
+        )
+    else:
+        resolution_status = "Status Review Required"
+        priority = "Medium"
+        recommended_action = (
+            "Confirm the latest escalation response before deciding the "
+            "resolution action."
+        )
+        next_action = (
+            "Update the escalation response tracker with the correct status."
+        )
+
+    return (
+        f"JERVIS Career Background Verification Resolution Advisor - "
+        f"Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Verification Status: {verification_status}\n"
+        f"Escalation Response Status: {response_status}\n"
+        f"Resolution Status: {resolution_status}\n"
+        f"Priority: {priority}\n"
+        f"Recommended Action: {recommended_action}\n"
+        f"Next Action: {next_action}"
+    )
+
