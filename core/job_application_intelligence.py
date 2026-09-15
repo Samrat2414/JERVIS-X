@@ -9539,3 +9539,93 @@ def get_career_background_verification_closure_analytics(application_id):
         f"Closure Stability: {stability}\n"
         f"Recommended Action: {recommended_action}"
     )
+
+
+def get_career_background_verification_closure_action_plan(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    current_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+    history = application.get(
+        "background_verification_closure_history",
+        [],
+    )
+
+    reopened_count = sum(
+        1
+        for entry in history
+        if entry.get("to_status") == "Reopened"
+    )
+
+    closure_attempts = sum(
+        1
+        for entry in history
+        if entry.get("to_status") == "Closed"
+    )
+
+    if current_status == "Closed" and reopened_count == 0:
+        priority = "Low"
+        action = (
+            "Keep the closure confirmation and continue monitoring "
+            "onboarding or joining requirements."
+        )
+        next_step = (
+            "Monitor the remaining onboarding process."
+        )
+    elif current_status == "Closed" and reopened_count > 0:
+        priority = "Medium"
+        action = (
+            "Review previous reopening events and keep all verification "
+            "records available."
+        )
+        next_step = (
+            "Confirm that no additional verification requirement remains."
+        )
+    elif current_status == "Reopened":
+        priority = "High"
+        action = (
+            "Review the reason for reopening and provide any requested "
+            "information or documents."
+        )
+        next_step = (
+            "Resolve the reopened verification requirement."
+        )
+    elif current_status == "Pending Confirmation":
+        priority = "Medium"
+        action = (
+            "Request final confirmation from the background verification "
+            "or HR team."
+        )
+        next_step = (
+            "Obtain confirmation before treating the case as closed."
+        )
+    else:
+        priority = "Medium"
+        action = (
+            "Continue monitoring the verification closure process and "
+            "complete any remaining requirements."
+        )
+        next_step = (
+            "Follow up with the verification team if the case remains open."
+        )
+
+    return (
+        f"JERVIS Career Background Verification Closure Action Plan "
+        f"- Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Current Closure Status: {current_status}\n"
+        f"Closure Attempts: {closure_attempts}\n"
+        f"Reopened Events: {reopened_count}\n"
+        f"Action Priority: {priority}\n"
+        f"Recommended Action: {action}\n"
+        f"Next Step: {next_step}"
+    )
