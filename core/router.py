@@ -61,6 +61,10 @@ def classify_command(command):
     if command.startswith("career compare offers "):
         return "JOB_APPLICATION"
 
+    if command.startswith("career background document update "):
+        return "JOB_APPLICATION"
+    if command.startswith("career background documents "):
+        return "JOB_APPLICATION"
     if command.startswith("career background verification risk "):
         return "JOB_APPLICATION"
     if command.startswith("career background verification "):
@@ -274,6 +278,10 @@ def get_routing_plan(command):
     elif normalized_command.startswith("career compare offers "):
         handler = "job_application_handlers.handle_get_career_offer_comparison_analysis"
 
+    elif normalized_command.startswith("career background document update "):
+        handler = "job_application_handlers.handle_update_career_background_document"
+    elif normalized_command.startswith("career background documents "):
+        handler = "job_application_handlers.handle_get_career_background_documents"
     elif normalized_command.startswith("career background verification risk "):
         handler = "job_application_handlers.handle_get_career_background_verification_risk"
     elif normalized_command.startswith("career background verification "):

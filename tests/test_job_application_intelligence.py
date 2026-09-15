@@ -52,6 +52,8 @@ from core.job_application_intelligence import (
     get_career_employment_verification_request,
     get_career_background_verification_readiness,
     get_career_background_verification_risk,
+    get_career_background_documents,
+    update_career_background_document,
     _load,
     _save,
     get_onboarding_plan,
@@ -5585,3 +5587,147 @@ def test_career_background_verification_risk_next_action():
     assert "Next Action:" in result
     assert "resolve any missing or inconsistent information" in result
     assert "background verification process" in result
+
+
+def test_career_background_documents_not_found():
+    result = get_career_background_documents("999")
+    assert result == "Job application not found."
+
+
+def test_career_background_documents_default_checklist():
+    add_test_application()
+
+    result = get_career_background_documents("1")
+
+    assert (
+        "JERVIS Career Background Verification Document Checklist Tracker"
+        in result
+    )
+    assert "Documents Ready: 0/5" in result
+    assert "Pending: 5" in result
+    assert "Missing: 0" in result
+    assert "Completion: 0%" in result
+    assert "Identity Proof: Pending" in result
+    assert "Education Certificates: Pending" in result
+
+
+def test_career_background_document_update_ready():
+    add_test_application()
+
+    result = update_career_background_document(
+        "1",
+        "Identity Proof",
+        "Ready",
+    )
+
+    assert result == "Identity Proof updated to Ready for application 1."
+
+    tracker = get_career_background_documents("1")
+
+    assert "Documents Ready: 1/5" in tracker
+    assert "Pending: 4" in tracker
+    assert "Completion: 20%" in tracker
+    assert "Identity Proof: Ready" in tracker
+
+
+def test_career_background_document_update_missing():
+    add_test_application()
+
+    result = update_career_background_document(
+        "1",
+        "Address Proof",
+        "Missing",
+    )
+
+    assert result == "Address Proof updated to Missing for application 1."
+
+    tracker = get_career_background_documents("1")
+
+    assert "Missing: 1" in tracker
+    assert "Address Proof: Missing" in tracker
+
+
+def test_career_background_document_update_case_insensitive():
+    add_test_application()
+
+    result = update_career_background_document(
+        "1",
+        "identity proof",
+        "ready",
+    )
+
+    assert result == "Identity Proof updated to Ready for application 1."
+
+
+def test_career_background_document_update_invalid_status():
+    add_test_application()
+
+    result = update_career_background_document(
+        "1",
+        "Identity Proof",
+        "Done",
+    )
+
+    assert result == (
+        "Invalid document status. Use: Ready, Pending, Missing"
+    )
+
+
+def test_career_background_document_update_invalid_document():
+    add_test_application()
+
+    result = update_career_background_document(
+        "1",
+        "Passport Photo",
+        "Ready",
+    )
+
+    assert "Invalid document. Use:" in result
+    assert "Identity Proof" in result
+
+
+def test_career_background_document_update_empty_document():
+    add_test_application()
+
+    result = update_career_background_document(
+        "1",
+        "",
+        "Ready",
+    )
+
+    assert result == "Document name is required."
+
+
+def test_career_background_document_update_invalid_id():
+    result = update_career_background_document(
+        "abc",
+        "Identity Proof",
+        "Ready",
+    )
+
+    assert result == "Invalid application ID."
+
+
+def test_career_background_document_update_not_found():
+    result = update_career_background_document(
+        "999",
+        "Identity Proof",
+        "Ready",
+    )
+
+    assert result == "Job application not found."
+
+
+def test_career_background_document_already_pending():
+    add_test_application()
+
+    result = update_career_background_document(
+        "1",
+        "Identity Proof",
+        "Pending",
+    )
+
+    assert (
+        "Identity Proof is already marked as Pending "
+        "for application 1."
+    ) == result

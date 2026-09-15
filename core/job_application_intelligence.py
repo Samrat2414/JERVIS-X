@@ -7844,3 +7844,139 @@ def get_career_background_verification_risk(application_id):
         "then resolve any missing or inconsistent information before the "
         "background verification process."
     )
+
+
+def get_career_background_documents(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+
+    default_documents = {
+        "Identity Proof": "Pending",
+        "Education Certificates": "Pending",
+        "Address Proof": "Pending",
+        "Employment Documents": "Pending",
+        "Relieving / Experience Letters": "Pending",
+    }
+
+    documents = application.get(
+        "background_verification_documents",
+        default_documents,
+    )
+
+    # Include newly introduced default documents for older applications.
+    documents = {
+        **default_documents,
+        **documents,
+    }
+
+    ready_count = sum(
+        1 for status in documents.values()
+        if str(status).lower() == "ready"
+    )
+    pending_count = sum(
+        1 for status in documents.values()
+        if str(status).lower() == "pending"
+    )
+    missing_count = sum(
+        1 for status in documents.values()
+        if str(status).lower() == "missing"
+    )
+
+    total = len(documents)
+    completion = round(
+        (ready_count / total) * 100
+    ) if total else 0
+
+    documents_text = "\n".join(
+        f"- {document}: {status}"
+        for document, status in documents.items()
+    )
+
+    return (
+        f"JERVIS Career Background Verification Document Checklist Tracker - "
+        f"Application {application_id}\n"
+        "------------------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Documents Ready: {ready_count}/{total}\n"
+        f"Pending: {pending_count}\n"
+        f"Missing: {missing_count}\n"
+        f"Completion: {completion}%\n"
+        "Document Checklist:\n"
+        f"{documents_text}\n"
+        "Next Action: Update each document to Ready, Pending, or Missing and "
+        "complete all required verification documents before submission."
+    )
+
+
+def update_career_background_document(application_id, document, status):
+    document = str(document).strip()
+    status = str(status).strip().title()
+
+    valid_statuses = ("Ready", "Pending", "Missing")
+
+    if not document:
+        return "Document name is required."
+
+    if status not in valid_statuses:
+        return "Invalid document status. Use: Ready, Pending, Missing"
+
+    data = _load()
+
+    try:
+        application_id = int(application_id)
+    except (TypeError, ValueError):
+        return "Invalid application ID."
+
+    for application in data["applications"]:
+        if application.get("id") == application_id:
+            default_documents = {
+                "Identity Proof": "Pending",
+                "Education Certificates": "Pending",
+                "Address Proof": "Pending",
+                "Employment Documents": "Pending",
+                "Relieving / Experience Letters": "Pending",
+            }
+
+            documents = application.setdefault(
+                "background_verification_documents",
+                default_documents.copy(),
+            )
+
+            matched_document = next(
+                (
+                    existing
+                    for existing in documents
+                    if existing.lower() == document.lower()
+                ),
+                None,
+            )
+
+            if matched_document is None:
+                return (
+                    "Invalid document. Use: "
+                    + ", ".join(default_documents)
+                )
+
+            previous_status = documents[matched_document]
+
+            if str(previous_status).lower() == status.lower():
+                return (
+                    f"{matched_document} is already marked as {status} "
+                    f"for application {application_id}."
+                )
+
+            documents[matched_document] = status
+            _save(data)
+
+            return (
+                f"{matched_document} updated to {status} for application "
+                f"{application_id}."
+            )
+
+    return "Job application not found."
