@@ -51,6 +51,7 @@ from core.job_application_intelligence import (
     get_career_experience_certificate_request,
     get_career_employment_verification_request,
     get_career_background_verification_readiness,
+    get_career_background_verification_risk,
     _load,
     _save,
     get_onboarding_plan,
@@ -5509,3 +5510,78 @@ def test_career_background_verification_readiness_next_action():
     assert "Next Action:" in result
     assert "resolve any inconsistencies" in result
     assert "background verification begins" in result
+
+
+def test_career_background_verification_risk_not_found():
+    result = get_career_background_verification_risk("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_risk_header():
+    add_test_application()
+
+    result = get_career_background_verification_risk("1")
+
+    assert "JERVIS Career Background Verification Risk Analyzer" in result
+    assert "Application 1" in result
+
+
+def test_career_background_verification_risk_application_details():
+    add_test_application()
+
+    result = get_career_background_verification_risk("1")
+
+    assert "Company: Test Company" in result
+    assert "Role: Python Developer" in result
+    assert "Application Status: Applied" in result
+
+
+def test_career_background_verification_risk_score():
+    add_test_application()
+
+    result = get_career_background_verification_risk("1")
+
+    assert "Risk Score: 15/100" in result
+    assert "Risk Level: Low" in result
+
+
+def test_career_background_verification_risk_detected_factors():
+    add_test_application()
+
+    result = get_career_background_verification_risk("1")
+
+    assert "Detected Risk Factors:" in result
+    assert "Supporting notes / HR communication are not available." in result
+
+
+def test_career_background_verification_risk_checklist():
+    add_test_application()
+
+    result = get_career_background_verification_risk("1")
+
+    assert "Verification Checklist:" in result
+    assert "full name matches all submitted documents" in result
+    assert "education details and dates are accurate" in result
+    assert "identity and address proof ready" in result
+
+
+def test_career_background_verification_risk_recommendations():
+    add_test_application()
+
+    result = get_career_background_verification_risk("1")
+
+    assert "Recommendations:" in result
+    assert "inaccurate or incomplete application information" in result
+    assert "supporting records" in result
+    assert "Resolve discrepancies" in result
+
+
+def test_career_background_verification_risk_next_action():
+    add_test_application()
+
+    result = get_career_background_verification_risk("1")
+
+    assert "Next Action:" in result
+    assert "resolve any missing or inconsistent information" in result
+    assert "background verification process" in result

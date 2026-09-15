@@ -53,6 +53,7 @@ from core.job_application_intelligence import (
     get_career_experience_certificate_request,
     get_career_employment_verification_request,
     get_career_background_verification_readiness,
+    get_career_background_verification_risk,
 )
 
 
@@ -432,3 +433,14 @@ def handle_get_career_background_verification_readiness(command):
         return "Usage: career background verification <application_id>"
 
     return get_career_background_verification_readiness(application_id)
+
+
+def handle_get_career_background_verification_risk(command):
+    application_id = command[
+        len("career background verification risk "):
+    ].strip()
+
+    if not application_id:
+        return "Usage: career background verification risk <application_id>"
+
+    return get_career_background_verification_risk(application_id)

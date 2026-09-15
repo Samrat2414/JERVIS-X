@@ -7753,3 +7753,94 @@ def get_career_background_verification_readiness(application_id):
         "Next Action: Gather the listed documents, verify your application details, "
         "and resolve any inconsistencies before background verification begins."
     )
+
+
+def get_career_background_verification_risk(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    status = application.get("status", "Unknown")
+    applied_date = application.get("applied_date")
+    notes = application.get("notes", [])
+
+    risk_score = 0
+    risk_factors = []
+
+    if not company or company == "Unknown":
+        risk_score += 25
+        risk_factors.append(
+            "Company information is missing or incomplete."
+        )
+
+    if not role or role == "Unknown":
+        risk_score += 25
+        risk_factors.append(
+            "Role / designation information is missing or incomplete."
+        )
+
+    if not applied_date:
+        risk_score += 20
+        risk_factors.append(
+            "Application / employment timeline reference is missing."
+        )
+
+    if not status or status == "Unknown":
+        risk_score += 15
+        risk_factors.append(
+            "Application status is missing."
+        )
+
+    if not notes:
+        risk_score += 15
+        risk_factors.append(
+            "Supporting notes / HR communication are not available."
+        )
+
+    if risk_score >= 60:
+        risk_level = "High"
+    elif risk_score >= 30:
+        risk_level = "Moderate"
+    else:
+        risk_level = "Low"
+
+    if risk_factors:
+        risk_text = "\n".join(f"- {item}" for item in risk_factors)
+    else:
+        risk_text = "- No major application-data risk factors detected."
+
+    checklist = [
+        "Verify your full name matches all submitted documents.",
+        "Confirm education details and dates are accurate.",
+        "Confirm employment history and designation details.",
+        "Keep identity and address proof ready.",
+        "Keep HR / employer contact information available where applicable.",
+    ]
+
+    checklist_text = "\n".join(f"- {item}" for item in checklist)
+
+    return (
+        f"JERVIS Career Background Verification Risk Analyzer - Application "
+        f"{application_id}\n"
+        "------------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Application Status: {status}\n"
+        f"Risk Score: {risk_score}/100\n"
+        f"Risk Level: {risk_level}\n"
+        "Detected Risk Factors:\n"
+        f"{risk_text}\n"
+        "Verification Checklist:\n"
+        f"{checklist_text}\n"
+        "Recommendations:\n"
+        "- Correct inaccurate or incomplete application information.\n"
+        "- Keep education, identity, address, and employment records consistent.\n"
+        "- Preserve important HR communication and supporting records.\n"
+        "- Resolve discrepancies before submitting verification documents.\n"
+        "Next Action: Review the detected risks and verification checklist, "
+        "then resolve any missing or inconsistent information before the "
+        "background verification process."
+    )
