@@ -63,6 +63,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_escalation_message,
     get_career_background_verification_escalation_response,
     get_career_background_verification_resolution,
+    get_career_background_verification_resolution_message,
     update_career_background_verification_escalation_response,
     get_career_background_documents,
     update_career_background_document,
@@ -6626,4 +6627,75 @@ def test_career_background_verification_resolution_resolved():
     assert "Resolution Status: Resolved" in result
     assert "Priority: Low" in result
     assert "Keep the resolution confirmation" in result
+
+
+def test_career_background_verification_resolution_message_not_found():
+    result = get_career_background_verification_resolution_message("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_resolution_message_not_received():
+    add_test_application()
+
+    result = get_career_background_verification_resolution_message("1")
+
+    assert "Escalation Response Status: Not Received" in result
+    assert "Message Type: Resolution Follow-Up" in result
+    assert (
+        "Subject: Background Verification Resolution Follow-Up"
+        in result
+    )
+    assert "appreciate an update on the current status" in result
+
+
+def test_career_background_verification_resolution_message_received():
+    add_test_application()
+    update_career_background_verification_escalation_response(
+        "1",
+        "Received",
+    )
+
+    result = get_career_background_verification_resolution_message("1")
+
+    assert "Escalation Response Status: Received" in result
+    assert "Message Type: Resolution Response" in result
+    assert (
+        "Subject: Background Verification Resolution Response"
+        in result
+    )
+    assert "Thank you for your response" in result
+
+
+def test_career_background_verification_resolution_message_action_required():
+    add_test_application()
+    update_career_background_verification_escalation_response(
+        "1",
+        "Action Required",
+    )
+
+    result = get_career_background_verification_resolution_message("1")
+
+    assert "Escalation Response Status: Action Required" in result
+    assert "Message Type: Resolution Action Confirmation" in result
+    assert "Subject: Background Verification Required Action" in result
+    assert "working on the requested information or documentation" in result
+
+
+def test_career_background_verification_resolution_message_resolved():
+    add_test_application()
+    update_career_background_verification_escalation_response(
+        "1",
+        "Resolved",
+    )
+
+    result = get_career_background_verification_resolution_message("1")
+
+    assert "Escalation Response Status: Resolved" in result
+    assert "Message Type: Resolution Acknowledgement" in result
+    assert (
+        "Subject: Background Verification Resolution Acknowledgement"
+        in result
+    )
+    assert "Thank you for confirming the resolution" in result
 

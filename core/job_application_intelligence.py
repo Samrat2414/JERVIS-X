@@ -9072,3 +9072,103 @@ def get_career_background_verification_resolution(application_id):
         f"Next Action: {next_action}"
     )
 
+def get_career_background_verification_resolution_message(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    verification_status = application.get(
+        "background_verification_status",
+        "Not Submitted",
+    )
+    response_status = application.get(
+        "background_verification_escalation_response",
+        "Not Received",
+    )
+
+    if response_status == "Not Received":
+        message_type = "Resolution Follow-Up"
+        subject = "Background Verification Resolution Follow-Up"
+        message = (
+            f"Dear {company} HR/Background Verification Team,\n\n"
+            f"I am writing regarding the background verification process "
+            f"for my {role} application. I am following up on my previous "
+            f"communication and would appreciate an update on the current "
+            f"status and any action required from my side.\n\n"
+            f"Please let me know if you need any additional information or "
+            f"documents from me to help resolve the matter.\n\n"
+            f"Thank you for your assistance.\n\n"
+            f"Best regards"
+        )
+    elif response_status == "Received":
+        message_type = "Resolution Response"
+        subject = "Background Verification Resolution Response"
+        message = (
+            f"Dear {company} HR/Background Verification Team,\n\n"
+            f"Thank you for your response regarding the background "
+            f"verification process for my {role} application. I have "
+            f"received your communication and am reviewing the information "
+            f"provided.\n\n"
+            f"I will complete any required action promptly. Please let me "
+            f"know if there are any additional instructions or documents "
+            f"needed from my side.\n\n"
+            f"Thank you for your guidance.\n\n"
+            f"Best regards"
+        )
+    elif response_status == "Action Required":
+        message_type = "Resolution Action Confirmation"
+        subject = "Background Verification Required Action"
+        message = (
+            f"Dear {company} HR/Background Verification Team,\n\n"
+            f"Thank you for informing me about the required action for the "
+            f"background verification process related to my {role} "
+            f"application. I am working on the requested information or "
+            f"documentation and will provide it as soon as possible.\n\n"
+            f"Please let me know if there are any specific requirements I "
+            f"should follow while completing the requested action.\n\n"
+            f"Thank you for your support.\n\n"
+            f"Best regards"
+        )
+    elif response_status == "Resolved":
+        message_type = "Resolution Acknowledgement"
+        subject = "Background Verification Resolution Acknowledgement"
+        message = (
+            f"Dear {company} HR/Background Verification Team,\n\n"
+            f"Thank you for confirming the resolution of the background "
+            f"verification matter related to my {role} application. I "
+            f"appreciate your assistance throughout the process.\n\n"
+            f"Please let me know if any further information or action is "
+            f"required from my side as the verification and onboarding "
+            f"process continues.\n\n"
+            f"Thank you again for your support.\n\n"
+            f"Best regards"
+        )
+    else:
+        message_type = "Resolution Status Clarification"
+        subject = "Background Verification Resolution Status Clarification"
+        message = (
+            f"Dear {company} HR/Background Verification Team,\n\n"
+            f"I am writing to clarify the current resolution status of the "
+            f"background verification process for my {role} application.\n\n"
+            f"Please confirm the latest status and let me know whether any "
+            f"additional action or documentation is required from my side.\n\n"
+            f"Thank you for your assistance.\n\n"
+            f"Best regards"
+        )
+
+    return (
+        f"JERVIS Career Background Verification Resolution Message "
+        f"Generator - Application {application_id}\n"
+        "-------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Verification Status: {verification_status}\n"
+        f"Escalation Response Status: {response_status}\n"
+        f"Message Type: {message_type}\n"
+        f"Subject: {subject}\n\n"
+        f"{message}"
+    )
+
