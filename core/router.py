@@ -77,6 +77,8 @@ def classify_command(command):
         return "JOB_APPLICATION"
     if command.startswith("career background verification progress "):
         return "JOB_APPLICATION"
+    if command.startswith("career background verification escalation "):
+        return "JOB_APPLICATION"
     if command.startswith("career background verification delay risk "):
         return "JOB_APPLICATION"
     if command.startswith("career background verification risk "):
@@ -308,6 +310,8 @@ def get_routing_plan(command):
         handler = "job_application_handlers.handle_get_career_background_verification_follow_up"
     elif normalized_command.startswith("career background verification progress "):
         handler = "job_application_handlers.handle_get_career_background_verification_progress"
+    elif normalized_command.startswith("career background verification escalation "):
+        handler = "job_application_handlers.handle_get_career_background_verification_escalation"
     elif normalized_command.startswith("career background verification delay risk "):
         handler = "job_application_handlers.handle_get_career_background_verification_delay_risk"
     elif normalized_command.startswith("career background verification risk "):

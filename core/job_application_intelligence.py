@@ -8640,3 +8640,121 @@ def get_career_background_verification_delay_risk(application_id):
         f"Recommendation: {recommendation}\n"
         f"Next Action: {next_action}"
     )
+
+def get_career_background_verification_escalation(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    status = application.get(
+        "background_verification_status",
+        "Not Submitted",
+    )
+
+    if status == "Not Submitted":
+        escalation_level = "High"
+        escalation_required = "Yes"
+        reason = (
+            "Background verification has not been submitted, which can "
+            "block the verification and onboarding process."
+        )
+        recommended_contact = "HR / Background Verification Team"
+        recommended_action = (
+            "Confirm the required documents and complete the submission "
+            "as soon as possible."
+        )
+        next_action = (
+            "Contact HR if submission requirements or instructions "
+            "are unclear."
+        )
+    elif status == "Submitted":
+        escalation_level = "Moderate"
+        escalation_required = "Yes"
+        reason = (
+            "Verification documents are submitted, but confirmation or "
+            "progress may still be required."
+        )
+        recommended_contact = "HR / Background Verification Team"
+        recommended_action = (
+            "Send a professional status request before further escalation."
+        )
+        next_action = (
+            "Request an update and keep a record of the communication."
+        )
+    elif status == "In Review":
+        escalation_level = "Low"
+        escalation_required = "No"
+        reason = (
+            "Background verification is actively under review and no "
+            "immediate escalation is required."
+        )
+        recommended_contact = "Background Verification Team"
+        recommended_action = (
+            "Monitor the review and remain available for any requests."
+        )
+        next_action = (
+            "Wait for the review outcome unless the process becomes delayed."
+        )
+    elif status == "Additional Documents Requested":
+        escalation_level = "High"
+        escalation_required = "Yes"
+        reason = (
+            "Additional documents are outstanding and may prevent "
+            "verification from progressing."
+        )
+        recommended_contact = "HR / Background Verification Team"
+        recommended_action = (
+            "Provide the requested documents immediately and confirm "
+            "that they were received."
+        )
+        next_action = (
+            "Resolve all outstanding document requests before waiting "
+            "for further progress."
+        )
+    elif status == "Cleared":
+        escalation_level = "None"
+        escalation_required = "No"
+        reason = (
+            "Background verification is cleared and there is no active "
+            "issue requiring escalation."
+        )
+        recommended_contact = "Not Required"
+        recommended_action = (
+            "Keep the verification clearance confirmation for your records."
+        )
+        next_action = (
+            "Continue with the joining or onboarding process."
+        )
+    else:
+        escalation_level = "Moderate"
+        escalation_required = "Yes"
+        reason = (
+            "The current background verification status is unclear."
+        )
+        recommended_contact = "HR / Background Verification Team"
+        recommended_action = (
+            "Request clarification of the current verification stage."
+        )
+        next_action = (
+            "Confirm the verification status before deciding on further "
+            "escalation."
+        )
+
+    return (
+        f"JERVIS Career Background Verification Escalation Advisor - "
+        f"Application {application_id}\n"
+        "----------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Verification Status: {status}\n"
+        f"Escalation Level: {escalation_level}\n"
+        f"Escalation Required: {escalation_required}\n"
+        f"Reason: {reason}\n"
+        f"Recommended Contact: {recommended_contact}\n"
+        f"Recommended Action: {recommended_action}\n"
+        f"Next Action: {next_action}"
+    )
+

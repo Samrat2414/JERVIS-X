@@ -59,6 +59,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_follow_up,
     get_career_background_verification_follow_up_message,
     get_career_background_verification_delay_risk,
+    get_career_background_verification_escalation,
     get_career_background_documents,
     update_career_background_document,
     _load,
@@ -6312,3 +6313,84 @@ def test_career_background_verification_delay_risk_cleared():
     assert "Delay Risk Score: 0/100" in result
     assert "Delay Risk Level: Low" in result
     assert "no active verification delay" in result
+
+def test_career_background_verification_escalation_not_found():
+    result = get_career_background_verification_escalation("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_escalation_not_submitted():
+    add_test_application()
+
+    result = get_career_background_verification_escalation("1")
+
+    assert "Verification Status: Not Submitted" in result
+    assert "Escalation Level: High" in result
+    assert "Escalation Required: Yes" in result
+    assert "block the verification and onboarding process" in result
+
+
+def test_career_background_verification_escalation_submitted():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Submitted",
+    )
+
+    result = get_career_background_verification_escalation("1")
+
+    assert "Verification Status: Submitted" in result
+    assert "Escalation Level: Moderate" in result
+    assert "Escalation Required: Yes" in result
+    assert "Send a professional status request" in result
+
+
+def test_career_background_verification_escalation_in_review():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "In Review",
+    )
+
+    result = get_career_background_verification_escalation("1")
+
+    assert "Verification Status: In Review" in result
+    assert "Escalation Level: Low" in result
+    assert "Escalation Required: No" in result
+    assert "actively under review" in result
+
+
+def test_career_background_verification_escalation_additional_documents():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Additional Documents Requested",
+    )
+
+    result = get_career_background_verification_escalation("1")
+
+    assert "Verification Status: Additional Documents Requested" in result
+    assert "Escalation Level: High" in result
+    assert "Escalation Required: Yes" in result
+    assert "additional documents are outstanding" in result.lower()
+
+
+def test_career_background_verification_escalation_cleared():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Cleared",
+    )
+
+    result = get_career_background_verification_escalation("1")
+
+    assert "Verification Status: Cleared" in result
+    assert "Escalation Level: None" in result
+    assert "Escalation Required: No" in result
+    assert "no active issue requiring escalation" in result
+

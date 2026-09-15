@@ -61,6 +61,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_follow_up,
     get_career_background_verification_follow_up_message,
     get_career_background_verification_delay_risk,
+    get_career_background_verification_escalation,
     get_career_background_documents,
     update_career_background_document,
 )
@@ -601,3 +602,19 @@ def handle_get_career_background_verification_delay_risk(command):
     return get_career_background_verification_delay_risk(
         application_id
     )
+
+def handle_get_career_background_verification_escalation(command):
+    application_id = command[
+        len("career background verification escalation "):
+    ].strip()
+
+    if not application_id:
+        return (
+            "Usage: career background verification escalation "
+            "<application_id>"
+        )
+
+    return get_career_background_verification_escalation(
+        application_id
+    )
+
