@@ -56,6 +56,7 @@ from core.job_application_intelligence import (
     get_career_background_submission_readiness,
     get_career_background_verification_completion,
     update_career_background_verification_status,
+    get_career_background_verification_follow_up,
     get_career_background_documents,
     update_career_background_document,
     _load,
@@ -6062,3 +6063,85 @@ def test_career_background_verification_status_already_same():
         == "Background verification is already Not Submitted "
         "for application 1."
     )
+
+
+
+def test_career_background_verification_follow_up_not_found():
+    result = get_career_background_verification_follow_up("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_follow_up_not_submitted():
+    add_test_application()
+
+    result = get_career_background_verification_follow_up("1")
+
+    assert "Verification Status: Not Submitted" in result
+    assert "Follow-Up Priority: High" in result
+    assert "Complete and submit the required" in result
+    assert "No follow-up message is required" in result
+
+
+def test_career_background_verification_follow_up_submitted():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Submitted",
+    )
+
+    result = get_career_background_verification_follow_up("1")
+
+    assert "Verification Status: Submitted" in result
+    assert "Follow-Up Priority: Medium" in result
+    assert "Confirm that the employer or verification team received" in result
+    assert "received successfully" in result
+
+
+def test_career_background_verification_follow_up_in_review():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "In Review",
+    )
+
+    result = get_career_background_verification_follow_up("1")
+
+    assert "Verification Status: In Review" in result
+    assert "Follow-Up Priority: Medium" in result
+    assert "Request a professional status update" in result
+    assert "additional information is required" in result
+
+
+def test_career_background_verification_follow_up_additional_documents():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Additional Documents Requested",
+    )
+
+    result = get_career_background_verification_follow_up("1")
+
+    assert "Verification Status: Additional Documents Requested" in result
+    assert "Follow-Up Priority: High" in result
+    assert "Provide the requested additional documents" in result
+    assert "acknowledge receipt" in result
+
+
+def test_career_background_verification_follow_up_cleared():
+    add_test_application()
+
+    update_career_background_verification_status(
+        "1",
+        "Cleared",
+    )
+
+    result = get_career_background_verification_follow_up("1")
+
+    assert "Verification Status: Cleared" in result
+    assert "Follow-Up Priority: Low" in result
+    assert "No verification follow-up is currently required" in result
+    assert "joining or onboarding step" in result

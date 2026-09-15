@@ -8338,3 +8338,90 @@ def update_career_background_verification_status(application_id, status):
             )
 
     return "Job application not found."
+
+
+
+def get_career_background_verification_follow_up(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    status = application.get(
+        "background_verification_status",
+        "Not Submitted",
+    )
+
+    if status == "Not Submitted":
+        priority = "High"
+        action = (
+            "Complete and submit the required background verification "
+            "documents before sending a follow-up."
+        )
+        message_guidance = (
+            "No follow-up message is required until the verification "
+            "package has been submitted."
+        )
+    elif status == "Submitted":
+        priority = "Medium"
+        action = (
+            "Confirm that the employer or verification team received "
+            "your submitted documents."
+        )
+        message_guidance = (
+            "Politely ask for confirmation that your background "
+            "verification documents were received successfully."
+        )
+    elif status == "In Review":
+        priority = "Medium"
+        action = (
+            "Request a professional status update if there has been "
+            "no recent verification update."
+        )
+        message_guidance = (
+            "Ask whether the verification is progressing normally and "
+            "whether any additional information is required from you."
+        )
+    elif status == "Additional Documents Requested":
+        priority = "High"
+        action = (
+            "Provide the requested additional documents as soon as "
+            "possible and confirm their submission."
+        )
+        message_guidance = (
+            "Confirm which documents were requested, submit them, and "
+            "ask the verification team to acknowledge receipt."
+        )
+    elif status == "Cleared":
+        priority = "Low"
+        action = (
+            "No verification follow-up is currently required."
+        )
+        message_guidance = (
+            "Keep the clearance confirmation for your records and "
+            "continue with the next joining or onboarding step."
+        )
+    else:
+        priority = "Medium"
+        action = (
+            "Confirm the current background verification status with "
+            "the employer or verification team."
+        )
+        message_guidance = (
+            "Request clarification about the current verification stage "
+            "before taking further action."
+        )
+
+    return (
+        f"JERVIS Career Background Verification Follow-Up Advisor - "
+        f"Application {application_id}\n"
+        "--------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Verification Status: {status}\n"
+        f"Follow-Up Priority: {priority}\n"
+        f"Recommended Action: {action}\n"
+        f"Message Guidance: {message_guidance}"
+    )

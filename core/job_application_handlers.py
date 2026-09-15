@@ -58,6 +58,7 @@ from core.job_application_intelligence import (
     get_career_background_submission_readiness,
     get_career_background_verification_completion,
     update_career_background_verification_status,
+    get_career_background_verification_follow_up,
     get_career_background_documents,
     update_career_background_document,
 )
@@ -549,3 +550,18 @@ def handle_update_career_background_verification_status(command):
         application_id,
         status,
     )
+
+
+
+def handle_get_career_background_verification_follow_up(command):
+    application_id = command[
+        len("career background verification follow up "):
+    ].strip()
+
+    if not application_id:
+        return (
+            "Usage: career background verification follow up "
+            "<application_id>"
+        )
+
+    return get_career_background_verification_follow_up(application_id)
