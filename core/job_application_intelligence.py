@@ -10256,3 +10256,44 @@ def export_career_background_verification_closure_audit_trail(application_id):
         f"audit event(s) for application {application_id} to "
         f"{CLOSURE_AUDIT_EXPORT_FILE}."
     )
+
+
+def get_career_background_verification_closure_audit_summary(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    current_status = application.get("background_verification_closure_status", "Open")
+    history = application.get("background_verification_closure_history", [])
+
+    if not history:
+        return (
+            f"JERVIS Career Background Verification Closure Audit Summary - Application {application_id}\n"
+            "------------------------------------------------------------\n"
+            f"Company: {company}\n"
+            f"Role: {role}\n"
+            f"Current Closure Status: {current_status}\n"
+            "Total Audit Events: 0\n"
+            "Audit Summary: No closure audit events recorded."
+        )
+
+    first_entry = history[0]
+    latest_entry = history[-1]
+    first_transition = f"{first_entry.get('from_status', 'Unknown')} -> {first_entry.get('to_status', 'Unknown')}"
+    latest_transition = f"{latest_entry.get('from_status', 'Unknown')} -> {latest_entry.get('to_status', 'Unknown')}"
+    latest_change = latest_entry.get("changed_at", "Unknown")
+
+    return (
+        f"JERVIS Career Background Verification Closure Audit Summary - Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Current Closure Status: {current_status}\n"
+        f"Total Audit Events: {len(history)}\n"
+        f"First Transition: {first_transition}\n"
+        f"Latest Transition: {latest_transition}\n"
+        f"Latest Change: {latest_change}"
+    )
