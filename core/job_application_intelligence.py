@@ -9915,3 +9915,80 @@ def get_career_background_verification_closure_recommendation(application_id):
         f"Recommendation: {recommendation}\n"
         f"Next Action: {next_action}"
     )
+
+
+def get_career_background_verification_closure_followup_plan(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    closure_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+    history = application.get(
+        "background_verification_closure_history",
+        [],
+    )
+
+    reopened_count = sum(
+        1
+        for entry in history
+        if entry.get("to_status") == "Reopened"
+    )
+
+    pending_count = sum(
+        1
+        for entry in history
+        if entry.get("to_status") == "Pending Confirmation"
+    )
+
+    if closure_status == "Closed" and reopened_count == 0:
+        followup_priority = "Low"
+        followup_required = "No"
+        followup_action = (
+            "Keep the closure confirmation for your records."
+        )
+        followup_timing = "Monitor during the remaining onboarding process."
+    elif closure_status == "Reopened":
+        followup_priority = "High"
+        followup_required = "Yes"
+        followup_action = (
+            "Contact HR or the verification team and resolve the "
+            "reopened verification requirements."
+        )
+        followup_timing = "Follow up as soon as possible."
+    elif closure_status == "Pending Confirmation":
+        followup_priority = "Medium"
+        followup_required = "Yes"
+        followup_action = (
+            "Request final confirmation that the background verification "
+            "case has been closed."
+        )
+        followup_timing = "Follow up before treating verification as complete."
+    else:
+        followup_priority = (
+            "High" if reopened_count > 0 or pending_count > 1 else "Medium"
+        )
+        followup_required = "Yes"
+        followup_action = (
+            "Check the current closure progress and complete any "
+            "remaining verification requirements."
+        )
+        followup_timing = "Follow up until closure is confirmed."
+
+    return (
+        f"JERVIS Career Background Verification Closure Follow-Up Plan "
+        f"- Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Follow-Up Required: {followup_required}\n"
+        f"Follow-Up Priority: {followup_priority}\n"
+        f"Follow-Up Action: {followup_action}\n"
+        f"Follow-Up Timing: {followup_timing}"
+    )
