@@ -75,6 +75,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_closure_recommendation,
     get_career_background_verification_closure_followup_plan,
     get_career_background_verification_closure_summary_report,
+    get_career_background_verification_closure_final_decision,
     generate_career_background_verification_closure_message,
     update_career_background_verification_closure,
     update_career_background_verification_escalation_response,
@@ -900,5 +901,22 @@ def handle_get_career_background_verification_closure_summary_report(command):
         )
 
     return get_career_background_verification_closure_summary_report(
+        application_id
+    )
+
+
+
+def handle_get_career_background_verification_closure_final_decision(command):
+    application_id = command[
+        len("career background verification closure final decision "):
+    ].strip()
+
+    if not application_id:
+        return (
+            "Usage: career background verification closure final decision "
+            "<application_id>"
+        )
+
+    return get_career_background_verification_closure_final_decision(
         application_id
     )
