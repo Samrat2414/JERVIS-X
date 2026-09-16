@@ -80,6 +80,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_closure_audit_summary,
     get_career_background_verification_closure_evidence_pack,
     validate_career_background_verification_closure_evidence,
+    check_career_background_verification_closure_evidence_integrity,
     generate_career_background_verification_closure_message,
     update_career_background_verification_closure,
     update_career_background_verification_escalation_response,
@@ -991,5 +992,22 @@ def handle_validate_career_background_verification_closure_evidence(command):
         )
 
     return validate_career_background_verification_closure_evidence(
+        application_id
+    )
+
+
+
+def handle_check_career_background_verification_closure_evidence_integrity(command):
+    application_id = command[
+        len("career background verification closure evidence integrity "):
+    ].strip()
+
+    if not application_id:
+        return (
+            "Usage: career background verification closure evidence integrity "
+            "<application_id>"
+        )
+
+    return check_career_background_verification_closure_evidence_integrity(
         application_id
     )

@@ -10461,3 +10461,81 @@ def validate_career_background_verification_closure_evidence(application_id):
         f"Issues: {issue_summary}\n"
         f"Next Action: {next_action}"
     )
+
+
+def check_career_background_verification_closure_evidence_integrity(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    closure_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+    history = application.get(
+        "background_verification_closure_history",
+        [],
+    )
+
+    issues = []
+    seen_events = set()
+
+    for index, event in enumerate(history, start=1):
+        from_status = event.get("from_status")
+        to_status = event.get("to_status")
+        changed_at = event.get("changed_at")
+
+        if not from_status or not to_status or not changed_at:
+            issues.append(f"Audit event {index} has missing required fields.")
+
+        event_key = (from_status, to_status, changed_at)
+        if event_key in seen_events:
+            issues.append(f"Audit event {index} is a duplicate event.")
+        seen_events.add(event_key)
+
+        if index > 1:
+            previous_to_status = history[index - 2].get("to_status")
+            if from_status != previous_to_status:
+                issues.append(
+                    f"Audit event {index} breaks transition continuity."
+                )
+
+    if history:
+        latest_status = history[-1].get("to_status")
+        if latest_status != closure_status:
+            issues.append(
+                "Latest audit status does not match current closure status."
+            )
+    elif closure_status != "Open":
+        issues.append(
+            "Non-open closure status has no supporting audit history."
+        )
+
+    if issues:
+        integrity_status = "REVIEW REQUIRED"
+        next_action = "Review and repair the closure evidence integrity issues."
+    else:
+        integrity_status = "INTACT"
+        next_action = "Retain the integrity-checked closure evidence."
+
+    issue_summary = (
+        "; ".join(issues)
+        if issues
+        else "No closure evidence integrity issues detected."
+    )
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Integrity Checker "
+        f"- Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Audit Event Count: {len(history)}\n"
+        f"Integrity Status: {integrity_status}\n"
+        f"Issues: {issue_summary}\n"
+        f"Next Action: {next_action}"
+    )
