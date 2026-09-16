@@ -336,6 +336,8 @@ def get_routing_plan(command):
         handler = "job_application_handlers.handle_export_career_background_verification_closure_audit_trail"
     elif normalized_command.startswith("career background verification closure audit summary "):
         handler = "job_application_handlers.handle_get_career_background_verification_closure_audit_summary"
+    elif normalized_command.startswith("career background verification closure evidence pack "):
+        handler = "job_application_handlers.handle_get_career_background_verification_closure_evidence_pack"
     elif normalized_command.startswith("career background verification closure final decision "):
         handler = "job_application_handlers.handle_get_career_background_verification_closure_final_decision"
     elif normalized_command.startswith("career background verification closure summary report "):
@@ -509,6 +511,7 @@ def route_command(command, handler=None, handlers=None):
         return response
 
     return "Sorry, I don't understand that command yet."
+
 
 
 

@@ -10297,3 +10297,92 @@ def get_career_background_verification_closure_audit_summary(application_id):
         f"Latest Transition: {latest_transition}\n"
         f"Latest Change: {latest_change}"
     )
+
+
+def get_career_background_verification_closure_evidence_pack(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+
+    verification_status = application.get(
+        "background_verification_status",
+        "Not Submitted",
+    )
+    escalation_response = application.get(
+        "background_verification_escalation_response",
+        "Not Received",
+    )
+    closure_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+    history = application.get(
+        "background_verification_closure_history",
+        [],
+    )
+
+    audit_event_count = len(history)
+
+    if history:
+        first_event = history[0]
+        latest_event = history[-1]
+
+        first_transition = (
+            f"{first_event.get('from_status', 'Unknown')} -> "
+            f"{first_event.get('to_status', 'Unknown')}"
+        )
+        latest_transition = (
+            f"{latest_event.get('from_status', 'Unknown')} -> "
+            f"{latest_event.get('to_status', 'Unknown')}"
+        )
+        latest_change = latest_event.get("changed_at", "Unknown")
+    else:
+        first_transition = "No audit event"
+        latest_transition = "No audit event"
+        latest_change = "Unknown"
+
+    if closure_status == "Closed":
+        evidence_state = "Closure Evidence Complete"
+        next_action = (
+            "Retain the closure evidence and continue with "
+            "the remaining onboarding process."
+        )
+    elif closure_status == "Pending Confirmation":
+        evidence_state = "Closure Evidence Pending"
+        next_action = (
+            "Obtain final closure confirmation before treating "
+            "the case as complete."
+        )
+    elif closure_status == "Reopened":
+        evidence_state = "Closure Evidence Requires Action"
+        next_action = (
+            "Resolve the reopened verification requirements "
+            "before closing the case."
+        )
+    else:
+        evidence_state = "Closure Evidence In Progress"
+        next_action = (
+            "Continue monitoring verification and closure "
+            "requirements."
+        )
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Pack "
+        f"- Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Verification Status: {verification_status}\n"
+        f"Escalation Response: {escalation_response}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Evidence State: {evidence_state}\n"
+        f"Audit Event Count: {audit_event_count}\n"
+        f"First Transition: {first_transition}\n"
+        f"Latest Transition: {latest_transition}\n"
+        f"Latest Change: {latest_change}\n"
+        f"Next Action: {next_action}"
+    )
