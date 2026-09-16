@@ -19,6 +19,7 @@ DATA_DIR = STORAGE_ROOT / "data"
 APPLICATION_FILE = DATA_DIR / "job_applications.json"
 EXPORT_DIR = Path("exports")
 APPLICATION_EXPORT_FILE = EXPORT_DIR / "job_applications.csv"
+CLOSURE_AUDIT_EXPORT_FILE = EXPORT_DIR / "background_verification_closure_audit_trail.csv"
 BACKUP_DIR = STORAGE_ROOT / "backups"
 
 VALID_STATUSES = [
@@ -10173,4 +10174,85 @@ def get_career_background_verification_closure_final_decision(application_id):
         f"Decision Status: {decision_status}\n"
         f"Priority: {priority}\n"
         f"Next Action: {next_action}"
+    )
+
+
+
+def export_career_background_verification_closure_audit_trail(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    current_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+    history = application.get(
+        "background_verification_closure_history",
+        [],
+    )
+
+    if not history:
+        return "No background verification closure history available to export."
+
+    EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+
+    fieldnames = [
+        "application_id",
+        "company",
+        "role",
+        "event_number",
+        "from_status",
+        "to_status",
+        "changed_at",
+        "current_closure_status",
+    ]
+
+    try:
+        with CLOSURE_AUDIT_EXPORT_FILE.open(
+            "w",
+            newline="",
+            encoding="utf-8-sig",
+        ) as export_file:
+            writer = csv.DictWriter(
+                export_file,
+                fieldnames=fieldnames,
+            )
+            writer.writeheader()
+
+            for event_number, entry in enumerate(history, start=1):
+                writer.writerow(
+                    {
+                        "application_id": application_id,
+                        "company": company,
+                        "role": role,
+                        "event_number": event_number,
+                        "from_status": entry.get(
+                            "from_status",
+                            "Unknown",
+                        ),
+                        "to_status": entry.get(
+                            "to_status",
+                            "Unknown",
+                        ),
+                        "changed_at": entry.get(
+                            "changed_at",
+                            "Unknown",
+                        ),
+                        "current_closure_status": current_status,
+                    }
+                )
+    except OSError as error:
+        return (
+            "Could not export background verification closure "
+            f"audit trail: {error}"
+        )
+
+    return (
+        f"Exported {len(history)} background verification closure "
+        f"audit event(s) for application {application_id} to "
+        f"{CLOSURE_AUDIT_EXPORT_FILE}."
     )
