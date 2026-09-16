@@ -10386,3 +10386,78 @@ def get_career_background_verification_closure_evidence_pack(application_id):
         f"Latest Change: {latest_change}\n"
         f"Next Action: {next_action}"
     )
+
+
+def validate_career_background_verification_closure_evidence(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    verification_status = application.get(
+        "background_verification_status",
+        "Not Submitted",
+    )
+    escalation_response = application.get(
+        "background_verification_escalation_response",
+        "Not Received",
+    )
+    closure_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+    history = application.get(
+        "background_verification_closure_history",
+        [],
+    )
+
+    issues = []
+
+    if verification_status != "Submitted":
+        issues.append("Background verification is not submitted.")
+
+    if escalation_response != "Received":
+        issues.append("Escalation response is not received.")
+
+    if closure_status == "Closed" and not history:
+        issues.append("Closed case has no closure audit history.")
+
+    if history:
+        latest_status = history[-1].get("to_status", "Unknown")
+        if latest_status != closure_status:
+            issues.append(
+                "Latest audit status does not match current closure status."
+            )
+
+    if not issues and closure_status == "Closed":
+        validation_status = "VALID"
+        next_action = "Retain the validated closure evidence."
+    elif issues:
+        validation_status = "REVIEW REQUIRED"
+        next_action = "Review and resolve the listed evidence issues."
+    else:
+        validation_status = "INCOMPLETE"
+        next_action = "Complete the closure process before final validation."
+
+    issue_summary = (
+        "; ".join(issues)
+        if issues
+        else "No evidence inconsistencies detected."
+    )
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Validator "
+        f"- Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Verification Status: {verification_status}\n"
+        f"Escalation Response: {escalation_response}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Audit Event Count: {len(history)}\n"
+        f"Validation Status: {validation_status}\n"
+        f"Issues: {issue_summary}\n"
+        f"Next Action: {next_action}"
+    )
