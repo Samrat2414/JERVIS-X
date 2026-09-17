@@ -72,6 +72,7 @@ HANDLERS = {
     "job_application_handlers.handle_check_career_background_verification_closure_evidence_integrity": job_application_handlers.handle_check_career_background_verification_closure_evidence_integrity,
     "job_application_handlers.handle_analyze_career_background_verification_closure_evidence_consistency": job_application_handlers.handle_analyze_career_background_verification_closure_evidence_consistency,
     "job_application_handlers.handle_score_career_background_verification_closure_evidence_quality": job_application_handlers.handle_score_career_background_verification_closure_evidence_quality,
+    "job_application_handlers.handle_analyze_career_background_verification_closure_evidence_confidence": job_application_handlers.handle_analyze_career_background_verification_closure_evidence_confidence,
     "job_application_handlers.handle_get_career_background_verification_closure_risk": job_application_handlers.handle_get_career_background_verification_closure_risk,
     "job_application_handlers.handle_get_career_background_verification_closure_history": job_application_handlers.handle_get_career_background_verification_closure_history,
     "job_application_handlers.handle_get_career_background_verification_closure": job_application_handlers.handle_get_career_background_verification_closure,
@@ -138,4 +139,21 @@ def get_handler(name):
 
 
 
+
+
+
+def handle_score_career_background_verification_closure_evidence_quality(command):
+    application_id = command[
+        len("career background verification closure evidence quality "):
+    ].strip()
+
+    if not application_id:
+        return (
+            "Usage: career background verification closure evidence quality "
+            "<application_id>"
+        )
+
+    return score_career_background_verification_closure_evidence_quality(
+        application_id
+    )
 

@@ -10708,3 +10708,90 @@ def score_career_background_verification_closure_evidence_quality(application_id
         f"Issues: {issue_summary}\n"
         f"Next Action: {next_action}"
     )
+
+
+def analyze_career_background_verification_closure_evidence_confidence(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    closure_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+    history = application.get(
+        "background_verification_closure_history",
+        [],
+    )
+
+    confidence_score = 100
+    concerns = []
+
+    if not history:
+        confidence_score -= 40
+        concerns.append("No closure audit history is available.")
+
+    for index, event in enumerate(history, start=1):
+        from_status = event.get("from_status")
+        to_status = event.get("to_status")
+        changed_at = event.get("changed_at")
+
+        if not from_status or not to_status or not changed_at:
+            confidence_score -= 15
+            concerns.append(f"Audit event {index} has incomplete evidence.")
+
+        if from_status == to_status and from_status is not None:
+            confidence_score -= 10
+            concerns.append(f"Audit event {index} contains a self-transition.")
+
+        if index > 1:
+            previous_to_status = history[index - 2].get("to_status")
+            if from_status != previous_to_status:
+                confidence_score -= 15
+                concerns.append(f"Audit event {index} breaks transition continuity.")
+
+    if history and history[-1].get("to_status") != closure_status:
+        confidence_score -= 20
+        concerns.append("Latest audit status does not match current closure status.")
+    elif not history and closure_status != "Open":
+        confidence_score -= 20
+        concerns.append("Current closure status lacks supporting audit history.")
+
+    confidence_score = max(0, confidence_score)
+
+    if confidence_score >= 85:
+        confidence_level = "HIGH"
+    elif confidence_score >= 60:
+        confidence_level = "MEDIUM"
+    else:
+        confidence_level = "LOW"
+
+    if confidence_level == "HIGH":
+        next_action = "Retain the high-confidence closure evidence."
+    elif confidence_level == "MEDIUM":
+        next_action = "Review the evidence concerns before relying on closure."
+    else:
+        next_action = "Reconcile the closure evidence before relying on it."
+
+    concern_summary = (
+        "; ".join(concerns)
+        if concerns
+        else "No confidence concerns detected."
+    )
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Confidence Analyzer "
+        f"- Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Audit Event Count: {len(history)}\n"
+        f"Confidence Score: {confidence_score}/100\n"
+        f"Confidence Level: {confidence_level}\n"
+        f"Concerns: {concern_summary}\n"
+        f"Next Action: {next_action}"
+    )
