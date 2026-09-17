@@ -10621,3 +10621,90 @@ def analyze_career_background_verification_closure_evidence_consistency(applicat
         f"Issues: {issue_summary}\n"
         f"Next Action: {next_action}"
     )
+
+
+def score_career_background_verification_closure_evidence_quality(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    closure_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+    history = application.get(
+        "background_verification_closure_history",
+        [],
+    )
+
+    score = 100
+    issues = []
+
+    if not history:
+        score -= 40
+        issues.append("No closure audit history is available.")
+
+    for index, event in enumerate(history, start=1):
+        from_status = event.get("from_status")
+        to_status = event.get("to_status")
+        changed_at = event.get("changed_at")
+
+        if not from_status or not to_status or not changed_at:
+            score -= 15
+            issues.append(f"Audit event {index} has incomplete evidence.")
+
+        if from_status == to_status and from_status is not None:
+            score -= 10
+            issues.append(f"Audit event {index} contains a self-transition.")
+
+        if index > 1:
+            previous_to_status = history[index - 2].get("to_status")
+            if from_status != previous_to_status:
+                score -= 15
+                issues.append(f"Audit event {index} breaks transition continuity.")
+
+    if history and history[-1].get("to_status") != closure_status:
+        score -= 20
+        issues.append("Current closure status does not match the latest audit event.")
+    elif not history and closure_status != "Open":
+        score -= 20
+        issues.append("Current closure status lacks supporting audit evidence.")
+
+    score = max(0, score)
+
+    if score >= 90:
+        quality_status = "EXCELLENT"
+    elif score >= 75:
+        quality_status = "GOOD"
+    elif score >= 50:
+        quality_status = "FAIR"
+    else:
+        quality_status = "POOR"
+
+    if issues:
+        next_action = "Review the identified evidence quality issues."
+    else:
+        next_action = "Retain the high-quality closure evidence."
+
+    issue_summary = (
+        "; ".join(issues)
+        if issues
+        else "No closure evidence quality issues detected."
+    )
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Quality Scorer "
+        f"- Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Audit Event Count: {len(history)}\n"
+        f"Quality Score: {score}/100\n"
+        f"Quality Status: {quality_status}\n"
+        f"Issues: {issue_summary}\n"
+        f"Next Action: {next_action}"
+    )

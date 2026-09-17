@@ -71,6 +71,7 @@ HANDLERS = {
     "job_application_handlers.handle_validate_career_background_verification_closure_evidence": job_application_handlers.handle_validate_career_background_verification_closure_evidence,
     "job_application_handlers.handle_check_career_background_verification_closure_evidence_integrity": job_application_handlers.handle_check_career_background_verification_closure_evidence_integrity,
     "job_application_handlers.handle_analyze_career_background_verification_closure_evidence_consistency": job_application_handlers.handle_analyze_career_background_verification_closure_evidence_consistency,
+    "job_application_handlers.handle_score_career_background_verification_closure_evidence_quality": job_application_handlers.handle_score_career_background_verification_closure_evidence_quality,
     "job_application_handlers.handle_get_career_background_verification_closure_risk": job_application_handlers.handle_get_career_background_verification_closure_risk,
     "job_application_handlers.handle_get_career_background_verification_closure_history": job_application_handlers.handle_get_career_background_verification_closure_history,
     "job_application_handlers.handle_get_career_background_verification_closure": job_application_handlers.handle_get_career_background_verification_closure,
@@ -107,6 +108,7 @@ HANDLERS = {
 
 def get_handler(name):
     return HANDLERS.get(name)
+
 
 
 
