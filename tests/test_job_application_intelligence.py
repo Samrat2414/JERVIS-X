@@ -70,6 +70,7 @@ from core.job_application_intelligence import (
     analyze_career_background_verification_closure_evidence_compliance,
     analyze_career_background_verification_closure_evidence_retention,
     analyze_career_background_verification_closure_evidence_archival,
+    analyze_career_background_verification_closure_evidence_finalization,
     update_career_background_verification_closure,
     update_career_background_verification_escalation_response,
     get_career_background_documents,
@@ -6952,5 +6953,38 @@ def test_career_background_verification_closure_evidence_archival_open():
     assert "Closure Status: Open" in result
     assert "Archival Score: 20/100" in result
     assert "Archival Status: NOT READY" in result
+    assert "Background verification closure is not Closed." in result
+    assert "No closure audit history is available." in result
+
+
+
+def test_career_background_verification_closure_evidence_finalization_ready():
+    add_test_application()
+
+    update_career_background_verification_closure(
+        "1",
+        "Closed",
+    )
+    result = analyze_career_background_verification_closure_evidence_finalization("1")
+
+    assert "Finalization Score: 100/100" in result
+    assert "Finalization Status: FINALIZED" in result
+    assert "No finalization blockers detected." in result
+
+
+def test_career_background_verification_closure_evidence_finalization_not_found():
+    result = analyze_career_background_verification_closure_evidence_finalization("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_closure_evidence_finalization_open():
+    add_test_application()
+
+    result = analyze_career_background_verification_closure_evidence_finalization("1")
+
+    assert "Closure Status: Open" in result
+    assert "Finalization Score: 20/100" in result
+    assert "Finalization Status: NOT FINALIZED" in result
     assert "Background verification closure is not Closed." in result
     assert "No closure audit history is available." in result
