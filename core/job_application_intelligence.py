@@ -10937,3 +10937,70 @@ def analyze_career_background_verification_closure_evidence_finalization(applica
         f"Blockers: {blocker_summary}\n"
         f"Next Action: {next_action}"
     )
+
+
+def analyze_career_background_verification_closure_evidence_archival(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    closure_status = application.get("background_verification_closure_status", "Open")
+    history = application.get("background_verification_closure_history", [])
+
+    archival_score = 100
+    concerns = []
+
+    if closure_status != "Closed":
+        archival_score -= 40
+        concerns.append("Background verification closure is not Closed.")
+
+    if not history:
+        archival_score -= 40
+        concerns.append("No closure audit history is available.")
+
+    for index, event in enumerate(history, start=1):
+        if not event.get("from_status") or not event.get("to_status") or not event.get("changed_at"):
+            archival_score -= 15
+            concerns.append(f"Audit event {index} has incomplete archival evidence.")
+
+        if index > 1 and event.get("from_status") != history[index - 2].get("to_status"):
+            archival_score -= 15
+            concerns.append(f"Audit event {index} breaks archival continuity.")
+
+    if history and history[-1].get("to_status") != closure_status:
+        archival_score -= 20
+        concerns.append("Latest audit status does not match current closure status.")
+
+    archival_score = max(0, archival_score)
+
+    if archival_score >= 90:
+        archival_status = "ARCHIVE READY"
+    elif archival_score >= 70:
+        archival_status = "REVIEW REQUIRED"
+    else:
+        archival_status = "NOT READY"
+
+    if archival_status == "ARCHIVE READY":
+        next_action = "Retain the closure evidence as an archive-ready record."
+    elif archival_status == "REVIEW REQUIRED":
+        next_action = "Review the archival concerns before retention."
+    else:
+        next_action = "Resolve the archival concerns before retention."
+
+    concern_summary = "; ".join(concerns) if concerns else "No archival concerns detected."
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Archival Analyzer - Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Audit Event Count: {len(history)}\n"
+        f"Archival Score: {archival_score}/100\n"
+        f"Archival Status: {archival_status}\n"
+        f"Concerns: {concern_summary}\n"
+        f"Next Action: {next_action}"
+    )
