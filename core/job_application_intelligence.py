@@ -11004,3 +11004,70 @@ def analyze_career_background_verification_closure_evidence_archival(application
         f"Concerns: {concern_summary}\n"
         f"Next Action: {next_action}"
     )
+
+
+def analyze_career_background_verification_closure_evidence_retention(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    closure_status = application.get("background_verification_closure_status", "Open")
+    history = application.get("background_verification_closure_history", [])
+
+    retention_score = 100
+    concerns = []
+
+    if closure_status != "Closed":
+        retention_score -= 40
+        concerns.append("Background verification closure is not Closed.")
+
+    if not history:
+        retention_score -= 40
+        concerns.append("No closure audit history is available.")
+
+    for index, event in enumerate(history, start=1):
+        if not event.get("from_status") or not event.get("to_status") or not event.get("changed_at"):
+            retention_score -= 15
+            concerns.append(f"Audit event {index} has incomplete retention evidence.")
+
+        if index > 1 and event.get("from_status") != history[index - 2].get("to_status"):
+            retention_score -= 15
+            concerns.append(f"Audit event {index} breaks retention continuity.")
+
+    if history and history[-1].get("to_status") != closure_status:
+        retention_score -= 20
+        concerns.append("Latest audit status does not match current closure status.")
+
+    retention_score = max(0, retention_score)
+
+    if retention_score >= 90:
+        retention_status = "RETENTION READY"
+    elif retention_score >= 70:
+        retention_status = "REVIEW REQUIRED"
+    else:
+        retention_status = "NOT READY"
+
+    if retention_status == "RETENTION READY":
+        next_action = "Retain the closure evidence as a retention-ready record."
+    elif retention_status == "REVIEW REQUIRED":
+        next_action = "Review the retention concerns before long-term retention."
+    else:
+        next_action = "Resolve the retention concerns before long-term retention."
+
+    concern_summary = "; ".join(concerns) if concerns else "No retention concerns detected."
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Retention Analyzer - Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Audit Event Count: {len(history)}\n"
+        f"Retention Score: {retention_score}/100\n"
+        f"Retention Status: {retention_status}\n"
+        f"Concerns: {concern_summary}\n"
+        f"Next Action: {next_action}"
+    )
