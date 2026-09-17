@@ -11138,3 +11138,70 @@ def analyze_career_background_verification_closure_evidence_compliance(applicati
         f"Concerns: {concern_summary}\n"
         f"Next Action: {next_action}"
     )
+
+
+def analyze_career_background_verification_closure_evidence_audit(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    closure_status = application.get("background_verification_closure_status", "Open")
+    history = application.get("background_verification_closure_history", [])
+
+    audit_score = 100
+    findings = []
+
+    if closure_status != "Closed":
+        audit_score -= 40
+        findings.append("Background verification closure is not Closed.")
+
+    if not history:
+        audit_score -= 40
+        findings.append("No closure audit history is available.")
+
+    for index, event in enumerate(history, start=1):
+        if not event.get("from_status") or not event.get("to_status") or not event.get("changed_at"):
+            audit_score -= 15
+            findings.append(f"Audit event {index} has incomplete audit evidence.")
+
+        if index > 1 and event.get("from_status") != history[index - 2].get("to_status"):
+            audit_score -= 15
+            findings.append(f"Audit event {index} breaks audit continuity.")
+
+    if history and history[-1].get("to_status") != closure_status:
+        audit_score -= 20
+        findings.append("Latest audit status does not match current closure status.")
+
+    audit_score = max(0, audit_score)
+
+    if audit_score >= 90:
+        audit_status = "AUDIT CLEAR"
+    elif audit_score >= 70:
+        audit_status = "REVIEW REQUIRED"
+    else:
+        audit_status = "AUDIT ISSUES DETECTED"
+
+    if audit_status == "AUDIT CLEAR":
+        next_action = "Retain the closure evidence as an audit-cleared record."
+    elif audit_status == "REVIEW REQUIRED":
+        next_action = "Review the audit findings before relying on the record."
+    else:
+        next_action = "Resolve the audit findings before relying on the record."
+
+    finding_summary = "; ".join(findings) if findings else "No audit findings detected."
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Audit Analyzer - Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Audit Event Count: {len(history)}\n"
+        f"Audit Score: {audit_score}/100\n"
+        f"Audit Status: {audit_status}\n"
+        f"Findings: {finding_summary}\n"
+        f"Next Action: {next_action}"
+    )
