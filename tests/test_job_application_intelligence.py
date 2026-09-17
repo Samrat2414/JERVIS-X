@@ -68,6 +68,7 @@ from core.job_application_intelligence import (
     analyze_career_background_verification_closure_evidence_governance,
     analyze_career_background_verification_closure_evidence_audit,
     analyze_career_background_verification_closure_evidence_compliance,
+    analyze_career_background_verification_closure_evidence_retention,
     update_career_background_verification_closure,
     update_career_background_verification_escalation_response,
     get_career_background_documents,
@@ -6885,3 +6886,37 @@ def test_career_background_verification_closure_evidence_compliance_open():
     assert "Compliance Status: NON-COMPLIANT" in result
     assert "Background verification closure is not Closed." in result
     assert "No closure audit history is available." in result
+
+
+
+def test_career_background_verification_closure_evidence_retention_ready():
+    add_test_application()
+
+    update_career_background_verification_closure(
+        "1",
+        "Closed",
+    )
+    result = analyze_career_background_verification_closure_evidence_retention("1")
+
+    assert "Retention Score: 100/100" in result
+    assert "Retention Status: RETENTION READY" in result
+    assert "No retention concerns detected." in result
+
+
+def test_career_background_verification_closure_evidence_retention_not_found():
+    result = analyze_career_background_verification_closure_evidence_retention("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_closure_evidence_retention_open():
+    add_test_application()
+
+    result = analyze_career_background_verification_closure_evidence_retention("1")
+
+    assert "Closure Status: Open" in result
+    assert "Retention Score: 20/100" in result
+    assert "Retention Status: NOT READY" in result
+    assert "Background verification closure is not Closed." in result
+    assert "No closure audit history is available." in result
+
