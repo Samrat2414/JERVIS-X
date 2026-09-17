@@ -67,6 +67,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_closure,
     analyze_career_background_verification_closure_evidence_governance,
     analyze_career_background_verification_closure_evidence_audit,
+    analyze_career_background_verification_closure_evidence_compliance,
     update_career_background_verification_closure,
     update_career_background_verification_escalation_response,
     get_career_background_documents,
@@ -6849,5 +6850,38 @@ def test_career_background_verification_closure_evidence_audit_open():
     assert "Closure Status: Open" in result
     assert "Audit Score: 20/100" in result
     assert "Audit Status: AUDIT ISSUES DETECTED" in result
+    assert "Background verification closure is not Closed." in result
+    assert "No closure audit history is available." in result
+
+
+
+def test_career_background_verification_closure_evidence_compliance_ready():
+    add_test_application()
+
+    update_career_background_verification_closure(
+        "1",
+        "Closed",
+    )
+    result = analyze_career_background_verification_closure_evidence_compliance("1")
+
+    assert "Compliance Score: 100/100" in result
+    assert "Compliance Status: COMPLIANT" in result
+    assert "No compliance concerns detected." in result
+
+
+def test_career_background_verification_closure_evidence_compliance_not_found():
+    result = analyze_career_background_verification_closure_evidence_compliance("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_closure_evidence_compliance_open():
+    add_test_application()
+
+    result = analyze_career_background_verification_closure_evidence_compliance("1")
+
+    assert "Closure Status: Open" in result
+    assert "Compliance Score: 20/100" in result
+    assert "Compliance Status: NON-COMPLIANT" in result
     assert "Background verification closure is not Closed." in result
     assert "No closure audit history is available." in result
