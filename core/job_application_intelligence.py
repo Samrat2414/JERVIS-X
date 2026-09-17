@@ -10795,3 +10795,70 @@ def analyze_career_background_verification_closure_evidence_confidence(applicati
         f"Concerns: {concern_summary}\n"
         f"Next Action: {next_action}"
     )
+
+
+def analyze_career_background_verification_closure_evidence_readiness(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    closure_status = application.get("background_verification_closure_status", "Open")
+    history = application.get("background_verification_closure_history", [])
+
+    readiness_score = 100
+    blockers = []
+
+    if closure_status != "Closed":
+        readiness_score -= 30
+        blockers.append("Background verification closure is not Closed.")
+
+    if not history:
+        readiness_score -= 40
+        blockers.append("No closure audit history is available.")
+
+    for index, event in enumerate(history, start=1):
+        if not event.get("from_status") or not event.get("to_status") or not event.get("changed_at"):
+            readiness_score -= 15
+            blockers.append(f"Audit event {index} has incomplete evidence.")
+
+        if index > 1 and event.get("from_status") != history[index - 2].get("to_status"):
+            readiness_score -= 15
+            blockers.append(f"Audit event {index} breaks transition continuity.")
+
+    if history and history[-1].get("to_status") != closure_status:
+        readiness_score -= 20
+        blockers.append("Latest audit status does not match current closure status.")
+
+    readiness_score = max(0, readiness_score)
+
+    if readiness_score >= 85:
+        readiness_status = "READY"
+    elif readiness_score >= 60:
+        readiness_status = "REVIEW REQUIRED"
+    else:
+        readiness_status = "NOT READY"
+
+    if readiness_status == "READY":
+        next_action = "Closure evidence is ready for final reliance and retention."
+    elif readiness_status == "REVIEW REQUIRED":
+        next_action = "Review the identified blockers before final reliance."
+    else:
+        next_action = "Resolve the closure evidence blockers before final reliance."
+
+    blocker_summary = "; ".join(blockers) if blockers else "No readiness blockers detected."
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Readiness Analyzer - Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Audit Event Count: {len(history)}\n"
+        f"Readiness Score: {readiness_score}/100\n"
+        f"Readiness Status: {readiness_status}\n"
+        f"Blockers: {blocker_summary}\n"
+        f"Next Action: {next_action}"
+    )
