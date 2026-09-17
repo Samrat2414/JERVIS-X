@@ -65,6 +65,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_resolution,
     get_career_background_verification_resolution_message,
     get_career_background_verification_closure,
+    analyze_career_background_verification_closure_evidence_governance,
     update_career_background_verification_closure,
     update_career_background_verification_escalation_response,
     get_career_background_documents,
@@ -6783,3 +6784,36 @@ def test_career_background_verification_closure_update_not_found():
 
     assert result == "Job application not found."
 
+
+
+
+def test_career_background_verification_closure_evidence_governance_ready():
+    add_test_application()
+
+    update_career_background_verification_closure(
+        "1",
+        "Closed",
+    )
+    result = analyze_career_background_verification_closure_evidence_governance("1")
+
+    assert "Governance Score: 100/100" in result
+    assert "Governance Status: GOVERNANCE READY" in result
+    assert "No governance concerns detected." in result
+
+
+def test_career_background_verification_closure_evidence_governance_not_found():
+    result = analyze_career_background_verification_closure_evidence_governance("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_closure_evidence_governance_open():
+    add_test_application()
+
+    result = analyze_career_background_verification_closure_evidence_governance("1")
+
+    assert "Closure Status: Open" in result
+    assert "Governance Score: 20/100" in result
+    assert "Governance Status: GOVERNANCE ISSUES DETECTED" in result
+    assert "Background verification closure is not Closed." in result
+    assert "No closure audit history is available." in result
