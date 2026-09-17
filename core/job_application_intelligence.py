@@ -11205,3 +11205,70 @@ def analyze_career_background_verification_closure_evidence_audit(application_id
         f"Findings: {finding_summary}\n"
         f"Next Action: {next_action}"
     )
+
+
+def analyze_career_background_verification_closure_evidence_governance(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    closure_status = application.get("background_verification_closure_status", "Open")
+    history = application.get("background_verification_closure_history", [])
+
+    governance_score = 100
+    concerns = []
+
+    if closure_status != "Closed":
+        governance_score -= 40
+        concerns.append("Background verification closure is not Closed.")
+
+    if not history:
+        governance_score -= 40
+        concerns.append("No closure audit history is available.")
+
+    for index, event in enumerate(history, start=1):
+        if not event.get("from_status") or not event.get("to_status") or not event.get("changed_at"):
+            governance_score -= 15
+            concerns.append(f"Audit event {index} has incomplete governance evidence.")
+
+        if index > 1 and event.get("from_status") != history[index - 2].get("to_status"):
+            governance_score -= 15
+            concerns.append(f"Audit event {index} breaks governance continuity.")
+
+    if history and history[-1].get("to_status") != closure_status:
+        governance_score -= 20
+        concerns.append("Latest audit status does not match current closure status.")
+
+    governance_score = max(0, governance_score)
+
+    if governance_score >= 90:
+        governance_status = "GOVERNANCE READY"
+    elif governance_score >= 70:
+        governance_status = "REVIEW REQUIRED"
+    else:
+        governance_status = "GOVERNANCE ISSUES DETECTED"
+
+    if governance_status == "GOVERNANCE READY":
+        next_action = "Retain the closure evidence as a governance-ready record."
+    elif governance_status == "REVIEW REQUIRED":
+        next_action = "Review the governance concerns before relying on the record."
+    else:
+        next_action = "Resolve the governance concerns before relying on the record."
+
+    concern_summary = "; ".join(concerns) if concerns else "No governance concerns detected."
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Governance Analyzer - Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Audit Event Count: {len(history)}\n"
+        f"Governance Score: {governance_score}/100\n"
+        f"Governance Status: {governance_status}\n"
+        f"Concerns: {concern_summary}\n"
+        f"Next Action: {next_action}"
+    )
