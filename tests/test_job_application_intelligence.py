@@ -71,6 +71,7 @@ from core.job_application_intelligence import (
     analyze_career_background_verification_closure_evidence_retention,
     analyze_career_background_verification_closure_evidence_archival,
     analyze_career_background_verification_closure_evidence_consistency,
+    analyze_career_background_verification_closure_evidence_confidence,
     analyze_career_background_verification_closure_evidence_finalization,
     update_career_background_verification_closure,
     update_career_background_verification_escalation_response,
@@ -7024,3 +7025,53 @@ def test_career_background_verification_closure_evidence_consistency_inconsisten
 
     assert "Consistency Status: INCONSISTENT" in result
     assert "self-transition" in result
+
+
+
+def test_career_background_verification_closure_evidence_confidence_high():
+    add_test_application()
+
+    update_career_background_verification_closure(
+        "1",
+        "Closed",
+    )
+    result = analyze_career_background_verification_closure_evidence_confidence("1")
+
+    assert "Confidence Score: 100/100" in result
+    assert "Confidence Level: HIGH" in result
+    assert "No confidence concerns detected." in result
+
+
+def test_career_background_verification_closure_evidence_confidence_no_history():
+    add_test_application()
+
+    result = analyze_career_background_verification_closure_evidence_confidence("1")
+
+    assert "Confidence Score: 60/100" in result
+    assert "Confidence Level: MEDIUM" in result
+    assert "No closure audit history is available." in result
+
+
+def test_career_background_verification_closure_evidence_confidence_low():
+    add_test_application()
+
+    update_career_background_verification_closure("1", "Closed")
+    update_career_background_verification_closure("1", "Closed")
+    update_career_background_verification_closure("1", "Closed")
+
+    data = _load()
+    application = next(item for item in data["applications"] if str(item.get("id")) == "1")
+    application["background_verification_closure_history"][1]["changed_at"] = None
+    application["background_verification_closure_history"][2]["changed_at"] = None
+    application["background_verification_closure_status"] = "Open"
+    _save(data)
+
+    result = analyze_career_background_verification_closure_evidence_confidence("1")
+
+    assert "Confidence Score: 30/100" in result
+    assert "Confidence Level: LOW" in result
+    assert "Latest audit status does not match current closure status." in result
+
+
+
+
