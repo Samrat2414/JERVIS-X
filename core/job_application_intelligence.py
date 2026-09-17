@@ -10862,3 +10862,78 @@ def analyze_career_background_verification_closure_evidence_readiness(applicatio
         f"Blockers: {blocker_summary}\n"
         f"Next Action: {next_action}"
     )
+
+
+def analyze_career_background_verification_closure_evidence_finalization(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    closure_status = application.get("background_verification_closure_status", "Open")
+    history = application.get("background_verification_closure_history", [])
+
+    finalization_score = 100
+    blockers = []
+
+    if closure_status != "Closed":
+        finalization_score -= 40
+        blockers.append("Background verification closure is not Closed.")
+
+    if not history:
+        finalization_score -= 40
+        blockers.append("No closure audit history is available.")
+
+    for index, event in enumerate(history, start=1):
+        from_status = event.get("from_status")
+        to_status = event.get("to_status")
+        changed_at = event.get("changed_at")
+
+        if not from_status or not to_status or not changed_at:
+            finalization_score -= 15
+            blockers.append(f"Audit event {index} has incomplete evidence.")
+
+        if from_status == to_status and from_status is not None:
+            finalization_score -= 10
+            blockers.append(f"Audit event {index} contains a self-transition.")
+
+        if index > 1 and from_status != history[index - 2].get("to_status"):
+            finalization_score -= 15
+            blockers.append(f"Audit event {index} breaks transition continuity.")
+
+    if history and history[-1].get("to_status") != closure_status:
+        finalization_score -= 20
+        blockers.append("Latest audit status does not match current closure status.")
+
+    finalization_score = max(0, finalization_score)
+
+    if finalization_score >= 90:
+        finalization_status = "FINALIZED"
+    elif finalization_score >= 70:
+        finalization_status = "REVIEW REQUIRED"
+    else:
+        finalization_status = "NOT FINALIZED"
+
+    if finalization_status == "FINALIZED":
+        next_action = "Retain the finalized closure evidence as the final record."
+    elif finalization_status == "REVIEW REQUIRED":
+        next_action = "Review the identified blockers before finalization."
+    else:
+        next_action = "Resolve the closure evidence blockers before finalization."
+
+    blocker_summary = "; ".join(blockers) if blockers else "No finalization blockers detected."
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Finalization Analyzer - Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Audit Event Count: {len(history)}\n"
+        f"Finalization Score: {finalization_score}/100\n"
+        f"Finalization Status: {finalization_status}\n"
+        f"Blockers: {blocker_summary}\n"
+        f"Next Action: {next_action}"
+    )
