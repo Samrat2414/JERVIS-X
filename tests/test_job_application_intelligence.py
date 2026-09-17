@@ -70,6 +70,7 @@ from core.job_application_intelligence import (
     analyze_career_background_verification_closure_evidence_compliance,
     analyze_career_background_verification_closure_evidence_retention,
     analyze_career_background_verification_closure_evidence_archival,
+    analyze_career_background_verification_closure_evidence_consistency,
     analyze_career_background_verification_closure_evidence_finalization,
     update_career_background_verification_closure,
     update_career_background_verification_escalation_response,
@@ -6988,3 +6989,38 @@ def test_career_background_verification_closure_evidence_finalization_open():
     assert "Finalization Status: NOT FINALIZED" in result
     assert "Background verification closure is not Closed." in result
     assert "No closure audit history is available." in result
+
+
+
+def test_career_background_verification_closure_evidence_consistency_consistent():
+    add_test_application()
+
+    update_career_background_verification_closure(
+        "1",
+        "Closed",
+    )
+    result = analyze_career_background_verification_closure_evidence_consistency("1")
+
+    assert "Consistency Status: CONSISTENT" in result
+    assert "No closure evidence consistency issues detected." in result
+
+
+
+def test_career_background_verification_closure_evidence_consistency_no_history():
+    add_test_application()
+
+    result = analyze_career_background_verification_closure_evidence_consistency("1")
+
+    assert "Consistency Status: NO HISTORY" in result
+    assert "No closure evidence consistency issues detected." in result
+
+
+def test_career_background_verification_closure_evidence_consistency_inconsistent():
+    add_test_application()
+
+    update_career_background_verification_closure("1", "Closed")
+    update_career_background_verification_closure("1", "Closed")
+    result = analyze_career_background_verification_closure_evidence_consistency("1")
+
+    assert "Consistency Status: INCONSISTENT" in result
+    assert "self-transition" in result
