@@ -10539,3 +10539,85 @@ def check_career_background_verification_closure_evidence_integrity(application_
         f"Issues: {issue_summary}\n"
         f"Next Action: {next_action}"
     )
+
+
+def analyze_career_background_verification_closure_evidence_consistency(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    closure_status = application.get(
+        "background_verification_closure_status",
+        "Open",
+    )
+    history = application.get(
+        "background_verification_closure_history",
+        [],
+    )
+
+    issues = []
+    self_transitions = 0
+
+    for index, event in enumerate(history, start=1):
+        from_status = event.get("from_status")
+        to_status = event.get("to_status")
+
+        if from_status == to_status and from_status is not None:
+            self_transitions += 1
+            issues.append(
+                f"Audit event {index} contains a self-transition "
+                f"({from_status} -> {to_status})."
+            )
+
+        if index > 1:
+            previous_to_status = history[index - 2].get("to_status")
+            if from_status != previous_to_status:
+                issues.append(
+                    f"Audit event {index} is inconsistent with the "
+                    "previous transition."
+                )
+
+    if history:
+        latest_status = history[-1].get("to_status")
+        if latest_status != closure_status:
+            issues.append(
+                "Current closure status is inconsistent with the latest "
+                "audit transition."
+            )
+    elif closure_status != "Open":
+        issues.append(
+            "Current closure status requires supporting audit history."
+        )
+
+    if issues:
+        consistency_status = "INCONSISTENT"
+        next_action = "Review and reconcile the inconsistent closure evidence."
+    elif history:
+        consistency_status = "CONSISTENT"
+        next_action = "Retain the consistency-verified closure evidence."
+    else:
+        consistency_status = "NO HISTORY"
+        next_action = "Continue monitoring until closure transitions are recorded."
+
+    issue_summary = (
+        "; ".join(issues)
+        if issues
+        else "No closure evidence consistency issues detected."
+    )
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Consistency Analyzer "
+        f"- Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Audit Event Count: {len(history)}\n"
+        f"Self-Transition Count: {self_transitions}\n"
+        f"Consistency Status: {consistency_status}\n"
+        f"Issues: {issue_summary}\n"
+        f"Next Action: {next_action}"
+    )
