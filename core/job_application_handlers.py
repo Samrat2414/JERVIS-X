@@ -93,6 +93,7 @@ from core.job_application_intelligence import (
     analyze_career_background_verification_closure_evidence_governance,
     analyze_career_background_verification_closure_evidence_lifecycle,
     get_career_background_verification_closure_evidence_health,
+    get_career_background_verification_closure_evidence_snapshot,
     generate_career_background_verification_closure_message,
     update_career_background_verification_closure,
     update_career_background_verification_escalation_response,
@@ -1231,5 +1232,24 @@ def handle_get_career_background_verification_closure_evidence_health(command):
     application_id = int(application_id)
 
     return get_career_background_verification_closure_evidence_health(
+        application_id
+    )
+
+
+
+def handle_get_career_background_verification_closure_evidence_snapshot(command):
+    application_id = command[
+        len("career background verification closure evidence snapshot "):
+    ].strip()
+
+    if not application_id.isdigit():
+        return (
+            "Usage: career background verification closure evidence snapshot "
+            "<application_id>"
+        )
+
+    application_id = int(application_id)
+
+    return get_career_background_verification_closure_evidence_snapshot(
         application_id
     )

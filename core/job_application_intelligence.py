@@ -11414,3 +11414,43 @@ def get_career_background_verification_closure_evidence_health(application_id):
         f"Issues: {issue_summary}\n"
         f"Next Action: {next_action}"
     )
+
+
+def get_career_background_verification_closure_evidence_snapshot(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    verification_status = application.get("background_verification_status", "Not Submitted")
+    escalation_response = application.get("background_verification_escalation_response", "Not Received")
+    closure_status = application.get("background_verification_closure_status", "Open")
+    history = application.get("background_verification_closure_history", [])
+    snapshot_at = datetime.now().strftime("%d-%m-%Y %H:%M")
+
+    if history:
+        latest_event = history[-1]
+        latest_transition = (
+            f"{latest_event.get('from_status', 'Unknown')} -> "
+            f"{latest_event.get('to_status', 'Unknown')}"
+        )
+        latest_change = latest_event.get("changed_at", "Unknown")
+    else:
+        latest_transition = "No audit event"
+        latest_change = "Unknown"
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Snapshot - Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Snapshot At: {snapshot_at}\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Verification Status: {verification_status}\n"
+        f"Escalation Response: {escalation_response}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Audit Event Count: {len(history)}\n"
+        f"Latest Transition: {latest_transition}\n"
+        f"Latest Change: {latest_change}"
+    )
