@@ -68,6 +68,7 @@ from core.job_application_intelligence import (
     analyze_career_background_verification_closure_evidence_governance,
     analyze_career_background_verification_closure_evidence_lifecycle,
     get_career_background_verification_closure_evidence_health,
+    get_career_background_verification_closure_evidence_snapshot,
     analyze_career_background_verification_closure_evidence_audit,
     analyze_career_background_verification_closure_evidence_compliance,
     analyze_career_background_verification_closure_evidence_retention,
@@ -7159,3 +7160,34 @@ def test_career_background_verification_closure_evidence_health_open():
     assert "Health Status: UNHEALTHY" in result
     assert "Background verification closure is not Closed." in result
     assert "No closure audit history is available." in result
+
+
+
+def test_career_background_verification_closure_evidence_snapshot_closed():
+    add_test_application()
+
+    update_career_background_verification_closure("1", "Closed")
+    result = get_career_background_verification_closure_evidence_snapshot("1")
+
+    assert "Closure Evidence Snapshot - Application 1" in result
+    assert "Closure Status: Closed" in result
+    assert "Audit Event Count: 1" in result
+    assert "Latest Transition: Open -> Closed" in result
+    assert "Snapshot At:" in result
+
+
+def test_career_background_verification_closure_evidence_snapshot_not_found():
+    result = get_career_background_verification_closure_evidence_snapshot("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_closure_evidence_snapshot_open():
+    add_test_application()
+
+    result = get_career_background_verification_closure_evidence_snapshot("1")
+
+    assert "Closure Status: Open" in result
+    assert "Audit Event Count: 0" in result
+    assert "Latest Transition: No audit event" in result
+    assert "Latest Change: Unknown" in result
