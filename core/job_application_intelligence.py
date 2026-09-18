@@ -11454,3 +11454,84 @@ def get_career_background_verification_closure_evidence_snapshot(application_id)
         f"Latest Transition: {latest_transition}\n"
         f"Latest Change: {latest_change}"
     )
+
+
+def record_career_background_verification_closure_evidence_snapshot(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    data = _load()
+
+    for item in data.get("applications", []):
+        if str(item.get("id")) == str(application_id):
+            closure_history = item.get("background_verification_closure_history", [])
+            snapshot_history = item.setdefault(
+                "background_verification_closure_evidence_snapshot_history",
+                [],
+            )
+
+            snapshot = {
+                "snapshot_at": datetime.now().strftime("%d-%m-%Y %H:%M"),
+                "verification_status": item.get("background_verification_status", "Not Submitted"),
+                "escalation_response": item.get("background_verification_escalation_response", "Not Received"),
+                "closure_status": item.get("background_verification_closure_status", "Open"),
+                "audit_event_count": len(closure_history),
+            }
+
+            snapshot_history.append(snapshot)
+            _save(data)
+
+            return (
+                f"Closure evidence snapshot recorded for application {application_id}. "
+                f"Snapshot count: {len(snapshot_history)}."
+            )
+
+    return "Job application not found."
+
+
+
+def get_career_background_verification_closure_evidence_snapshot_history(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    snapshot_history = application.get(
+        "background_verification_closure_evidence_snapshot_history",
+        [],
+    )
+
+    if not snapshot_history:
+        return (
+            f"JERVIS Career Background Verification Closure Evidence Snapshot History - Application {application_id}\n"
+            "------------------------------------------------------------\n"
+            f"Company: {company}\n"
+            f"Role: {role}\n"
+            "Snapshot Count: 0\n"
+            "No evidence snapshots recorded."
+        )
+
+    lines = [
+        f"JERVIS Career Background Verification Closure Evidence Snapshot History - Application {application_id}",
+        "------------------------------------------------------------",
+        f"Company: {company}",
+        f"Role: {role}",
+        f"Snapshot Count: {len(snapshot_history)}",
+        "",
+        "Snapshots:",
+    ]
+
+    for index, snapshot in enumerate(snapshot_history, start=1):
+        lines.append(
+            f"{index}. {snapshot.get('snapshot_at', 'Unknown')} | "
+            f"Verification: {snapshot.get('verification_status', 'Unknown')} | "
+            f"Escalation: {snapshot.get('escalation_response', 'Unknown')} | "
+            f"Closure: {snapshot.get('closure_status', 'Unknown')} | "
+            f"Audit Events: {snapshot.get('audit_event_count', 0)}"
+        )
+
+    return "\n".join(lines)

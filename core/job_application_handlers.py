@@ -94,6 +94,8 @@ from core.job_application_intelligence import (
     analyze_career_background_verification_closure_evidence_lifecycle,
     get_career_background_verification_closure_evidence_health,
     get_career_background_verification_closure_evidence_snapshot,
+    record_career_background_verification_closure_evidence_snapshot,
+    get_career_background_verification_closure_evidence_snapshot_history,
     generate_career_background_verification_closure_message,
     update_career_background_verification_closure,
     update_career_background_verification_escalation_response,
@@ -1251,5 +1253,42 @@ def handle_get_career_background_verification_closure_evidence_snapshot(command)
     application_id = int(application_id)
 
     return get_career_background_verification_closure_evidence_snapshot(
+        application_id
+    )
+
+
+
+def handle_record_career_background_verification_closure_evidence_snapshot(command):
+    application_id = command[
+        len("career background verification closure evidence snapshot record "):
+    ].strip()
+
+    if not application_id.isdigit():
+        return (
+            "Usage: career background verification closure evidence snapshot record "
+            "<application_id>"
+        )
+
+    application_id = int(application_id)
+
+    return record_career_background_verification_closure_evidence_snapshot(
+        application_id
+    )
+
+
+def handle_get_career_background_verification_closure_evidence_snapshot_history(command):
+    application_id = command[
+        len("career background verification closure evidence snapshot history "):
+    ].strip()
+
+    if not application_id.isdigit():
+        return (
+            "Usage: career background verification closure evidence snapshot history "
+            "<application_id>"
+        )
+
+    application_id = int(application_id)
+
+    return get_career_background_verification_closure_evidence_snapshot_history(
         application_id
     )

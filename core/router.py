@@ -364,6 +364,10 @@ def get_routing_plan(command):
         handler = "job_application_handlers.handle_analyze_career_background_verification_closure_evidence_lifecycle"
     elif normalized_command.startswith("career background verification closure evidence health "):
         handler = "job_application_handlers.handle_get_career_background_verification_closure_evidence_health"
+    elif normalized_command.startswith("career background verification closure evidence snapshot record "):
+        handler = "job_application_handlers.handle_record_career_background_verification_closure_evidence_snapshot"
+    elif normalized_command.startswith("career background verification closure evidence snapshot history "):
+        handler = "job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot_history"
     elif normalized_command.startswith("career background verification closure evidence snapshot "):
         handler = "job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot"
     elif normalized_command.startswith("career background verification closure evidence pack "):
@@ -541,6 +545,8 @@ def route_command(command, handler=None, handlers=None):
         return response
 
     return "Sorry, I don't understand that command yet."
+
+
 
 
 
