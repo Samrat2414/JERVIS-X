@@ -66,6 +66,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_resolution_message,
     get_career_background_verification_closure,
     analyze_career_background_verification_closure_evidence_governance,
+    analyze_career_background_verification_closure_evidence_lifecycle,
     analyze_career_background_verification_closure_evidence_audit,
     analyze_career_background_verification_closure_evidence_compliance,
     analyze_career_background_verification_closure_evidence_retention,
@@ -7100,5 +7101,31 @@ def test_career_background_verification_closure_evidence_readiness_not_ready():
 
     assert "Readiness Score: 30/100" in result
     assert "Readiness Status: NOT READY" in result
+    assert "Background verification closure is not Closed." in result
+    assert "No closure audit history is available." in result
+
+
+def test_career_background_verification_closure_evidence_lifecycle_ready():
+    add_test_application()
+
+    update_career_background_verification_closure("1", "Closed")
+    result = analyze_career_background_verification_closure_evidence_lifecycle("1")
+
+    assert "Lifecycle Score: 100/100" in result
+    assert "Lifecycle Status: LIFECYCLE READY" in result
+    assert "No lifecycle concerns detected." in result
+
+def test_career_background_verification_closure_evidence_lifecycle_not_found():
+    result = analyze_career_background_verification_closure_evidence_lifecycle("999")
+
+    assert result == "Job application not found."
+
+def test_career_background_verification_closure_evidence_lifecycle_open():
+    add_test_application()
+
+    result = analyze_career_background_verification_closure_evidence_lifecycle("1")
+
+    assert "Lifecycle Score: 20/100" in result
+    assert "Lifecycle Status: LIFECYCLE ISSUES DETECTED" in result
     assert "Background verification closure is not Closed." in result
     assert "No closure audit history is available." in result
