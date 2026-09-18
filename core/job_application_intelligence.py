@@ -11339,3 +11339,78 @@ def analyze_career_background_verification_closure_evidence_lifecycle(applicatio
         f"Concerns: {concern_summary}\n"
         f"Next Action: {next_action}"
     )
+
+
+def get_career_background_verification_closure_evidence_health(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    closure_status = application.get("background_verification_closure_status", "Open")
+    history = application.get("background_verification_closure_history", [])
+
+    health_score = 100
+    issues = []
+
+    if closure_status != "Closed":
+        health_score -= 40
+        issues.append("Background verification closure is not Closed.")
+
+    if not history:
+        health_score -= 40
+        issues.append("No closure audit history is available.")
+
+    for index, event in enumerate(history, start=1):
+        from_status = event.get("from_status")
+        to_status = event.get("to_status")
+        changed_at = event.get("changed_at")
+
+        if not from_status or not to_status or not changed_at:
+            health_score -= 15
+            issues.append(f"Audit event {index} has incomplete evidence.")
+
+        if from_status == to_status and from_status is not None:
+            health_score -= 10
+            issues.append(f"Audit event {index} contains a self-transition.")
+
+        if index > 1 and from_status != history[index - 2].get("to_status"):
+            health_score -= 15
+            issues.append(f"Audit event {index} breaks transition continuity.")
+
+    if history and history[-1].get("to_status") != closure_status:
+        health_score -= 20
+        issues.append("Latest audit status does not match current closure status.")
+
+    health_score = max(0, health_score)
+
+    if health_score >= 90:
+        health_status = "HEALTHY"
+    elif health_score >= 70:
+        health_status = "REVIEW REQUIRED"
+    else:
+        health_status = "UNHEALTHY"
+
+    if health_status == "HEALTHY":
+        next_action = "Retain the closure evidence as a healthy verified record."
+    elif health_status == "REVIEW REQUIRED":
+        next_action = "Review the evidence health issues before relying on the record."
+    else:
+        next_action = "Resolve the evidence health issues before relying on the record."
+
+    issue_summary = "; ".join(issues) if issues else "No closure evidence health issues detected."
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Health Overview - Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Audit Event Count: {len(history)}\n"
+        f"Health Score: {health_score}/100\n"
+        f"Health Status: {health_status}\n"
+        f"Issues: {issue_summary}\n"
+        f"Next Action: {next_action}"
+    )
