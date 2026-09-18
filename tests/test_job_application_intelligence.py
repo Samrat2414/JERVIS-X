@@ -72,6 +72,7 @@ from core.job_application_intelligence import (
     analyze_career_background_verification_closure_evidence_archival,
     analyze_career_background_verification_closure_evidence_consistency,
     analyze_career_background_verification_closure_evidence_confidence,
+    analyze_career_background_verification_closure_evidence_readiness,
     analyze_career_background_verification_closure_evidence_finalization,
     update_career_background_verification_closure,
     update_career_background_verification_escalation_response,
@@ -7075,3 +7076,29 @@ def test_career_background_verification_closure_evidence_confidence_low():
 
 
 
+
+
+def test_career_background_verification_closure_evidence_readiness_ready():
+    add_test_application()
+
+    update_career_background_verification_closure("1", "Closed")
+    result = analyze_career_background_verification_closure_evidence_readiness("1")
+
+    assert "Readiness Score: 100/100" in result
+    assert "Readiness Status: READY" in result
+    assert "No readiness blockers detected." in result
+
+def test_career_background_verification_closure_evidence_readiness_not_found():
+    result = analyze_career_background_verification_closure_evidence_readiness("999")
+
+    assert result == "Job application not found."
+
+def test_career_background_verification_closure_evidence_readiness_not_ready():
+    add_test_application()
+
+    result = analyze_career_background_verification_closure_evidence_readiness("1")
+
+    assert "Readiness Score: 30/100" in result
+    assert "Readiness Status: NOT READY" in result
+    assert "Background verification closure is not Closed." in result
+    assert "No closure audit history is available." in result
