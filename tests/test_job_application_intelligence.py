@@ -67,6 +67,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_closure,
     analyze_career_background_verification_closure_evidence_governance,
     analyze_career_background_verification_closure_evidence_lifecycle,
+    get_career_background_verification_closure_evidence_health,
     analyze_career_background_verification_closure_evidence_audit,
     analyze_career_background_verification_closure_evidence_compliance,
     analyze_career_background_verification_closure_evidence_retention,
@@ -7127,5 +7128,34 @@ def test_career_background_verification_closure_evidence_lifecycle_open():
 
     assert "Lifecycle Score: 20/100" in result
     assert "Lifecycle Status: LIFECYCLE ISSUES DETECTED" in result
+    assert "Background verification closure is not Closed." in result
+    assert "No closure audit history is available." in result
+
+
+
+def test_career_background_verification_closure_evidence_health_healthy():
+    add_test_application()
+
+    update_career_background_verification_closure("1", "Closed")
+    result = get_career_background_verification_closure_evidence_health("1")
+
+    assert "Health Score: 100/100" in result
+    assert "Health Status: HEALTHY" in result
+    assert "No closure evidence health issues detected." in result
+
+
+def test_career_background_verification_closure_evidence_health_not_found():
+    result = get_career_background_verification_closure_evidence_health("999")
+
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_closure_evidence_health_open():
+    add_test_application()
+
+    result = get_career_background_verification_closure_evidence_health("1")
+
+    assert "Health Score: 20/100" in result
+    assert "Health Status: UNHEALTHY" in result
     assert "Background verification closure is not Closed." in result
     assert "No closure audit history is available." in result
