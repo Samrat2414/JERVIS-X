@@ -11272,3 +11272,70 @@ def analyze_career_background_verification_closure_evidence_governance(applicati
         f"Concerns: {concern_summary}\n"
         f"Next Action: {next_action}"
     )
+
+
+def analyze_career_background_verification_closure_evidence_lifecycle(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    closure_status = application.get("background_verification_closure_status", "Open")
+    history = application.get("background_verification_closure_history", [])
+
+    lifecycle_score = 100
+    concerns = []
+
+    if closure_status != "Closed":
+        lifecycle_score -= 40
+        concerns.append("Background verification closure is not Closed.")
+
+    if not history:
+        lifecycle_score -= 40
+        concerns.append("No closure audit history is available.")
+
+    for index, event in enumerate(history, start=1):
+        if not event.get("from_status") or not event.get("to_status") or not event.get("changed_at"):
+            lifecycle_score -= 15
+            concerns.append(f"Audit event {index} has incomplete lifecycle evidence.")
+
+        if index > 1 and event.get("from_status") != history[index - 2].get("to_status"):
+            lifecycle_score -= 15
+            concerns.append(f"Audit event {index} breaks lifecycle continuity.")
+
+    if history and history[-1].get("to_status") != closure_status:
+        lifecycle_score -= 20
+        concerns.append("Latest audit status does not match current closure status.")
+
+    lifecycle_score = max(0, lifecycle_score)
+
+    if lifecycle_score >= 90:
+        lifecycle_status = "LIFECYCLE READY"
+    elif lifecycle_score >= 70:
+        lifecycle_status = "REVIEW REQUIRED"
+    else:
+        lifecycle_status = "LIFECYCLE ISSUES DETECTED"
+
+    if lifecycle_status == "LIFECYCLE READY":
+        next_action = "Retain the closure evidence as a lifecycle-ready record."
+    elif lifecycle_status == "REVIEW REQUIRED":
+        next_action = "Review the lifecycle concerns before relying on the record."
+    else:
+        next_action = "Resolve the lifecycle concerns before relying on the record."
+
+    concern_summary = "; ".join(concerns) if concerns else "No lifecycle concerns detected."
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Lifecycle Analyzer - Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Closure Status: {closure_status}\n"
+        f"Audit Event Count: {len(history)}\n"
+        f"Lifecycle Score: {lifecycle_score}/100\n"
+        f"Lifecycle Status: {lifecycle_status}\n"
+        f"Concerns: {concern_summary}\n"
+        f"Next Action: {next_action}"
+    )
