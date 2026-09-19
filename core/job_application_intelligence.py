@@ -11817,3 +11817,82 @@ def get_career_background_verification_closure_evidence_snapshot_prediction(appl
         f"Recent Score Direction: {previous_score} -> {latest_score}\n"
         f"Next Action: {next_action}"
     )
+
+
+def get_career_background_verification_closure_evidence_snapshot_projection(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    snapshot_history = application.get(
+        "background_verification_closure_evidence_snapshot_history",
+        [],
+    )
+
+    if len(snapshot_history) < 2:
+        return (
+            f"JERVIS Career Background Verification Closure Evidence Snapshot Projection - Application {application_id}\n"
+            "------------------------------------------------------------\n"
+            f"Company: {company}\n"
+            f"Role: {role}\n"
+            f"Snapshot Count: {len(snapshot_history)}\n"
+            "At least 2 evidence snapshots are required for projection analysis."
+        )
+
+    previous = snapshot_history[-2]
+    latest = snapshot_history[-1]
+
+    verification_rank = {
+        "Not Submitted": 0,
+        "Submitted": 1,
+        "In Review": 2,
+        "Verified": 3,
+    }
+    escalation_rank = {
+        "Not Received": 0,
+        "Received": 1,
+    }
+    closure_rank = {
+        "Open": 0,
+        "Pending Confirmation": 1,
+        "Closed": 2,
+    }
+
+    previous_score = (
+        verification_rank.get(previous.get("verification_status"), 0)
+        + escalation_rank.get(previous.get("escalation_response"), 0)
+        + closure_rank.get(previous.get("closure_status"), 0)
+    )
+    latest_score = (
+        verification_rank.get(latest.get("verification_status"), 0)
+        + escalation_rank.get(latest.get("escalation_response"), 0)
+        + closure_rank.get(latest.get("closure_status"), 0)
+    )
+
+    score_change = latest_score - previous_score
+    projected_score = max(0, min(6, latest_score + score_change))
+
+    if score_change > 0:
+        projection = "UPWARD"
+        next_action = "Maintain progress and verify the projected improvement with new evidence."
+    elif score_change < 0:
+        projection = "DOWNWARD"
+        next_action = "Address the recent decline before the next evidence snapshot."
+    else:
+        projection = "STEADY"
+        next_action = "Monitor for new evidence that can change the projected direction."
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Snapshot Projection - Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Snapshot Count: {len(snapshot_history)}\n"
+        f"Projection: {projection}\n"
+        f"Recent Score Direction: {previous_score} -> {latest_score}\n"
+        f"Projected Next Score: {projected_score}\n"
+        f"Next Action: {next_action}"
+    )
