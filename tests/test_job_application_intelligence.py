@@ -69,6 +69,10 @@ from core.job_application_intelligence import (
     analyze_career_background_verification_closure_evidence_lifecycle,
     get_career_background_verification_closure_evidence_health,
     get_career_background_verification_closure_evidence_snapshot,
+    record_career_background_verification_closure_evidence_snapshot,
+    get_career_background_verification_closure_evidence_snapshot_history,
+    record_career_background_verification_closure_evidence_snapshot,
+    get_career_background_verification_closure_evidence_snapshot_history,
     analyze_career_background_verification_closure_evidence_audit,
     analyze_career_background_verification_closure_evidence_compliance,
     analyze_career_background_verification_closure_evidence_retention,
@@ -7191,3 +7195,44 @@ def test_career_background_verification_closure_evidence_snapshot_open():
     assert "Audit Event Count: 0" in result
     assert "Latest Transition: No audit event" in result
     assert "Latest Change: Unknown" in result
+
+
+
+def test_career_background_verification_closure_evidence_snapshot_record():
+    add_test_application()
+
+    result = record_career_background_verification_closure_evidence_snapshot("1")
+
+    assert "Closure evidence snapshot recorded for application 1." in result
+    assert "Snapshot count: 1." in result
+
+def test_career_background_verification_closure_evidence_snapshot_record_not_found():
+    result = record_career_background_verification_closure_evidence_snapshot("999")
+
+    assert result == "Job application not found."
+
+def test_career_background_verification_closure_evidence_snapshot_history_empty():
+    add_test_application()
+
+    result = get_career_background_verification_closure_evidence_snapshot_history("1")
+
+    assert "Closure Evidence Snapshot History - Application 1" in result
+    assert "Snapshot Count: 0" in result
+    assert "No evidence snapshots recorded." in result
+
+def test_career_background_verification_closure_evidence_snapshot_history_recorded():
+    add_test_application()
+
+    record_career_background_verification_closure_evidence_snapshot("1")
+    result = get_career_background_verification_closure_evidence_snapshot_history("1")
+
+    assert "Snapshot Count: 1" in result
+    assert "Verification: Not Submitted" in result
+    assert "Escalation: Not Received" in result
+    assert "Closure: Open" in result
+    assert "Audit Events: 0" in result
+
+def test_career_background_verification_closure_evidence_snapshot_history_not_found():
+    result = get_career_background_verification_closure_evidence_snapshot_history("999")
+
+    assert result == "Job application not found."
