@@ -370,6 +370,8 @@ def get_routing_plan(command):
         handler = "job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot_history"
     elif normalized_command.startswith("career background verification closure evidence snapshot comparison "):
         handler = "job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot_comparison"
+    elif normalized_command.startswith("career background verification closure evidence snapshot trend "):
+        handler = "job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot_trend"
     elif normalized_command.startswith("career background verification closure evidence snapshot "):
         handler = "job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot"
     elif normalized_command.startswith("career background verification closure evidence pack "):

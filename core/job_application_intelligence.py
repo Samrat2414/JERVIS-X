@@ -11594,3 +11594,76 @@ def get_career_background_verification_closure_evidence_snapshot_comparison(appl
         f"Closure Change: {closure_change}\n"
         f"Audit Event Count Change: {audit_change}"
     )
+
+
+def get_career_background_verification_closure_evidence_snapshot_trend(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    snapshot_history = application.get(
+        "background_verification_closure_evidence_snapshot_history",
+        [],
+    )
+
+    if len(snapshot_history) < 2:
+        return (
+            f"JERVIS Career Background Verification Closure Evidence Snapshot Trend - Application {application_id}\n"
+            "------------------------------------------------------------\n"
+            f"Company: {company}\n"
+            f"Role: {role}\n"
+            f"Snapshot Count: {len(snapshot_history)}\n"
+            "At least 2 evidence snapshots are required for trend analysis."
+        )
+
+    first = snapshot_history[0]
+    latest = snapshot_history[-1]
+
+    verification_rank = {
+        "Not Submitted": 0,
+        "Submitted": 1,
+        "In Review": 2,
+        "Verified": 3,
+    }
+    escalation_rank = {
+        "Not Received": 0,
+        "Received": 1,
+    }
+    closure_rank = {
+        "Open": 0,
+        "Pending Confirmation": 1,
+        "Closed": 2,
+    }
+
+    first_score = (
+        verification_rank.get(first.get("verification_status"), 0)
+        + escalation_rank.get(first.get("escalation_response"), 0)
+        + closure_rank.get(first.get("closure_status"), 0)
+    )
+    latest_score = (
+        verification_rank.get(latest.get("verification_status"), 0)
+        + escalation_rank.get(latest.get("escalation_response"), 0)
+        + closure_rank.get(latest.get("closure_status"), 0)
+    )
+
+    if latest_score > first_score:
+        trend = "IMPROVING"
+    elif latest_score < first_score:
+        trend = "REGRESSING"
+    else:
+        trend = "STABLE"
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Snapshot Trend - Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Snapshot Count: {len(snapshot_history)}\n"
+        f"First Snapshot: {first.get('snapshot_at', 'Unknown')}\n"
+        f"Latest Snapshot: {latest.get('snapshot_at', 'Unknown')}\n"
+        f"Evidence Trend: {trend}\n"
+        f"Score Change: {first_score} -> {latest_score}"
+    )
