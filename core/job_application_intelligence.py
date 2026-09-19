@@ -11742,3 +11742,78 @@ def get_career_background_verification_closure_evidence_snapshot_forecast(applic
         f"Score Direction: {first_score} -> {latest_score}\n"
         f"Next Action: {next_action}"
     )
+
+
+def get_career_background_verification_closure_evidence_snapshot_prediction(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    snapshot_history = application.get(
+        "background_verification_closure_evidence_snapshot_history",
+        [],
+    )
+
+    if len(snapshot_history) < 2:
+        return (
+            f"JERVIS Career Background Verification Closure Evidence Snapshot Prediction - Application {application_id}\n"
+            "------------------------------------------------------------\n"
+            f"Company: {company}\n"
+            f"Role: {role}\n"
+            f"Snapshot Count: {len(snapshot_history)}\n"
+            "At least 2 evidence snapshots are required for prediction analysis."
+        )
+
+    previous = snapshot_history[-2]
+    latest = snapshot_history[-1]
+
+    verification_rank = {
+        "Not Submitted": 0,
+        "Submitted": 1,
+        "In Review": 2,
+        "Verified": 3,
+    }
+    escalation_rank = {
+        "Not Received": 0,
+        "Received": 1,
+    }
+    closure_rank = {
+        "Open": 0,
+        "Pending Confirmation": 1,
+        "Closed": 2,
+    }
+
+    previous_score = (
+        verification_rank.get(previous.get("verification_status"), 0)
+        + escalation_rank.get(previous.get("escalation_response"), 0)
+        + closure_rank.get(previous.get("closure_status"), 0)
+    )
+    latest_score = (
+        verification_rank.get(latest.get("verification_status"), 0)
+        + escalation_rank.get(latest.get("escalation_response"), 0)
+        + closure_rank.get(latest.get("closure_status"), 0)
+    )
+
+    if latest_score > previous_score:
+        prediction = "IMPROVEMENT"
+        next_action = "Maintain progress and capture the next evidence update."
+    elif latest_score < previous_score:
+        prediction = "REGRESSION"
+        next_action = "Investigate the latest regression and restore evidence readiness."
+    else:
+        prediction = "STABLE"
+        next_action = "Monitor the next snapshot for a meaningful status change."
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Snapshot Prediction - Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Snapshot Count: {len(snapshot_history)}\n"
+        f"Prediction: {prediction}\n"
+        f"Recent Score Direction: {previous_score} -> {latest_score}\n"
+        f"Next Action: {next_action}"
+    )

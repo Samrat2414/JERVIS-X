@@ -87,6 +87,7 @@ HANDLERS = {
     "job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot_comparison": job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot_comparison,
     "job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot_trend": job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot_trend,
     "job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot_forecast": job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot_forecast,
+    "job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot_prediction": job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot_prediction,
     "job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot": job_application_handlers.handle_get_career_background_verification_closure_evidence_snapshot,
     "job_application_handlers.handle_get_career_background_verification_closure_risk": job_application_handlers.handle_get_career_background_verification_closure_risk,
     "job_application_handlers.handle_get_career_background_verification_closure_history": job_application_handlers.handle_get_career_background_verification_closure_history,
@@ -171,18 +172,3 @@ def handle_score_career_background_verification_closure_evidence_quality(command
     return score_career_background_verification_closure_evidence_quality(
         application_id
     )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
