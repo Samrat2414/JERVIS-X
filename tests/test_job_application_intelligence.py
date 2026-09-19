@@ -71,8 +71,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_closure_evidence_snapshot,
     record_career_background_verification_closure_evidence_snapshot,
     get_career_background_verification_closure_evidence_snapshot_history,
-    record_career_background_verification_closure_evidence_snapshot,
-    get_career_background_verification_closure_evidence_snapshot_history,
+    get_career_background_verification_closure_evidence_snapshot_comparison,
     analyze_career_background_verification_closure_evidence_audit,
     analyze_career_background_verification_closure_evidence_compliance,
     analyze_career_background_verification_closure_evidence_retention,
@@ -7236,3 +7235,44 @@ def test_career_background_verification_closure_evidence_snapshot_history_not_fo
     result = get_career_background_verification_closure_evidence_snapshot_history("999")
 
     assert result == "Job application not found."
+
+
+def test_career_background_verification_closure_evidence_snapshot_comparison_not_found():
+    result = get_career_background_verification_closure_evidence_snapshot_comparison("999")
+
+    assert result == "Job application not found."
+
+def test_career_background_verification_closure_evidence_snapshot_comparison_insufficient_snapshots():
+    add_test_application()
+
+    result = get_career_background_verification_closure_evidence_snapshot_comparison("1")
+
+    assert "Snapshot Count: 0" in result
+    assert "At least 2 evidence snapshots are required for comparison." in result
+
+def test_career_background_verification_closure_evidence_snapshot_comparison_unchanged():
+    add_test_application()
+
+    record_career_background_verification_closure_evidence_snapshot("1")
+    record_career_background_verification_closure_evidence_snapshot("1")
+
+    result = get_career_background_verification_closure_evidence_snapshot_comparison("1")
+
+    assert "Verification Change: UNCHANGED" in result
+    assert "Escalation Change: UNCHANGED" in result
+    assert "Closure Change: UNCHANGED" in result
+    assert "Audit Event Count Change: UNCHANGED" in result
+
+def test_career_background_verification_closure_evidence_snapshot_comparison_changed():
+    add_test_application()
+
+    record_career_background_verification_closure_evidence_snapshot("1")
+    update_career_background_verification_status("1", "Submitted")
+    record_career_background_verification_closure_evidence_snapshot("1")
+
+    result = get_career_background_verification_closure_evidence_snapshot_comparison("1")
+
+    assert "Verification Change: Not Submitted -> Submitted" in result
+    assert "Escalation Change: UNCHANGED" in result
+    assert "Closure Change: UNCHANGED" in result
+    assert "Audit Event Count Change: UNCHANGED" in result
