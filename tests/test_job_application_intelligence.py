@@ -75,6 +75,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_closure_evidence_snapshot_trend,
     get_career_background_verification_closure_evidence_snapshot_forecast,
     get_career_background_verification_closure_evidence_snapshot_prediction,
+    get_career_background_verification_closure_evidence_snapshot_projection,
     analyze_career_background_verification_closure_evidence_audit,
     analyze_career_background_verification_closure_evidence_compliance,
     analyze_career_background_verification_closure_evidence_retention,
@@ -7421,3 +7422,49 @@ def test_career_background_verification_closure_evidence_snapshot_prediction_reg
     assert "Prediction: REGRESSION" in result
     assert "Recent Score Direction: 1 -> 0" in result
     assert "Next Action: Investigate the latest regression and restore evidence readiness." in result
+
+
+
+def test_career_background_verification_closure_evidence_snapshot_projection_not_found():
+    result = get_career_background_verification_closure_evidence_snapshot_projection("999")
+    assert result == "Job application not found."
+
+
+def test_career_background_verification_closure_evidence_snapshot_projection_insufficient_snapshots():
+    add_test_application()
+    result = get_career_background_verification_closure_evidence_snapshot_projection("1")
+    assert "Snapshot Count: 0" in result
+    assert "At least 2 evidence snapshots are required for projection analysis." in result
+
+
+def test_career_background_verification_closure_evidence_snapshot_projection_steady():
+    add_test_application()
+    record_career_background_verification_closure_evidence_snapshot("1")
+    record_career_background_verification_closure_evidence_snapshot("1")
+    result = get_career_background_verification_closure_evidence_snapshot_projection("1")
+    assert "Projection: STEADY" in result
+    assert "Recent Score Direction: 0 -> 0" in result
+    assert "Projected Next Score: 0" in result
+
+
+def test_career_background_verification_closure_evidence_snapshot_projection_upward():
+    add_test_application()
+    record_career_background_verification_closure_evidence_snapshot("1")
+    update_career_background_verification_status("1", "Submitted")
+    record_career_background_verification_closure_evidence_snapshot("1")
+    result = get_career_background_verification_closure_evidence_snapshot_projection("1")
+    assert "Projection: UPWARD" in result
+    assert "Recent Score Direction: 0 -> 1" in result
+    assert "Projected Next Score: 2" in result
+
+
+def test_career_background_verification_closure_evidence_snapshot_projection_downward():
+    add_test_application()
+    update_career_background_verification_status("1", "Submitted")
+    record_career_background_verification_closure_evidence_snapshot("1")
+    update_career_background_verification_status("1", "Not Submitted")
+    record_career_background_verification_closure_evidence_snapshot("1")
+    result = get_career_background_verification_closure_evidence_snapshot_projection("1")
+    assert "Projection: DOWNWARD" in result
+    assert "Recent Score Direction: 1 -> 0" in result
+    assert "Projected Next Score: 0" in result
