@@ -11535,3 +11535,62 @@ def get_career_background_verification_closure_evidence_snapshot_history(applica
         )
 
     return "\n".join(lines)
+
+def get_career_background_verification_closure_evidence_snapshot_comparison(application_id):
+    application = get_job_application(application_id)
+
+    if application is None:
+        return "Job application not found."
+
+    company = application.get("company", "Unknown")
+    role = application.get("role", "Unknown")
+    snapshot_history = application.get(
+        "background_verification_closure_evidence_snapshot_history",
+        [],
+    )
+
+    if len(snapshot_history) < 2:
+        return (
+            f"JERVIS Career Background Verification Closure Evidence Snapshot Comparison - Application {application_id}\n"
+            "------------------------------------------------------------\n"
+            f"Company: {company}\n"
+            f"Role: {role}\n"
+            f"Snapshot Count: {len(snapshot_history)}\n"
+            "At least 2 evidence snapshots are required for comparison."
+        )
+
+    previous = snapshot_history[-2]
+    current = snapshot_history[-1]
+
+    def change(old, new):
+        return "UNCHANGED" if old == new else f"{old} -> {new}"
+
+    verification_change = change(
+        previous.get("verification_status", "Unknown"),
+        current.get("verification_status", "Unknown"),
+    )
+    escalation_change = change(
+        previous.get("escalation_response", "Unknown"),
+        current.get("escalation_response", "Unknown"),
+    )
+    closure_change = change(
+        previous.get("closure_status", "Unknown"),
+        current.get("closure_status", "Unknown"),
+    )
+    audit_change = change(
+        previous.get("audit_event_count", 0),
+        current.get("audit_event_count", 0),
+    )
+
+    return (
+        f"JERVIS Career Background Verification Closure Evidence Snapshot Comparison - Application {application_id}\n"
+        "------------------------------------------------------------\n"
+        f"Company: {company}\n"
+        f"Role: {role}\n"
+        f"Previous Snapshot: {previous.get('snapshot_at', 'Unknown')}\n"
+        f"Current Snapshot: {current.get('snapshot_at', 'Unknown')}\n"
+        f"Verification Change: {verification_change}\n"
+        f"Escalation Change: {escalation_change}\n"
+        f"Closure Change: {closure_change}\n"
+        f"Audit Event Count Change: {audit_change}"
+    )

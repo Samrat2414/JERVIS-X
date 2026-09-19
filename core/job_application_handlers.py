@@ -96,6 +96,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_closure_evidence_snapshot,
     record_career_background_verification_closure_evidence_snapshot,
     get_career_background_verification_closure_evidence_snapshot_history,
+    get_career_background_verification_closure_evidence_snapshot_comparison,
     generate_career_background_verification_closure_message,
     update_career_background_verification_closure,
     update_career_background_verification_escalation_response,
@@ -1290,5 +1291,23 @@ def handle_get_career_background_verification_closure_evidence_snapshot_history(
     application_id = int(application_id)
 
     return get_career_background_verification_closure_evidence_snapshot_history(
+        application_id
+    )
+
+
+def handle_get_career_background_verification_closure_evidence_snapshot_comparison(command):
+    application_id = command[
+        len("career background verification closure evidence snapshot comparison "):
+    ].strip()
+
+    if not application_id.isdigit():
+        return (
+            "Usage: career background verification closure evidence snapshot comparison "
+            "<application_id>"
+        )
+
+    application_id = int(application_id)
+
+    return get_career_background_verification_closure_evidence_snapshot_comparison(
         application_id
     )
