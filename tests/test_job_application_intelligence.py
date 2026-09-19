@@ -73,6 +73,7 @@ from core.job_application_intelligence import (
     get_career_background_verification_closure_evidence_snapshot_history,
     get_career_background_verification_closure_evidence_snapshot_comparison,
     get_career_background_verification_closure_evidence_snapshot_trend,
+    get_career_background_verification_closure_evidence_snapshot_forecast,
     analyze_career_background_verification_closure_evidence_audit,
     analyze_career_background_verification_closure_evidence_compliance,
     analyze_career_background_verification_closure_evidence_retention,
@@ -7332,3 +7333,44 @@ def test_career_background_verification_closure_evidence_snapshot_trend_regressi
 
     assert "Evidence Trend: REGRESSING" in result
     assert "Score Change: 1 -> 0" in result
+
+
+def test_career_background_verification_closure_evidence_snapshot_forecast_not_found():
+    result = get_career_background_verification_closure_evidence_snapshot_forecast("999")
+    assert result == "Job application not found."
+
+def test_career_background_verification_closure_evidence_snapshot_forecast_insufficient_snapshots():
+    add_test_application()
+    result = get_career_background_verification_closure_evidence_snapshot_forecast("1")
+    assert "Snapshot Count: 0" in result
+    assert "At least 2 evidence snapshots are required for forecast analysis." in result
+
+def test_career_background_verification_closure_evidence_snapshot_forecast_watch():
+    add_test_application()
+    record_career_background_verification_closure_evidence_snapshot("1")
+    record_career_background_verification_closure_evidence_snapshot("1")
+    result = get_career_background_verification_closure_evidence_snapshot_forecast("1")
+    assert "Forecast: WATCH" in result
+    assert "Score Direction: 0 -> 0" in result
+    assert "Next Action: Monitor for new evidence or status changes." in result
+
+def test_career_background_verification_closure_evidence_snapshot_forecast_positive():
+    add_test_application()
+    record_career_background_verification_closure_evidence_snapshot("1")
+    update_career_background_verification_status("1", "Submitted")
+    record_career_background_verification_closure_evidence_snapshot("1")
+    result = get_career_background_verification_closure_evidence_snapshot_forecast("1")
+    assert "Forecast: POSITIVE" in result
+    assert "Score Direction: 0 -> 1" in result
+    assert "Next Action: Continue current verification and closure progress." in result
+
+def test_career_background_verification_closure_evidence_snapshot_forecast_negative():
+    add_test_application()
+    update_career_background_verification_status("1", "Submitted")
+    record_career_background_verification_closure_evidence_snapshot("1")
+    update_career_background_verification_status("1", "Not Submitted")
+    record_career_background_verification_closure_evidence_snapshot("1")
+    result = get_career_background_verification_closure_evidence_snapshot_forecast("1")
+    assert "Forecast: NEGATIVE" in result
+    assert "Score Direction: 1 -> 0" in result
+    assert "Next Action: Review recent evidence changes and resolve regressions." in result
