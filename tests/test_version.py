@@ -136,3 +136,13 @@ def test_command_line_set_project_readiness():
         text=True,
     )
     assert "Project readiness updated to 75.0%." in result.stdout
+
+
+def test_command_line_set_resume_readiness():
+    result = subprocess.run(
+        [sys.executable, "main.py", "set resume readiness 80"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "Resume readiness updated to 80.0%." in result.stdout
