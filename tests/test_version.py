@@ -146,3 +146,13 @@ def test_command_line_set_resume_readiness():
         text=True,
     )
     assert "Resume readiness updated to 80.0%." in result.stdout
+
+
+def test_command_line_set_application_readiness():
+    result = subprocess.run(
+        [sys.executable, "main.py", "set application readiness 70"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "Application readiness updated to 70.0%." in result.stdout
