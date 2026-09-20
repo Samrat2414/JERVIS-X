@@ -105,3 +105,14 @@ def test_command_line_best_career_action():
     assert "Action:" in result.stdout
     assert "Priority:" in result.stdout
     assert "Reason:" in result.stdout
+
+
+def test_command_line_career_recommendations():
+    result = subprocess.run(
+        [sys.executable, "main.py", "career recommendations"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "JERVIS CAREER RECOMMENDATIONS" in result.stdout
+    assert "Safety: Career Intelligence provides planning recommendations only." in result.stdout
