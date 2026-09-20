@@ -92,3 +92,16 @@ def test_command_line_career_intelligence():
     assert "JERVIS SMART CAREER & JOB INTELLIGENCE" in result.stdout
     assert "Job Readiness Score:" in result.stdout
     assert "Target Role:" in result.stdout
+
+
+def test_command_line_best_career_action():
+    result = subprocess.run(
+        [sys.executable, "main.py", "best career action"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "JERVIS BEST NEXT CAREER ACTION" in result.stdout
+    assert "Action:" in result.stdout
+    assert "Priority:" in result.stdout
+    assert "Reason:" in result.stdout
