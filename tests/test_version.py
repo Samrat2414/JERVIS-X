@@ -126,3 +126,13 @@ def test_command_line_set_target_role():
         text=True,
     )
     assert "Target career role set to Python Developer." in result.stdout
+
+
+def test_command_line_set_project_readiness():
+    result = subprocess.run(
+        [sys.executable, "main.py", "set project readiness 75"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "Project readiness updated to 75.0%." in result.stdout
