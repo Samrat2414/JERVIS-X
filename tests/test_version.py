@@ -80,3 +80,15 @@ def test_command_line_diagnostics_json():
     assert data["total"] == 5
     assert len(data["checks"]) == 5
     assert "healthy" in data
+
+
+def test_command_line_career_intelligence():
+    result = subprocess.run(
+        [sys.executable, "main.py", "career intelligence"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "JERVIS SMART CAREER & JOB INTELLIGENCE" in result.stdout
+    assert "Job Readiness Score:" in result.stdout
+    assert "Target Role:" in result.stdout
