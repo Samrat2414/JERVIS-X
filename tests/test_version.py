@@ -116,3 +116,13 @@ def test_command_line_career_recommendations():
     )
     assert "JERVIS CAREER RECOMMENDATIONS" in result.stdout
     assert "Safety: Career Intelligence provides planning recommendations only." in result.stdout
+
+
+def test_command_line_set_target_role():
+    result = subprocess.run(
+        [sys.executable, "main.py", "set target role Python Developer"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "Target career role set to Python Developer." in result.stdout
