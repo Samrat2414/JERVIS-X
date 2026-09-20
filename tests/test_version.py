@@ -221,3 +221,16 @@ def test_command_line_career_intelligence_report():
     assert "Job Readiness Score:" in result.stdout
     assert "Target Role:" in result.stdout
     assert "BEST NEXT CAREER ACTION" in result.stdout
+
+
+def test_command_line_job_intelligence_report():
+    result = subprocess.run(
+        [sys.executable, "main.py", "job intelligence report"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "JERVIS SMART CAREER & JOB INTELLIGENCE" in result.stdout
+    assert "Job Readiness Score:" in result.stdout
+    assert "Target Role:" in result.stdout
+    assert "BEST NEXT CAREER ACTION" in result.stdout
