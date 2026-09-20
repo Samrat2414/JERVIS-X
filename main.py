@@ -193,6 +193,13 @@ def main():
         return
 
     if len(sys.argv) > 1:
+        if not sys.argv[1].startswith("-"):
+            from core.brain import process_command
+
+            command = " ".join(sys.argv[1:]).strip()
+            print(process_command(command))
+            return
+
         print(f"Unknown option: {sys.argv[1]}\n")
         print(CLI_HELP)
         return 2
