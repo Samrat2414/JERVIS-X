@@ -156,3 +156,16 @@ def test_command_line_set_application_readiness():
         text=True,
     )
     assert "Application readiness updated to 70.0%." in result.stdout
+
+
+def test_command_line_job_readiness():
+    result = subprocess.run(
+        [sys.executable, "main.py", "job readiness"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "JERVIS CAREER & JOB READINESS" in result.stdout
+    assert "Job Readiness Score:" in result.stdout
+    assert "Career Status:" in result.stdout
+    assert "Target Role:" in result.stdout
