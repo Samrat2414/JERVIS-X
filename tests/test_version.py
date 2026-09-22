@@ -299,3 +299,16 @@ def test_command_line_best_next_career_action():
     assert "Action:" in result.stdout
     assert "Priority:" in result.stdout
     assert "Reason:" in result.stdout
+
+
+def test_command_line_what_should_i_do_to_become_job_ready():
+    result = subprocess.run(
+        [sys.executable, "main.py", "what should i do to become job ready"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "JERVIS BEST NEXT CAREER ACTION" in result.stdout
+    assert "Action:" in result.stdout
+    assert "Priority:" in result.stdout
+    assert "Reason:" in result.stdout
