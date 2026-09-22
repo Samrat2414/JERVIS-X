@@ -273,3 +273,16 @@ def test_command_line_career_readiness_score():
     assert "Job Readiness Score:" in result.stdout
     assert "Career Status:" in result.stdout
     assert "Target Role:" in result.stdout
+
+
+def test_command_line_career_score():
+    result = subprocess.run(
+        [sys.executable, "main.py", "career score"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert "JERVIS CAREER & JOB READINESS" in result.stdout
+    assert "Job Readiness Score:" in result.stdout
+    assert "Career Status:" in result.stdout
+    assert "Target Role:" in result.stdout
