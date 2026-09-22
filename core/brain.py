@@ -159,6 +159,10 @@ from core.decision_intelligence import (
     get_best_next_action,
     get_decision_recommendations,
 )
+from core.decision_action_bridge import (
+    resolve_decision_action,
+    execute_action,
+)
 from core.context_intelligence import (
     resolve_context,
     get_context_system_status,
@@ -1052,6 +1056,25 @@ def process_command(command):
             "It does not automatically execute system or productivity actions."
         )
 
+    # Decision Action Bridge - preview only
+    if command in [
+        "decision action",
+        "preview decision action",
+        "decision action preview",
+    ]:
+        decision = get_best_next_action()
+        resolved = resolve_decision_action(decision)
+
+        return (
+            "JERVIS DECISION ACTION PREVIEW\n\n"
+            f"Decision: {decision.get('title', 'Unknown')}\n"
+            f"Recommended Action: {decision.get('action', '')}\n"
+            f"Bridge Status: {resolved.get('status', 'unsupported')}\n"
+            f"Executable Action: {resolved.get('action_name') or 'None'}\n"
+            f"Route: {resolved.get('route', 'None')}\n"
+            f"Message: {resolved.get('message', '')}\n\n"
+            "Safety: Preview only. No action was executed."
+        )
     # Step 80: Smart Context & Conversation Intelligence
     if command in [
         "context intelligence",
@@ -4402,3 +4425,6 @@ def process_command(command):
 
     # AI fallback
     return ask_ai(original_command)
+
+
+
