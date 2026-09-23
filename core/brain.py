@@ -160,6 +160,7 @@ from core.decision_intelligence import (
     get_decision_recommendations,
 )
 from core.decision_action_bridge import (
+    CONFIRM,
     resolve_decision_action,
     execute_action,
     execute_decision,
@@ -1057,6 +1058,59 @@ def process_command(command):
             "It does not automatically execute system or productivity actions."
         )
 
+    # Decision Action Bridge - explicit confirmation
+    if command.startswith("confirm decision action "):
+        rank_text = command.removeprefix(
+            "confirm decision action "
+        ).strip()
+
+        if not rank_text.isdigit():
+            return (
+                "Invalid decision rank. "
+                "Example: confirm decision action 3"
+            )
+
+        rank = int(rank_text)
+        decisions = get_ranked_decisions(
+            limit=max(10, rank)
+        )
+
+        if rank < 1 or rank > len(decisions):
+            return (
+                f"Decision rank {rank} is not available. "
+                f"Available ranks: 1-{len(decisions)}."
+            )
+
+        decision = decisions[rank - 1]
+        resolved = resolve_decision_action(decision)
+
+        if resolved.get("status") != CONFIRM:
+            return (
+                "Confirmation rejected.\n\n"
+                f"Rank: {rank}\n"
+                f"Decision: {decision.get('title', 'Unknown')}\n"
+                f"Status: {resolved.get('status', 'unsupported')}\n"
+                f"Action: {resolved.get('action_name') or 'None'}\n\n"
+                "This decision is not classified as a "
+                "confirmation-required action."
+            )
+
+        result = execute_decision(
+            decision,
+            confirmed=True,
+        )
+
+        return (
+            "JERVIS DECISION ACTION CONFIRMED\n\n"
+            f"Rank: {rank}\n"
+            f"Decision: {decision.get('title', 'Unknown')}\n"
+            f"Status: {result.get('status', 'unsupported')}\n"
+            f"Action: {result.get('action_name') or 'None'}\n"
+            f"Success: {'Yes' if result.get('success') else 'No'}\n"
+            f"Message: {result.get('message', '')}\n\n"
+            "Safety: Confirmation was accepted only for an "
+            "action classified as confirmation-required."
+        )
     # Decision Action Bridge - controlled execution
     if command.startswith("execute decision action "):
         rank_text = command.removeprefix(
@@ -4492,6 +4546,8 @@ def process_command(command):
 
     # AI fallback
     return ask_ai(original_command)
+
+
 
 
 

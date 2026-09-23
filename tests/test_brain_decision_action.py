@@ -138,3 +138,132 @@ def test_execute_decision_action_rejects_invalid_rank(monkeypatch):
         "Example: execute decision action 3"
     )
     assert called["value"] is False
+
+
+def test_confirm_decision_action_rejects_safe_action(monkeypatch):
+    decisions = [
+        {
+            "title": "Reduce RAM usage",
+            "action": "Close unused applications and browser tabs.",
+            "source": "System Health",
+            "rank": 1,
+        },
+    ]
+
+    monkeypatch.setattr(
+        brain,
+        "get_ranked_decisions",
+        lambda limit=10: decisions,
+    )
+
+    monkeypatch.setattr(
+        brain,
+        "resolve_decision_action",
+        lambda decision: {
+            "action_name": "open_task_manager",
+            "status": "safe",
+            "message": "Safe action.",
+        },
+    )
+
+    called = {"value": False}
+
+    def fake_execute_decision(decision, confirmed=False, target=None):
+        called["value"] = True
+        return {}
+
+    monkeypatch.setattr(
+        brain,
+        "execute_decision",
+        fake_execute_decision,
+    )
+
+    result = brain.process_command(
+        "confirm decision action 1"
+    )
+
+    assert "Confirmation rejected." in result
+    assert "Status: safe" in result
+    assert called["value"] is False
+
+
+def test_confirm_decision_action_executes_confirm_action(monkeypatch):
+    decisions = [
+        {
+            "title": "Lock the PC",
+            "action": "Lock the Windows PC.",
+            "source": "System Safety",
+            "rank": 1,
+        },
+    ]
+
+    monkeypatch.setattr(
+        brain,
+        "get_ranked_decisions",
+        lambda limit=10: decisions,
+    )
+
+    monkeypatch.setattr(
+        brain,
+        "resolve_decision_action",
+        lambda decision: {
+            "action_name": "lock_pc",
+            "status": brain.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    called = {}
+
+    def fake_execute_decision(decision, confirmed=False, target=None):
+        called["decision"] = decision
+        called["confirmed"] = confirmed
+
+        return {
+            "success": True,
+            "status": brain.CONFIRM,
+            "action_name": "lock_pc",
+            "route": None,
+            "message": "PC lock simulated.",
+        }
+
+    monkeypatch.setattr(
+        brain,
+        "execute_decision",
+        fake_execute_decision,
+    )
+
+    result = brain.process_command(
+        "confirm decision action 1"
+    )
+
+    assert called["decision"] == decisions[0]
+    assert called["confirmed"] is True
+    assert "JERVIS DECISION ACTION CONFIRMED" in result
+    assert "Action: lock_pc" in result
+    assert "Success: Yes" in result
+    assert "PC lock simulated." in result
+
+
+def test_confirm_decision_action_rejects_invalid_rank(monkeypatch):
+    called = {"value": False}
+
+    def fake_execute_decision(decision, confirmed=False, target=None):
+        called["value"] = True
+        return {}
+
+    monkeypatch.setattr(
+        brain,
+        "execute_decision",
+        fake_execute_decision,
+    )
+
+    result = brain.process_command(
+        "confirm decision action abc"
+    )
+
+    assert result == (
+        "Invalid decision rank. "
+        "Example: confirm decision action 3"
+    )
+    assert called["value"] is False
