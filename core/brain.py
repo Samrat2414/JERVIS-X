@@ -1062,17 +1062,26 @@ def process_command(command):
 
     # Decision Action Bridge - explicit confirmation
     if command.startswith("confirm decision action "):
-        rank_text = command.removeprefix(
+        confirmation_text = command.removeprefix(
             "confirm decision action "
         ).strip()
 
-        if not rank_text.isdigit():
+        parts = confirmation_text.split()
+
+        if len(parts) != 2 or not parts[0].isdigit():
             return (
-                "Invalid decision rank. "
-                "Example: confirm decision action 3"
+                "Invalid confirmation command. "
+                "Example: confirm decision action 3 A7F29C"
             )
 
-        rank = int(rank_text)
+        rank = int(parts[0])
+        confirmation_token = parts[1].strip().upper()
+
+        if not confirmation_token:
+            return (
+                "Invalid confirmation token. "
+                "A confirmation token is required."
+            )
         decisions = get_ranked_decisions(
             limit=max(10, rank)
         )
@@ -1097,7 +1106,10 @@ def process_command(command):
                 "confirmation-required action."
             )
 
-        confirmation = consume_pending_confirmation(decision)
+        confirmation = consume_pending_confirmation(
+            decision,
+            confirmation_token,
+        )
 
         if not confirmation.get("success"):
             return (
@@ -1164,7 +1176,9 @@ def process_command(command):
                 f"Action: {pending.get('action_name') or 'None'}\n"
                 f"Success: {'Yes' if pending.get('success') else 'No'}\n"
                 f"Message: {pending.get('message', '')}\n\n"
-                f"To continue, use: confirm decision action {rank}\n"
+                f"Confirmation Token: {pending.get('token') or 'None'}\n"
+                f"To continue, use: confirm decision action "
+                f"{rank} {pending.get('token') or '<TOKEN>'}\n"
                 "Safety: The exact decision/action context has been "
                 "stored. No confirmation-required action was executed."
             )

@@ -179,7 +179,7 @@ def test_confirm_decision_action_rejects_safe_action(monkeypatch):
     )
 
     result = brain.process_command(
-        "confirm decision action 1"
+        "confirm decision action 1 A7F29C"
     )
 
     assert "Confirmation rejected." in result
@@ -222,15 +222,25 @@ def test_confirm_decision_action_uses_pending_context(monkeypatch):
             "success": True,
             "status": brain.CONFIRM,
             "action_name": "lock_pc",
+            "token": "A7F29C",
             "message": "Pending confirmation context created.",
         }
 
-    def fake_consume_pending_confirmation(decision):
+    def fake_consume_pending_confirmation(decision, token=None):
+        pending["received_token"] = token
+
         if not pending["created"] or pending["consumed"]:
             return {
                 "success": False,
                 "status": brain.CONFIRM,
                 "message": "No pending decision confirmation exists.",
+            }
+
+        if token != "A7F29C":
+            return {
+                "success": False,
+                "status": brain.CONFIRM,
+                "message": "Invalid confirmation token.",
             }
 
         pending["consumed"] = True
@@ -280,13 +290,16 @@ def test_confirm_decision_action_uses_pending_context(monkeypatch):
     assert pending["created"] is True
     assert calls == []
     assert "PENDING CONFIRMATION" in pending_result
+    assert "Confirmation Token: A7F29C" in pending_result
+    assert "confirm decision action 1 A7F29C" in pending_result
     assert "No confirmation-required action was executed." in pending_result
 
     confirmed_result = brain.process_command(
-        "confirm decision action 1"
+        "confirm decision action 1 A7F29C"
     )
 
     assert pending["consumed"] is True
+    assert pending["received_token"] == "A7F29C"
     assert len(calls) == 1
     assert calls[0]["decision"] == decisions[0]
     assert calls[0]["confirmed"] is True
@@ -296,7 +309,7 @@ def test_confirm_decision_action_uses_pending_context(monkeypatch):
     assert "PC lock simulated." in confirmed_result
 
     replay_result = brain.process_command(
-        "confirm decision action 1"
+        "confirm decision action 1 A7F29C"
     )
 
     assert len(calls) == 1
@@ -322,7 +335,76 @@ def test_confirm_decision_action_rejects_invalid_rank(monkeypatch):
     )
 
     assert result == (
-        "Invalid decision rank. "
-        "Example: confirm decision action 3"
+        "Invalid confirmation command. "
+        "Example: confirm decision action 3 A7F29C"
     )
     assert called["value"] is False
+
+
+
+def test_confirm_decision_action_rejects_wrong_token(monkeypatch):
+    decisions = [
+        {
+            "title": "Lock the PC",
+            "action": "Lock the Windows PC.",
+            "source": "System Safety",
+            "rank": 1,
+        },
+    ]
+
+    monkeypatch.setattr(
+        brain,
+        "get_ranked_decisions",
+        lambda limit=10: decisions,
+    )
+
+    monkeypatch.setattr(
+        brain,
+        "resolve_decision_action",
+        lambda decision: {
+            "action_name": "lock_pc",
+            "status": brain.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    received = {}
+    executed = {"value": False}
+
+    def fake_consume_pending_confirmation(decision, token=None):
+        received["decision"] = decision
+        received["token"] = token
+
+        return {
+            "success": False,
+            "status": brain.CONFIRM,
+            "action_name": "lock_pc",
+            "message": "Invalid confirmation token.",
+        }
+
+    def fake_execute_decision(decision, confirmed=False, target=None):
+        executed["value"] = True
+        return {}
+
+    monkeypatch.setattr(
+        brain,
+        "consume_pending_confirmation",
+        fake_consume_pending_confirmation,
+    )
+
+    monkeypatch.setattr(
+        brain,
+        "execute_decision",
+        fake_execute_decision,
+    )
+
+    result = brain.process_command(
+        "confirm decision action 1 BAD999"
+    )
+
+    assert received["decision"] == decisions[0]
+    assert received["token"] == "BAD999"
+    assert executed["value"] is False
+
+    assert "Confirmation rejected." in result
+    assert "Invalid confirmation token." in result

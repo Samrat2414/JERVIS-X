@@ -1,6 +1,7 @@
 """Bridge between JERVIS Decision Intelligence and safe automation actions."""
 
 import hashlib
+import secrets
 import time
 
 from core.automation import (
@@ -68,10 +69,13 @@ def create_pending_confirmation(decision):
         action_name,
     )
 
+    confirmation_token = secrets.token_hex(3).upper()
+
     _PENDING_CONFIRMATION = {
         "fingerprint": fingerprint,
         "action_name": action_name,
         "created_at": time.monotonic(),
+        "token": confirmation_token,
     }
 
     return {
@@ -79,6 +83,7 @@ def create_pending_confirmation(decision):
         "status": CONFIRM,
         "action_name": action_name,
         "fingerprint": fingerprint,
+        "token": confirmation_token,
         "message": "Pending confirmation context created.",
     }
 
@@ -307,7 +312,7 @@ def execute_decision(decision, confirmed=False, target=None):
 
 
 
-def verify_pending_confirmation(decision):
+def verify_pending_confirmation(decision, token=None):
     """Verify that a decision matches the pending confirmation context."""
 
     pending = get_pending_confirmation()
@@ -317,6 +322,29 @@ def verify_pending_confirmation(decision):
             "success": False,
             "status": CONFIRM,
             "message": "No pending decision confirmation exists.",
+        }
+
+    supplied_token = str(token or "").strip().upper()
+    stored_token = str(pending.get("token") or "").strip().upper()
+
+    if not supplied_token:
+        return {
+            "success": False,
+            "status": CONFIRM,
+            "message": "Confirmation token is required.",
+        }
+
+    if (
+        not stored_token
+        or not secrets.compare_digest(
+            supplied_token,
+            stored_token,
+        )
+    ):
+        return {
+            "success": False,
+            "status": CONFIRM,
+            "message": "Invalid confirmation token.",
         }
 
     resolved = resolve_decision_action(decision)
@@ -367,10 +395,10 @@ def verify_pending_confirmation(decision):
     }
 
 
-def consume_pending_confirmation(decision):
+def consume_pending_confirmation(decision, token=None):
     """Verify and consume a matching pending confirmation."""
 
-    result = verify_pending_confirmation(decision)
+    result = verify_pending_confirmation(decision, token)
 
     if not result.get("success"):
         return result

@@ -314,7 +314,8 @@ def test_pending_confirmation_rejects_changed_decision(monkeypatch):
     assert created["success"] is True
 
     result = bridge.verify_pending_confirmation(
-        changed_decision
+        changed_decision,
+        created["token"],
     )
 
     assert result["success"] is False
@@ -346,7 +347,10 @@ def test_pending_confirmation_accepts_exact_decision(monkeypatch):
     )
 
     created = bridge.create_pending_confirmation(decision)
-    verified = bridge.verify_pending_confirmation(decision)
+    verified = bridge.verify_pending_confirmation(
+        decision,
+        created["token"],
+    )
 
     assert created["success"] is True
     assert verified["success"] is True
@@ -381,13 +385,19 @@ def test_pending_confirmation_is_single_use(monkeypatch):
     created = bridge.create_pending_confirmation(decision)
     assert created["success"] is True
 
-    first = bridge.consume_pending_confirmation(decision)
+    first = bridge.consume_pending_confirmation(
+        decision,
+        created["token"],
+    )
 
     assert first["success"] is True
     assert first["action_name"] == "lock_pc"
     assert bridge.get_pending_confirmation() is None
 
-    second = bridge.consume_pending_confirmation(decision)
+    second = bridge.consume_pending_confirmation(
+        decision,
+        created["token"],
+    )
 
     assert second["success"] is False
     assert second["status"] == bridge.CONFIRM
@@ -488,9 +498,96 @@ def test_expired_confirmation_cannot_be_consumed(monkeypatch):
         + bridge.PENDING_CONFIRMATION_TTL_SECONDS
     )
 
-    result = bridge.consume_pending_confirmation(decision)
+    result = bridge.consume_pending_confirmation(
+        decision,
+        created["token"],
+    )
 
     assert result["success"] is False
     assert result["status"] == bridge.CONFIRM
     assert bridge.get_pending_confirmation() is None
     assert "No pending decision confirmation exists" in result["message"]
+
+
+
+def test_pending_confirmation_rejects_missing_token(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_pending_confirmation()
+
+    decision = {
+        "title": "Lock the PC",
+        "action": "Lock the Windows PC.",
+        "source": "System Safety",
+    }
+
+    monkeypatch.setattr(
+        bridge,
+        "resolve_decision_action",
+        lambda item: {
+            "action_name": "lock_pc",
+            "status": bridge.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    created = bridge.create_pending_confirmation(decision)
+    assert created["success"] is True
+
+    result = bridge.verify_pending_confirmation(decision)
+
+    assert result["success"] is False
+    assert result["status"] == bridge.CONFIRM
+    assert "Confirmation token is required." in result["message"]
+
+    # Failed verification must not consume the valid pending session.
+    assert bridge.get_pending_confirmation() is not None
+
+    bridge.clear_pending_confirmation()
+
+
+def test_pending_confirmation_rejects_wrong_token(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_pending_confirmation()
+
+    decision = {
+        "title": "Lock the PC",
+        "action": "Lock the Windows PC.",
+        "source": "System Safety",
+    }
+
+    monkeypatch.setattr(
+        bridge,
+        "resolve_decision_action",
+        lambda item: {
+            "action_name": "lock_pc",
+            "status": bridge.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    created = bridge.create_pending_confirmation(decision)
+    assert created["success"] is True
+
+    wrong_token = (
+        "000000"
+        if created["token"] != "000000"
+        else "FFFFFF"
+    )
+
+    result = bridge.consume_pending_confirmation(
+        decision,
+        wrong_token,
+    )
+
+    assert result["success"] is False
+    assert result["status"] == bridge.CONFIRM
+    assert "Invalid confirmation token." in result["message"]
+
+    # Wrong token must not destroy the legitimate pending session.
+    pending = bridge.get_pending_confirmation()
+    assert pending is not None
+    assert pending["token"] == created["token"]
+
+    bridge.clear_pending_confirmation()
