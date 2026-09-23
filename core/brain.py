@@ -162,6 +162,7 @@ from core.decision_intelligence import (
 from core.decision_action_bridge import (
     resolve_decision_action,
     execute_action,
+    execute_decision,
 )
 from core.context_intelligence import (
     resolve_context,
@@ -1056,6 +1057,47 @@ def process_command(command):
             "It does not automatically execute system or productivity actions."
         )
 
+    # Decision Action Bridge - controlled execution
+    if command.startswith("execute decision action "):
+        rank_text = command.removeprefix(
+            "execute decision action "
+        ).strip()
+
+        if not rank_text.isdigit():
+            return (
+                "Invalid decision rank. "
+                "Example: execute decision action 3"
+            )
+
+        rank = int(rank_text)
+        decisions = get_ranked_decisions(
+            limit=max(10, rank)
+        )
+
+        if rank < 1 or rank > len(decisions):
+            return (
+                f"Decision rank {rank} is not available. "
+                f"Available ranks: 1-{len(decisions)}."
+            )
+
+        decision = decisions[rank - 1]
+        result = execute_decision(
+            decision,
+            confirmed=False,
+        )
+
+        return (
+            "JERVIS DECISION ACTION EXECUTION\n\n"
+            f"Rank: {rank}\n"
+            f"Decision: {decision.get('title', 'Unknown')}\n"
+            f"Status: {result.get('status', 'unsupported')}\n"
+            f"Action: {result.get('action_name') or 'None'}\n"
+            f"Route: {result.get('route', 'None')}\n"
+            f"Success: {'Yes' if result.get('success') else 'No'}\n"
+            f"Message: {result.get('message', '')}\n\n"
+            "Safety: Confirmation-required actions are not "
+            "executed without explicit confirmation."
+        )
     # Decision Action Bridge - ranked preview only
     if (
         command in [
@@ -4450,6 +4492,8 @@ def process_command(command):
 
     # AI fallback
     return ask_ai(original_command)
+
+
 
 
 

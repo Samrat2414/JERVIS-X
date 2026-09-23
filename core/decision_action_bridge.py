@@ -173,3 +173,34 @@ def resolve_decision_action(decision):
     }
 
 
+
+
+def execute_decision(decision, confirmed=False, target=None):
+    """Resolve and safely execute an actionable decision."""
+
+    resolved = resolve_decision_action(decision)
+    action_name = resolved.get("action_name")
+
+    if not action_name:
+        return {
+            "success": False,
+            "status": resolved.get("status", UNSUPPORTED),
+            "action_name": None,
+            "route": resolved.get("route"),
+            "message": resolved.get(
+                "message",
+                "No executable action is available for this decision.",
+            ),
+        }
+
+    result = execute_action(
+        action_name,
+        confirmed=confirmed,
+        target=target,
+    )
+
+    return {
+        **result,
+        "action_name": action_name,
+        "route": resolved.get("route"),
+    }
