@@ -1056,17 +1056,42 @@ def process_command(command):
             "It does not automatically execute system or productivity actions."
         )
 
-    # Decision Action Bridge - preview only
-    if command in [
-        "decision action",
-        "preview decision action",
-        "decision action preview",
-    ]:
-        decision = get_best_next_action()
+    # Decision Action Bridge - ranked preview only
+    if (
+        command in [
+            "decision action",
+            "preview decision action",
+            "decision action preview",
+        ]
+        or command.startswith("decision action ")
+    ):
+        rank = 1
+
+        if command.startswith("decision action "):
+            rank_text = command.removeprefix("decision action ").strip()
+
+            if not rank_text.isdigit():
+                return (
+                    "Invalid decision rank. "
+                    "Example: decision action 2"
+                )
+
+            rank = int(rank_text)
+
+        decisions = get_ranked_decisions(limit=max(10, rank))
+
+        if rank < 1 or rank > len(decisions):
+            return (
+                f"Decision rank {rank} is not available. "
+                f"Available ranks: 1-{len(decisions)}."
+            )
+
+        decision = decisions[rank - 1]
         resolved = resolve_decision_action(decision)
 
         return (
             "JERVIS DECISION ACTION PREVIEW\n\n"
+            f"Rank: {rank}\n"
             f"Decision: {decision.get('title', 'Unknown')}\n"
             f"Recommended Action: {decision.get('action', '')}\n"
             f"Bridge Status: {resolved.get('status', 'unsupported')}\n"
@@ -4425,6 +4450,7 @@ def process_command(command):
 
     # AI fallback
     return ask_ai(original_command)
+
 
 
 

@@ -62,3 +62,36 @@ def test_safe_action_executes_mapped_function(monkeypatch):
     assert result["success"] is True
     assert result["status"] == "safe"
     assert called["value"] is True
+
+
+def test_disk_decision_routes_to_cleanup_analysis():
+    decision = {
+        "title": "Free disk space",
+        "priority": "Critical",
+        "action": (
+            "Review large files and safe cleanup recommendations, "
+            "then free disk space."
+        ),
+        "source": "System Health",
+    }
+
+    result = resolve_decision_action(decision)
+
+    assert result["action_name"] is None
+    assert result["status"] == "safe"
+    assert result["route"] == "cleanup analysis"
+
+
+def test_ram_decision_routes_to_task_manager():
+    decision = {
+        "title": "Reduce RAM pressure",
+        "priority": "Critical",
+        "action": "Close unused applications and browser tabs.",
+        "source": "System Health",
+    }
+
+    result = resolve_decision_action(decision)
+
+    assert result["action_name"] == "open_task_manager"
+    assert result["status"] == "safe"
+    assert "not close applications automatically" in result["message"]

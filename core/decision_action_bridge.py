@@ -122,6 +122,39 @@ def resolve_decision_action(decision):
         }
 
     if (
+        "system health" in source
+        and (
+            "disk space" in action_text
+            or "large files" in action_text
+            or "cleanup" in action_text
+        )
+    ):
+        return {
+            "action_name": None,
+            "status": SAFE,
+            "route": "cleanup analysis",
+            "message": (
+                "Open Disk Cleanup Analysis to review safe cleanup "
+                "recommendations. No files will be deleted automatically."
+            ),
+        }
+    if (
+        "system health" in source
+        and (
+            "ram" in action_text
+            or "unused applications" in action_text
+            or "browser tabs" in action_text
+        )
+    ):
+        return {
+            "action_name": "open_task_manager",
+            "status": SAFE,
+            "message": (
+                "RAM pressure can be reviewed safely in Task Manager. "
+                "JERVIS will not close applications automatically."
+            ),
+        }
+    if (
         "task manager" in action_text
         or "high-cpu" in action_text
         or "high cpu" in action_text
@@ -138,3 +171,5 @@ def resolve_decision_action(decision):
         "status": UNSUPPORTED,
         "message": "No safe executable action is mapped for this decision.",
     }
+
+
