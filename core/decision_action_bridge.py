@@ -1,6 +1,7 @@
 """Bridge between JERVIS Decision Intelligence and safe automation actions."""
 
 import hashlib
+import time
 
 from core.automation import (
     open_task_manager,
@@ -15,6 +16,7 @@ from core.automation import (
 
 
 # Pending confirmation is process-local and intentionally short-lived.
+PENDING_CONFIRMATION_TTL_SECONDS = 60
 _PENDING_CONFIRMATION = None
 
 
@@ -69,6 +71,7 @@ def create_pending_confirmation(decision):
     _PENDING_CONFIRMATION = {
         "fingerprint": fingerprint,
         "action_name": action_name,
+        "created_at": time.monotonic(),
     }
 
     return {
@@ -88,9 +91,23 @@ def clear_pending_confirmation():
 
 
 def get_pending_confirmation():
-    """Return a copy of the pending confirmation context."""
+    """Return a valid pending confirmation or clear it if expired."""
+
+    global _PENDING_CONFIRMATION
 
     if _PENDING_CONFIRMATION is None:
+        return None
+
+    created_at = _PENDING_CONFIRMATION.get("created_at")
+
+    if created_at is None:
+        clear_pending_confirmation()
+        return None
+
+    age = time.monotonic() - created_at
+
+    if age >= PENDING_CONFIRMATION_TTL_SECONDS:
+        clear_pending_confirmation()
         return None
 
     return dict(_PENDING_CONFIRMATION)

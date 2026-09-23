@@ -392,3 +392,105 @@ def test_pending_confirmation_is_single_use(monkeypatch):
     assert second["success"] is False
     assert second["status"] == bridge.CONFIRM
     assert "No pending decision confirmation exists" in second["message"]
+
+
+def test_pending_confirmation_expires_at_ttl(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_pending_confirmation()
+
+    decision = {
+        "title": "Lock the PC",
+        "action": "Lock the Windows PC.",
+        "source": "System Safety",
+    }
+
+    clock = {"now": 100.0}
+
+    monkeypatch.setattr(
+        bridge.time,
+        "monotonic",
+        lambda: clock["now"],
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "resolve_decision_action",
+        lambda item: {
+            "action_name": "lock_pc",
+            "status": bridge.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    created = bridge.create_pending_confirmation(decision)
+
+    assert created["success"] is True
+
+    # One second before TTL: still valid.
+    clock["now"] = (
+        100.0
+        + bridge.PENDING_CONFIRMATION_TTL_SECONDS
+        - 1
+    )
+
+    pending = bridge.get_pending_confirmation()
+
+    assert pending is not None
+    assert pending["action_name"] == "lock_pc"
+
+    # Exactly at TTL: expired and automatically cleared.
+    clock["now"] = (
+        100.0
+        + bridge.PENDING_CONFIRMATION_TTL_SECONDS
+    )
+
+    expired = bridge.get_pending_confirmation()
+
+    assert expired is None
+    assert bridge.get_pending_confirmation() is None
+
+
+def test_expired_confirmation_cannot_be_consumed(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_pending_confirmation()
+
+    decision = {
+        "title": "Lock the PC",
+        "action": "Lock the Windows PC.",
+        "source": "System Safety",
+    }
+
+    clock = {"now": 500.0}
+
+    monkeypatch.setattr(
+        bridge.time,
+        "monotonic",
+        lambda: clock["now"],
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "resolve_decision_action",
+        lambda item: {
+            "action_name": "lock_pc",
+            "status": bridge.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    created = bridge.create_pending_confirmation(decision)
+    assert created["success"] is True
+
+    clock["now"] = (
+        500.0
+        + bridge.PENDING_CONFIRMATION_TTL_SECONDS
+    )
+
+    result = bridge.consume_pending_confirmation(decision)
+
+    assert result["success"] is False
+    assert result["status"] == bridge.CONFIRM
+    assert bridge.get_pending_confirmation() is None
+    assert "No pending decision confirmation exists" in result["message"]
