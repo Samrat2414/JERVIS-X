@@ -187,7 +187,7 @@ def test_confirm_decision_action_rejects_safe_action(monkeypatch):
     assert called["value"] is False
 
 
-def test_confirm_decision_action_executes_confirm_action(monkeypatch):
+def test_confirm_decision_action_uses_pending_context(monkeypatch):
     decisions = [
         {
             "title": "Lock the PC",
@@ -213,11 +213,41 @@ def test_confirm_decision_action_executes_confirm_action(monkeypatch):
         },
     )
 
-    called = {}
+    pending = {"created": False, "consumed": False}
+    calls = []
+
+    def fake_create_pending_confirmation(decision):
+        pending["created"] = True
+        return {
+            "success": True,
+            "status": brain.CONFIRM,
+            "action_name": "lock_pc",
+            "message": "Pending confirmation context created.",
+        }
+
+    def fake_consume_pending_confirmation(decision):
+        if not pending["created"] or pending["consumed"]:
+            return {
+                "success": False,
+                "status": brain.CONFIRM,
+                "message": "No pending decision confirmation exists.",
+            }
+
+        pending["consumed"] = True
+        return {
+            "success": True,
+            "status": brain.CONFIRM,
+            "action_name": "lock_pc",
+            "message": "Pending confirmation verified and consumed.",
+        }
 
     def fake_execute_decision(decision, confirmed=False, target=None):
-        called["decision"] = decision
-        called["confirmed"] = confirmed
+        calls.append(
+            {
+                "decision": decision,
+                "confirmed": confirmed,
+            }
+        )
 
         return {
             "success": True,
@@ -229,20 +259,49 @@ def test_confirm_decision_action_executes_confirm_action(monkeypatch):
 
     monkeypatch.setattr(
         brain,
+        "create_pending_confirmation",
+        fake_create_pending_confirmation,
+    )
+    monkeypatch.setattr(
+        brain,
+        "consume_pending_confirmation",
+        fake_consume_pending_confirmation,
+    )
+    monkeypatch.setattr(
+        brain,
         "execute_decision",
         fake_execute_decision,
     )
 
-    result = brain.process_command(
+    pending_result = brain.process_command(
+        "execute decision action 1"
+    )
+
+    assert pending["created"] is True
+    assert calls == []
+    assert "PENDING CONFIRMATION" in pending_result
+    assert "No confirmation-required action was executed." in pending_result
+
+    confirmed_result = brain.process_command(
         "confirm decision action 1"
     )
 
-    assert called["decision"] == decisions[0]
-    assert called["confirmed"] is True
-    assert "JERVIS DECISION ACTION CONFIRMED" in result
-    assert "Action: lock_pc" in result
-    assert "Success: Yes" in result
-    assert "PC lock simulated." in result
+    assert pending["consumed"] is True
+    assert len(calls) == 1
+    assert calls[0]["decision"] == decisions[0]
+    assert calls[0]["confirmed"] is True
+    assert "JERVIS DECISION ACTION CONFIRMED" in confirmed_result
+    assert "Action: lock_pc" in confirmed_result
+    assert "Success: Yes" in confirmed_result
+    assert "PC lock simulated." in confirmed_result
+
+    replay_result = brain.process_command(
+        "confirm decision action 1"
+    )
+
+    assert len(calls) == 1
+    assert "Confirmation rejected." in replay_result
+    assert "No pending decision confirmation exists." in replay_result
 
 
 def test_confirm_decision_action_rejects_invalid_rank(monkeypatch):

@@ -164,6 +164,8 @@ from core.decision_action_bridge import (
     resolve_decision_action,
     execute_action,
     execute_decision,
+    create_pending_confirmation,
+    consume_pending_confirmation,
 )
 from core.context_intelligence import (
     resolve_context,
@@ -1095,6 +1097,20 @@ def process_command(command):
                 "confirmation-required action."
             )
 
+        confirmation = consume_pending_confirmation(decision)
+
+        if not confirmation.get("success"):
+            return (
+                "Confirmation rejected.\n\n"
+                f"Rank: {rank}\n"
+                f"Decision: {decision.get('title', 'Unknown')}\n"
+                f"Status: {confirmation.get('status', 'unsupported')}\n"
+                f"Action: {confirmation.get('action_name') or 'None'}\n"
+                f"Message: {confirmation.get('message', '')}\n\n"
+                "Safety: The current decision does not match a valid "
+                "pending confirmation context."
+            )
+
         result = execute_decision(
             decision,
             confirmed=True,
@@ -1135,6 +1151,24 @@ def process_command(command):
             )
 
         decision = decisions[rank - 1]
+        resolved = resolve_decision_action(decision)
+
+        if resolved.get("status") == CONFIRM:
+            pending = create_pending_confirmation(decision)
+
+            return (
+                "JERVIS DECISION ACTION PENDING CONFIRMATION\n\n"
+                f"Rank: {rank}\n"
+                f"Decision: {decision.get('title', 'Unknown')}\n"
+                f"Status: {pending.get('status', 'unsupported')}\n"
+                f"Action: {pending.get('action_name') or 'None'}\n"
+                f"Success: {'Yes' if pending.get('success') else 'No'}\n"
+                f"Message: {pending.get('message', '')}\n\n"
+                f"To continue, use: confirm decision action {rank}\n"
+                "Safety: The exact decision/action context has been "
+                "stored. No confirmation-required action was executed."
+            )
+
         result = execute_decision(
             decision,
             confirmed=False,
@@ -4546,11 +4580,3 @@ def process_command(command):
 
     # AI fallback
     return ask_ai(original_command)
-
-
-
-
-
-
-
-

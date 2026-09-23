@@ -1,5 +1,7 @@
 """Bridge between JERVIS Decision Intelligence and safe automation actions."""
 
+import hashlib
+
 from core.automation import (
     open_task_manager,
     open_windows_settings,
@@ -11,6 +13,87 @@ from core.automation import (
     close_application,
 )
 
+
+# Pending confirmation is process-local and intentionally short-lived.
+_PENDING_CONFIRMATION = None
+
+
+def _decision_fingerprint(decision, action_name):
+    """Create a stable identity for a decision/action pair."""
+
+    if not isinstance(decision, dict):
+        return None
+
+    parts = [
+        str(decision.get("title", "")).strip(),
+        str(decision.get("action", "")).strip(),
+        str(decision.get("source", "")).strip(),
+        str(action_name or "").strip(),
+    ]
+
+    payload = "|".join(parts).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def create_pending_confirmation(decision):
+    """Store confirmation context for an exact CONFIRM decision."""
+
+    global _PENDING_CONFIRMATION
+
+    resolved = resolve_decision_action(decision)
+
+    if resolved.get("status") != CONFIRM:
+        return {
+            "success": False,
+            "status": resolved.get("status", UNSUPPORTED),
+            "message": (
+                "Pending confirmation can only be created for "
+                "confirmation-required actions."
+            ),
+        }
+
+    action_name = resolved.get("action_name")
+
+    if not action_name:
+        return {
+            "success": False,
+            "status": UNSUPPORTED,
+            "message": "No executable action is available for confirmation.",
+        }
+
+    fingerprint = _decision_fingerprint(
+        decision,
+        action_name,
+    )
+
+    _PENDING_CONFIRMATION = {
+        "fingerprint": fingerprint,
+        "action_name": action_name,
+    }
+
+    return {
+        "success": True,
+        "status": CONFIRM,
+        "action_name": action_name,
+        "fingerprint": fingerprint,
+        "message": "Pending confirmation context created.",
+    }
+
+
+def clear_pending_confirmation():
+    """Clear any pending decision confirmation context."""
+
+    global _PENDING_CONFIRMATION
+    _PENDING_CONFIRMATION = None
+
+
+def get_pending_confirmation():
+    """Return a copy of the pending confirmation context."""
+
+    if _PENDING_CONFIRMATION is None:
+        return None
+
+    return dict(_PENDING_CONFIRMATION)
 
 # Action safety levels
 SAFE = "safe"
@@ -203,4 +286,81 @@ def execute_decision(decision, confirmed=False, target=None):
         **result,
         "action_name": action_name,
         "route": resolved.get("route"),
+    }
+
+
+
+def verify_pending_confirmation(decision):
+    """Verify that a decision matches the pending confirmation context."""
+
+    pending = get_pending_confirmation()
+
+    if pending is None:
+        return {
+            "success": False,
+            "status": CONFIRM,
+            "message": "No pending decision confirmation exists.",
+        }
+
+    resolved = resolve_decision_action(decision)
+
+    if resolved.get("status") != CONFIRM:
+        return {
+            "success": False,
+            "status": resolved.get("status", UNSUPPORTED),
+            "message": (
+                "Decision is no longer classified as "
+                "confirmation-required."
+            ),
+        }
+
+    action_name = resolved.get("action_name")
+
+    if not action_name:
+        return {
+            "success": False,
+            "status": UNSUPPORTED,
+            "message": "Decision no longer has an executable action.",
+        }
+
+    fingerprint = _decision_fingerprint(
+        decision,
+        action_name,
+    )
+
+    if (
+        fingerprint != pending.get("fingerprint")
+        or action_name != pending.get("action_name")
+    ):
+        return {
+            "success": False,
+            "status": CONFIRM,
+            "message": (
+                "Pending confirmation does not match this decision. "
+                "Create a new confirmation context."
+            ),
+        }
+
+    return {
+        "success": True,
+        "status": CONFIRM,
+        "action_name": action_name,
+        "fingerprint": fingerprint,
+        "message": "Pending confirmation matches this decision.",
+    }
+
+
+def consume_pending_confirmation(decision):
+    """Verify and consume a matching pending confirmation."""
+
+    result = verify_pending_confirmation(decision)
+
+    if not result.get("success"):
+        return result
+
+    clear_pending_confirmation()
+
+    return {
+        **result,
+        "message": "Pending confirmation verified and consumed.",
     }
