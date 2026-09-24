@@ -22,6 +22,29 @@ MAX_CONFIRMATION_ATTEMPTS = 3
 MAX_CONFIRMATION_AUDIT_EVENTS = 100
 _PENDING_CONFIRMATION = None
 _CONFIRMATION_AUDIT_TRAIL = []
+_CONFIRMATION_AUDIT_ANCHOR_HASH = None
+
+
+def _confirmation_audit_event_hash(event):
+    """Return a stable SHA-256 hash for one confirmation audit event."""
+
+    fields = (
+        "event_type",
+        "timestamp",
+        "action_name",
+        "fingerprint",
+        "failed_attempts",
+        "reason",
+        "session_id",
+        "previous_hash",
+    )
+
+    payload = "|".join(
+        repr(event.get(field))
+        for field in fields
+    ).encode("utf-8")
+
+    return hashlib.sha256(payload).hexdigest()
 
 
 def _record_confirmation_audit_event(
@@ -32,7 +55,15 @@ def _record_confirmation_audit_event(
     reason=None,
     session_id=None,
 ):
-    """Record a bounded security event without confirmation secrets."""
+    """Record a bounded, hash-linked event without confirmation secrets."""
+
+    global _CONFIRMATION_AUDIT_ANCHOR_HASH
+
+    previous_hash = (
+        _CONFIRMATION_AUDIT_TRAIL[-1]["event_hash"]
+        if _CONFIRMATION_AUDIT_TRAIL
+        else _CONFIRMATION_AUDIT_ANCHOR_HASH
+    )
 
     event = {
         "event_type": str(event_type),
@@ -42,7 +73,10 @@ def _record_confirmation_audit_event(
         "failed_attempts": failed_attempts,
         "reason": reason,
         "session_id": session_id,
+        "previous_hash": previous_hash,
     }
+
+    event["event_hash"] = _confirmation_audit_event_hash(event)
 
     _CONFIRMATION_AUDIT_TRAIL.append(event)
 
@@ -52,6 +86,8 @@ def _record_confirmation_audit_event(
     )
 
     if overflow > 0:
+        removed = _CONFIRMATION_AUDIT_TRAIL[:overflow]
+        _CONFIRMATION_AUDIT_ANCHOR_HASH = removed[-1]["event_hash"]
         del _CONFIRMATION_AUDIT_TRAIL[:overflow]
 
     return dict(event)
@@ -67,9 +103,58 @@ def get_confirmation_audit_trail():
 
 
 def clear_confirmation_audit_trail():
-    """Clear confirmation security audit events."""
+    """Clear confirmation security audit events and chain anchor."""
+
+    global _CONFIRMATION_AUDIT_ANCHOR_HASH
 
     _CONFIRMATION_AUDIT_TRAIL.clear()
+    _CONFIRMATION_AUDIT_ANCHOR_HASH = None
+
+def verify_confirmation_audit_integrity():
+    """Verify the retained confirmation audit hash chain."""
+
+    expected_previous_hash = _CONFIRMATION_AUDIT_ANCHOR_HASH
+
+    for index, event in enumerate(_CONFIRMATION_AUDIT_TRAIL):
+        if event.get("previous_hash") != expected_previous_hash:
+            return {
+                "valid": False,
+                "event_count": len(_CONFIRMATION_AUDIT_TRAIL),
+                "failed_index": index,
+                "reason": "Previous audit hash does not match.",
+            }
+
+        stored_hash = event.get("event_hash")
+
+        if not stored_hash:
+            return {
+                "valid": False,
+                "event_count": len(_CONFIRMATION_AUDIT_TRAIL),
+                "failed_index": index,
+                "reason": "Audit event hash is missing.",
+            }
+
+        calculated_hash = _confirmation_audit_event_hash(event)
+
+        if not secrets.compare_digest(
+            str(stored_hash),
+            str(calculated_hash),
+        ):
+            return {
+                "valid": False,
+                "event_count": len(_CONFIRMATION_AUDIT_TRAIL),
+                "failed_index": index,
+                "reason": "Audit event hash does not match event data.",
+            }
+
+        expected_previous_hash = stored_hash
+
+    return {
+        "valid": True,
+        "event_count": len(_CONFIRMATION_AUDIT_TRAIL),
+        "failed_index": None,
+        "reason": "Confirmation audit trail integrity verified.",
+    }
 
 
 def _decision_fingerprint(decision, action_name):

@@ -1235,3 +1235,170 @@ def test_new_confirmation_sessions_use_distinct_session_ids(monkeypatch):
 
     bridge.clear_pending_confirmation()
     bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_integrity_accepts_valid_chain():
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    bridge._record_confirmation_audit_event(
+        "confirmation_created",
+        action_name="lock_pc",
+        fingerprint="fingerprint-1",
+        failed_attempts=0,
+        reason="Created.",
+        session_id="SESSION-1",
+    )
+
+    bridge._record_confirmation_audit_event(
+        "confirmation_failed",
+        action_name="lock_pc",
+        fingerprint="fingerprint-1",
+        failed_attempts=1,
+        reason="Invalid confirmation token.",
+        session_id="SESSION-1",
+    )
+
+    result = bridge.verify_confirmation_audit_integrity()
+
+    assert result["valid"] is True
+    assert result["event_count"] == 2
+    assert result["failed_index"] is None
+
+    trail = bridge.get_confirmation_audit_trail()
+
+    assert trail[0]["previous_hash"] is None
+    assert trail[0]["event_hash"]
+    assert trail[1]["previous_hash"] == trail[0]["event_hash"]
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_integrity_detects_modified_event():
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    bridge._record_confirmation_audit_event(
+        "confirmation_created",
+        action_name="lock_pc",
+        reason="Created.",
+        session_id="SESSION-1",
+    )
+
+    bridge._CONFIRMATION_AUDIT_TRAIL[0]["reason"] = "Tampered."
+
+    result = bridge.verify_confirmation_audit_integrity()
+
+    assert result["valid"] is False
+    assert result["failed_index"] == 0
+    assert "does not match event data" in result["reason"]
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_integrity_detects_deleted_event():
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    for index in range(3):
+        bridge._record_confirmation_audit_event(
+            f"event-{index}",
+            session_id="SESSION-1",
+        )
+
+    del bridge._CONFIRMATION_AUDIT_TRAIL[1]
+
+    result = bridge.verify_confirmation_audit_integrity()
+
+    assert result["valid"] is False
+    assert result["failed_index"] == 1
+    assert "Previous audit hash does not match" in result["reason"]
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_integrity_detects_reordered_events():
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    for index in range(3):
+        bridge._record_confirmation_audit_event(
+            f"event-{index}",
+            session_id="SESSION-1",
+        )
+
+    trail = bridge._CONFIRMATION_AUDIT_TRAIL
+    trail[1], trail[2] = trail[2], trail[1]
+
+    result = bridge.verify_confirmation_audit_integrity()
+
+    assert result["valid"] is False
+    assert result["failed_index"] == 1
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_clear_resets_chain_anchor():
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    bridge._record_confirmation_audit_event(
+        "old-event",
+        session_id="OLD",
+    )
+
+    bridge.clear_confirmation_audit_trail()
+
+    bridge._record_confirmation_audit_event(
+        "new-event",
+        session_id="NEW",
+    )
+
+    trail = bridge.get_confirmation_audit_trail()
+
+    assert len(trail) == 1
+    assert trail[0]["previous_hash"] is None
+
+    result = bridge.verify_confirmation_audit_integrity()
+
+    assert result["valid"] is True
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_integrity_survives_bounded_rollover():
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    total_events = bridge.MAX_CONFIRMATION_AUDIT_EVENTS + 5
+
+    for index in range(total_events):
+        bridge._record_confirmation_audit_event(
+            f"event-{index}",
+            session_id="ROLLOVER",
+        )
+
+    trail = bridge.get_confirmation_audit_trail()
+
+    assert len(trail) == bridge.MAX_CONFIRMATION_AUDIT_EVENTS
+    assert bridge._CONFIRMATION_AUDIT_ANCHOR_HASH is not None
+    assert (
+        trail[0]["previous_hash"]
+        == bridge._CONFIRMATION_AUDIT_ANCHOR_HASH
+    )
+
+    result = bridge.verify_confirmation_audit_integrity()
+
+    assert result["valid"] is True
+    assert (
+        result["event_count"]
+        == bridge.MAX_CONFIRMATION_AUDIT_EVENTS
+    )
+
+    bridge.clear_confirmation_audit_trail()
