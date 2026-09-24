@@ -3,6 +3,8 @@ import socket
 import sys
 from pathlib import Path
 
+from core.decision_action_bridge import verify_confirmation_audit_integrity
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -109,6 +111,38 @@ def check_data_folder():
         return False
 
 
+def check_security_bootstrap():
+    """Return health information for the initialized security audit chain."""
+
+    try:
+        result = verify_confirmation_audit_integrity()
+    except Exception as exc:
+        return {
+            "healthy": False,
+            "event_count": 0,
+            "failed_index": None,
+            "reason": f"Security audit integrity check failed: {exc}",
+        }
+
+    if not isinstance(result, dict):
+        return {
+            "healthy": False,
+            "event_count": 0,
+            "failed_index": None,
+            "reason": "Security audit integrity check returned an invalid result.",
+        }
+
+    return {
+        "healthy": result.get("valid") is True,
+        "event_count": result.get("event_count", 0),
+        "failed_index": result.get("failed_index"),
+        "reason": result.get(
+            "reason",
+            "Security audit integrity status unavailable.",
+        ),
+    }
+
+
 def run_diagnostics():
     missing_files = check_required_files()
     missing_folders = check_required_folders()
@@ -116,6 +150,7 @@ def run_diagnostics():
 
     internet = check_internet()
     data_writable = check_data_folder()
+    security_bootstrap = check_security_bootstrap()
 
     checks = {
         "Required Files": not missing_files,
@@ -123,6 +158,7 @@ def run_diagnostics():
         "Dependencies": not missing_dependencies,
         "Internet": internet,
         "Data Folder": data_writable,
+        "Security Bootstrap": security_bootstrap["healthy"],
     }
 
     passed = sum(checks.values())
@@ -138,6 +174,7 @@ def run_diagnostics():
         "missing_dependencies": missing_dependencies,
         "internet": internet,
         "data_writable": data_writable,
+        "security_bootstrap": security_bootstrap,
     }
 
 
@@ -185,6 +222,17 @@ def get_diagnostics_report():
                 result["missing_dependencies"]
             )
         )
+
+    security_bootstrap = result.get("security_bootstrap", {})
+
+    if not security_bootstrap.get("healthy", True):
+        reason = security_bootstrap.get("reason")
+
+        if reason:
+            lines.append("")
+            lines.append(
+                f"Security Reason: {reason}"
+            )
 
     lines.append("")
 
