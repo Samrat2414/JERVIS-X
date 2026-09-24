@@ -207,6 +207,9 @@ def main():
     from gui.app import run_gui
     from core.performance_monitor import record_startup_time
     from core.logger import log_exception, log_info
+    from core.startup_bootstrap import initialize_security_bootstrap
+
+    initialize_security_bootstrap()
 
     startup_seconds = time.perf_counter() - STARTUP_TIMER
     record_startup_time(startup_seconds)
