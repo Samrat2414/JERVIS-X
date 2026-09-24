@@ -30,6 +30,7 @@ def _record_confirmation_audit_event(
     fingerprint=None,
     failed_attempts=None,
     reason=None,
+    session_id=None,
 ):
     """Record a bounded security event without confirmation secrets."""
 
@@ -40,6 +41,7 @@ def _record_confirmation_audit_event(
         "fingerprint": fingerprint,
         "failed_attempts": failed_attempts,
         "reason": reason,
+        "session_id": session_id,
     }
 
     _CONFIRMATION_AUDIT_TRAIL.append(event)
@@ -119,6 +121,7 @@ def create_pending_confirmation(decision):
     )
 
     confirmation_token = secrets.token_hex(3).upper()
+    session_id = secrets.token_hex(8).upper()
 
     _PENDING_CONFIRMATION = {
         "fingerprint": fingerprint,
@@ -126,6 +129,7 @@ def create_pending_confirmation(decision):
         "created_at": time.monotonic(),
         "token": confirmation_token,
         "failed_attempts": 0,
+        "session_id": session_id,
     }
 
     _record_confirmation_audit_event(
@@ -134,6 +138,7 @@ def create_pending_confirmation(decision):
         fingerprint=fingerprint,
         failed_attempts=0,
         reason="Confirmation session created.",
+        session_id=session_id,
     )
 
     return {
@@ -142,6 +147,7 @@ def create_pending_confirmation(decision):
         "action_name": action_name,
         "fingerprint": fingerprint,
         "token": confirmation_token,
+        "session_id": session_id,
         "message": "Pending confirmation context created.",
     }
 
@@ -173,6 +179,7 @@ def get_pending_confirmation():
                 0,
             ),
             reason="Confirmation session missing creation timestamp.",
+            session_id=_PENDING_CONFIRMATION.get("session_id"),
         )
 
         clear_pending_confirmation()
@@ -190,6 +197,7 @@ def get_pending_confirmation():
                 0,
             ),
             reason="Confirmation session TTL expired.",
+            session_id=_PENDING_CONFIRMATION.get("session_id"),
         )
 
         clear_pending_confirmation()
@@ -433,6 +441,7 @@ def verify_pending_confirmation(decision, token=None):
             fingerprint=pending.get("fingerprint"),
             failed_attempts=failed_attempts,
             reason="Invalid confirmation token.",
+            session_id=pending.get("session_id"),
         )
 
         if failed_attempts >= MAX_CONFIRMATION_ATTEMPTS:
@@ -442,6 +451,7 @@ def verify_pending_confirmation(decision, token=None):
                 fingerprint=pending.get("fingerprint"),
                 failed_attempts=failed_attempts,
                 reason="Maximum confirmation attempts reached.",
+                session_id=pending.get("session_id"),
             )
 
             clear_pending_confirmation()
@@ -540,6 +550,7 @@ def consume_pending_confirmation(decision, token=None):
                 0,
             ),
             reason="Confirmation verified and consumed.",
+            session_id=pending.get("session_id"),
         )
 
     clear_pending_confirmation()

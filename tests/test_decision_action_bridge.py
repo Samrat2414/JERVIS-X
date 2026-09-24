@@ -1117,3 +1117,121 @@ def test_expired_confirmation_is_audited_without_token(monkeypatch):
     assert created["token"] not in repr(trail)
 
     bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_events_share_session_id(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_pending_confirmation()
+    bridge.clear_confirmation_audit_trail()
+
+    decision = {
+        "title": "Lock the PC",
+        "action": "Lock the Windows PC.",
+        "source": "System Safety",
+    }
+
+    monkeypatch.setattr(
+        bridge,
+        "resolve_decision_action",
+        lambda item: {
+            "action_name": "lock_pc",
+            "status": bridge.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    created = bridge.create_pending_confirmation(decision)
+
+    wrong_token = (
+        "000000"
+        if created["token"] != "000000"
+        else "FFFFFF"
+    )
+
+    failed = bridge.consume_pending_confirmation(
+        decision,
+        wrong_token,
+    )
+    assert failed["success"] is False
+
+    consumed = bridge.consume_pending_confirmation(
+        decision,
+        created["token"],
+    )
+    assert consumed["success"] is True
+
+    trail = bridge.get_confirmation_audit_trail()
+
+    assert [
+        event["event_type"]
+        for event in trail
+    ] == [
+        "confirmation_created",
+        "confirmation_failed",
+        "confirmation_consumed",
+    ]
+
+    session_ids = {
+        event["session_id"]
+        for event in trail
+    }
+
+    assert session_ids == {created["session_id"]}
+    assert created["session_id"]
+    assert created["token"] not in repr(trail)
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_new_confirmation_sessions_use_distinct_session_ids(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_pending_confirmation()
+    bridge.clear_confirmation_audit_trail()
+
+    decision = {
+        "title": "Lock the PC",
+        "action": "Lock the Windows PC.",
+        "source": "System Safety",
+    }
+
+    monkeypatch.setattr(
+        bridge,
+        "resolve_decision_action",
+        lambda item: {
+            "action_name": "lock_pc",
+            "status": bridge.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    first = bridge.create_pending_confirmation(decision)
+    first_session_id = first["session_id"]
+
+    bridge.clear_pending_confirmation()
+
+    second = bridge.create_pending_confirmation(decision)
+    second_session_id = second["session_id"]
+
+    assert first_session_id
+    assert second_session_id
+    assert first_session_id != second_session_id
+
+    trail = bridge.get_confirmation_audit_trail()
+
+    created_events = [
+        event
+        for event in trail
+        if event["event_type"] == "confirmation_created"
+    ]
+
+    assert len(created_events) == 2
+    assert created_events[0]["session_id"] == first_session_id
+    assert created_events[1]["session_id"] == second_session_id
+
+    assert first["token"] not in repr(trail)
+    assert second["token"] not in repr(trail)
+
+    bridge.clear_pending_confirmation()
+    bridge.clear_confirmation_audit_trail()
