@@ -1402,3 +1402,953 @@ def test_confirmation_audit_integrity_survives_bounded_rollover():
     )
 
     bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_serialization_excludes_pending_token(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+    bridge.clear_pending_confirmation()
+
+    decision = {
+        "title": "Lock the PC",
+        "action": "Lock the Windows PC.",
+        "source": "System Safety",
+    }
+
+    monkeypatch.setattr(
+        bridge,
+        "resolve_decision_action",
+        lambda item: {
+            "action_name": "lock_pc",
+            "status": bridge.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    created = bridge.create_pending_confirmation(decision)
+    assert created["success"] is True
+
+    state = bridge._serialize_confirmation_audit_state()
+    serialized = bridge.json.dumps(state)
+
+    assert state["version"] == bridge.CONFIRMATION_AUDIT_STORAGE_VERSION
+    assert "anchor_hash" in state
+    assert isinstance(state["events"], list)
+
+    # Confirmation credentials must remain process-local.
+    assert created["token"] not in serialized
+    assert "token" not in state
+    assert "pending_confirmation" not in state
+
+    bridge.clear_pending_confirmation()
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_atomic_write_creates_json_file(
+    monkeypatch,
+    tmp_path,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    data_dir = tmp_path / "data"
+    audit_file = data_dir / "decision_confirmation_audit.json"
+
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_DATA_DIR",
+        data_dir,
+    )
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_FILE",
+        audit_file,
+    )
+
+    bridge._record_confirmation_audit_event(
+        "confirmation_created",
+        action_name="lock_pc",
+        fingerprint="fingerprint-1",
+        failed_attempts=0,
+        reason="Created.",
+        session_id="SESSION-1",
+    )
+
+    result = bridge._atomic_write_confirmation_audit_state()
+
+    assert result == audit_file
+    assert audit_file.exists()
+
+    state = bridge.json.loads(
+        audit_file.read_text(encoding="utf-8")
+    )
+
+    assert state["version"] == bridge.CONFIRMATION_AUDIT_STORAGE_VERSION
+    assert state["anchor_hash"] is None
+    assert len(state["events"]) == 1
+    assert state["events"][0]["event_type"] == "confirmation_created"
+    assert state["events"][0]["session_id"] == "SESSION-1"
+
+    temporary_file = audit_file.with_name(
+        audit_file.name + ".tmp"
+    )
+    assert temporary_file.exists() is False
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_atomic_write_replaces_existing_file(
+    monkeypatch,
+    tmp_path,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir(parents=True)
+
+    audit_file = data_dir / "decision_confirmation_audit.json"
+    audit_file.write_text(
+        '{"old": true}',
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_DATA_DIR",
+        data_dir,
+    )
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_FILE",
+        audit_file,
+    )
+
+    bridge._record_confirmation_audit_event(
+        "confirmation_created",
+        session_id="SESSION-REPLACE",
+    )
+
+    bridge._atomic_write_confirmation_audit_state()
+
+    state = bridge.json.loads(
+        audit_file.read_text(encoding="utf-8")
+    )
+
+    assert "old" not in state
+    assert len(state["events"]) == 1
+    assert state["events"][0]["session_id"] == "SESSION-REPLACE"
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_atomic_write_cleans_temp_on_failure(
+    monkeypatch,
+    tmp_path,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    data_dir = tmp_path / "data"
+    audit_file = data_dir / "decision_confirmation_audit.json"
+
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_DATA_DIR",
+        data_dir,
+    )
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_FILE",
+        audit_file,
+    )
+
+    def fail_replace(source, destination):
+        raise OSError("simulated replace failure")
+
+    monkeypatch.setattr(
+        bridge.os,
+        "replace",
+        fail_replace,
+    )
+
+    try:
+        bridge._atomic_write_confirmation_audit_state()
+    except OSError as error:
+        assert "simulated replace failure" in str(error)
+    else:
+        raise AssertionError("Expected atomic audit write to fail.")
+
+    temporary_file = audit_file.with_name(
+        audit_file.name + ".tmp"
+    )
+
+    assert temporary_file.exists() is False
+    assert audit_file.exists() is False
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_loader_restores_valid_state(
+    monkeypatch,
+    tmp_path,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    data_dir = tmp_path / "data"
+    audit_file = data_dir / "decision_confirmation_audit.json"
+
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_DATA_DIR",
+        data_dir,
+    )
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_FILE",
+        audit_file,
+    )
+
+    bridge._record_confirmation_audit_event(
+        "confirmation_created",
+        action_name="lock_pc",
+        fingerprint="fingerprint-restore",
+        failed_attempts=0,
+        reason="Created.",
+        session_id="SESSION-RESTORE",
+    )
+
+    expected = bridge.get_confirmation_audit_trail()
+    bridge._atomic_write_confirmation_audit_state()
+
+    # Simulate loss of process-local state after restart.
+    bridge.clear_confirmation_audit_trail()
+    assert bridge.get_confirmation_audit_trail() == []
+
+    result = bridge._load_confirmation_audit_state()
+
+    assert result["success"] is True
+    assert result["loaded"] is True
+    assert result["event_count"] == 1
+    assert bridge.get_confirmation_audit_trail() == expected
+    assert bridge.verify_confirmation_audit_integrity()["valid"] is True
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_loader_missing_file_is_clean_noop(
+    monkeypatch,
+    tmp_path,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    audit_file = (
+        tmp_path
+        / "data"
+        / "decision_confirmation_audit.json"
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_FILE",
+        audit_file,
+    )
+
+    result = bridge._load_confirmation_audit_state()
+
+    assert result["success"] is True
+    assert result["loaded"] is False
+    assert bridge.get_confirmation_audit_trail() == []
+
+
+def test_confirmation_audit_loader_rejects_malformed_json_without_mutation(
+    monkeypatch,
+    tmp_path,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    bridge._record_confirmation_audit_event(
+        "existing_live_event",
+        session_id="LIVE-SESSION",
+    )
+    before = bridge.get_confirmation_audit_trail()
+
+    audit_file = tmp_path / "decision_confirmation_audit.json"
+    audit_file.write_text(
+        "{not valid json",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_FILE",
+        audit_file,
+    )
+
+    result = bridge._load_confirmation_audit_state()
+
+    assert result["success"] is False
+    assert result["loaded"] is False
+    assert bridge.get_confirmation_audit_trail() == before
+    assert bridge.verify_confirmation_audit_integrity()["valid"] is True
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_loader_rejects_wrong_version_without_mutation(
+    monkeypatch,
+    tmp_path,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    bridge._record_confirmation_audit_event(
+        "existing_live_event",
+        session_id="LIVE-VERSION",
+    )
+    before = bridge.get_confirmation_audit_trail()
+
+    audit_file = tmp_path / "decision_confirmation_audit.json"
+    audit_file.write_text(
+        bridge.json.dumps(
+            {
+                "version": 999,
+                "anchor_hash": None,
+                "events": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_FILE",
+        audit_file,
+    )
+
+    result = bridge._load_confirmation_audit_state()
+
+    assert result["success"] is False
+    assert result["loaded"] is False
+    assert bridge.get_confirmation_audit_trail() == before
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_loader_rejects_tampered_chain_without_mutation(
+    monkeypatch,
+    tmp_path,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    bridge._record_confirmation_audit_event(
+        "persisted_event",
+        action_name="lock_pc",
+        session_id="PERSISTED-SESSION",
+    )
+
+    state = bridge._serialize_confirmation_audit_state()
+
+    # Tamper with hashed event data without recomputing event_hash.
+    state["events"][0]["reason"] = "tampered"
+
+    bridge.clear_confirmation_audit_trail()
+    bridge._record_confirmation_audit_event(
+        "existing_live_event",
+        session_id="LIVE-TAMPER",
+    )
+    before = bridge.get_confirmation_audit_trail()
+
+    audit_file = tmp_path / "decision_confirmation_audit.json"
+    audit_file.write_text(
+        bridge.json.dumps(state),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_FILE",
+        audit_file,
+    )
+
+    result = bridge._load_confirmation_audit_state()
+
+    assert result["success"] is False
+    assert result["loaded"] is False
+    assert bridge.get_confirmation_audit_trail() == before
+    assert bridge.verify_confirmation_audit_integrity()["valid"] is True
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_loader_rejects_oversized_history_without_mutation(
+    monkeypatch,
+    tmp_path,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    bridge._record_confirmation_audit_event(
+        "existing_live_event",
+        session_id="LIVE-OVERSIZE",
+    )
+    before = bridge.get_confirmation_audit_trail()
+
+    audit_file = tmp_path / "decision_confirmation_audit.json"
+    audit_file.write_text(
+        bridge.json.dumps(
+            {
+                "version": bridge.CONFIRMATION_AUDIT_STORAGE_VERSION,
+                "anchor_hash": None,
+                "events": [
+                    {}
+                    for _ in range(
+                        bridge.MAX_CONFIRMATION_AUDIT_EVENTS + 1
+                    )
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_FILE",
+        audit_file,
+    )
+
+    result = bridge._load_confirmation_audit_state()
+
+    assert result["success"] is False
+    assert result["loaded"] is False
+    assert bridge.get_confirmation_audit_trail() == before
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_loader_restores_rollover_anchor(
+    monkeypatch,
+    tmp_path,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    data_dir = tmp_path / "data"
+    audit_file = data_dir / "decision_confirmation_audit.json"
+
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_DATA_DIR",
+        data_dir,
+    )
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_FILE",
+        audit_file,
+    )
+
+    total_events = bridge.MAX_CONFIRMATION_AUDIT_EVENTS + 5
+
+    for index in range(total_events):
+        bridge._record_confirmation_audit_event(
+            "rollover_test",
+            action_name="lock_pc",
+            fingerprint=f"fingerprint-{index}",
+            failed_attempts=0,
+            reason=f"Event {index}",
+            session_id=f"SESSION-{index}",
+        )
+
+    assert (
+        len(bridge.get_confirmation_audit_trail())
+        == bridge.MAX_CONFIRMATION_AUDIT_EVENTS
+    )
+
+    assert bridge._CONFIRMATION_AUDIT_ANCHOR_HASH is not None
+
+    expected_events = bridge.get_confirmation_audit_trail()
+    expected_anchor = bridge._CONFIRMATION_AUDIT_ANCHOR_HASH
+
+    before_integrity = bridge.verify_confirmation_audit_integrity()
+    assert before_integrity["valid"] is True
+
+    bridge._atomic_write_confirmation_audit_state()
+
+    persisted = bridge.json.loads(
+        audit_file.read_text(encoding="utf-8")
+    )
+
+    assert persisted["anchor_hash"] == expected_anchor
+    assert len(persisted["events"]) == bridge.MAX_CONFIRMATION_AUDIT_EVENTS
+
+    # Simulate a fresh process losing all process-local audit state.
+    bridge.clear_confirmation_audit_trail()
+
+    assert bridge.get_confirmation_audit_trail() == []
+    assert bridge._CONFIRMATION_AUDIT_ANCHOR_HASH is None
+
+    result = bridge._load_confirmation_audit_state()
+
+    assert result["success"] is True
+    assert result["loaded"] is True
+    assert (
+        result["event_count"]
+        == bridge.MAX_CONFIRMATION_AUDIT_EVENTS
+    )
+
+    assert bridge._CONFIRMATION_AUDIT_ANCHOR_HASH == expected_anchor
+    assert bridge.get_confirmation_audit_trail() == expected_events
+
+    after_integrity = bridge.verify_confirmation_audit_integrity()
+
+    assert after_integrity["valid"] is True
+    assert (
+        after_integrity["event_count"]
+        == bridge.MAX_CONFIRMATION_AUDIT_EVENTS
+    )
+
+    # First retained event must still link to the persisted rollover anchor.
+    restored = bridge.get_confirmation_audit_trail()
+
+    assert restored[0]["previous_hash"] == expected_anchor
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_safe_persistence_reports_success(
+    monkeypatch,
+    tmp_path,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    data_dir = tmp_path / "data"
+    audit_file = data_dir / "decision_confirmation_audit.json"
+
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_DATA_DIR",
+        data_dir,
+    )
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_FILE",
+        audit_file,
+    )
+
+    bridge._record_confirmation_audit_event(
+        "persistence_test",
+        session_id="SESSION-PERSIST",
+    )
+
+    result = bridge._persist_confirmation_audit_state_safely()
+
+    assert result["success"] is True
+    assert result["path"] == audit_file
+    assert audit_file.exists() is True
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_safe_persistence_failure_preserves_live_state(
+    monkeypatch,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    bridge._record_confirmation_audit_event(
+        "persistence_failure_test",
+        session_id="SESSION-LIVE",
+    )
+
+    before = bridge.get_confirmation_audit_trail()
+
+    def fail_write():
+        raise OSError("simulated disk failure")
+
+    monkeypatch.setattr(
+        bridge,
+        "_atomic_write_confirmation_audit_state",
+        fail_write,
+    )
+
+    result = bridge._persist_confirmation_audit_state_safely()
+
+    assert result["success"] is False
+    assert result["path"] is None
+    assert "simulated disk failure" in result["message"]
+
+    # Persistence failure must not damage the live security chain.
+    assert bridge.get_confirmation_audit_trail() == before
+    assert bridge.verify_confirmation_audit_integrity()["valid"] is True
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_recorder_persists_when_requested(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    calls = []
+
+    def fake_persist():
+        calls.append(
+            {
+                "events": bridge.get_confirmation_audit_trail(),
+                "anchor": bridge._CONFIRMATION_AUDIT_ANCHOR_HASH,
+            }
+        )
+        return {
+            "success": True,
+            "path": None,
+            "message": "Persisted.",
+        }
+
+    monkeypatch.setattr(
+        bridge,
+        "_persist_confirmation_audit_state_safely",
+        fake_persist,
+    )
+
+    event = bridge._record_confirmation_audit_event(
+        "confirmation_created",
+        session_id="SESSION-PERSIST-ROUTE",
+        persist=True,
+    )
+
+    assert event["event_type"] == "confirmation_created"
+    assert len(calls) == 1
+    assert len(calls[0]["events"]) == 1
+    assert (
+        calls[0]["events"][0]["event_hash"]
+        == event["event_hash"]
+    )
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_recorder_does_not_persist_by_default(
+    monkeypatch,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    called = {"value": False}
+
+    def fake_persist():
+        called["value"] = True
+        return {
+            "success": True,
+            "path": None,
+            "message": "Persisted.",
+        }
+
+    monkeypatch.setattr(
+        bridge,
+        "_persist_confirmation_audit_state_safely",
+        fake_persist,
+    )
+
+    bridge._record_confirmation_audit_event(
+        "test_event",
+        session_id="SESSION-NO-PERSIST",
+    )
+
+    assert called["value"] is False
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_recorder_survives_persistence_failure(
+    monkeypatch,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    def fake_persist():
+        return {
+            "success": False,
+            "path": None,
+            "message": "simulated persistence failure",
+        }
+
+    monkeypatch.setattr(
+        bridge,
+        "_persist_confirmation_audit_state_safely",
+        fake_persist,
+    )
+
+    event = bridge._record_confirmation_audit_event(
+        "confirmation_failed",
+        failed_attempts=1,
+        session_id="SESSION-FAIL-SAFE",
+        persist=True,
+    )
+
+    assert event["event_type"] == "confirmation_failed"
+    assert len(bridge.get_confirmation_audit_trail()) == 1
+    assert bridge.verify_confirmation_audit_integrity()["valid"] is True
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_rollover_is_updated_before_persistence(
+    monkeypatch,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    for index in range(bridge.MAX_CONFIRMATION_AUDIT_EVENTS):
+        bridge._record_confirmation_audit_event(
+            "rollover_seed",
+            session_id=f"SEED-{index}",
+        )
+
+    assert bridge._CONFIRMATION_AUDIT_ANCHOR_HASH is None
+
+    captured = {}
+
+    def fake_persist():
+        captured["anchor"] = bridge._CONFIRMATION_AUDIT_ANCHOR_HASH
+        captured["events"] = bridge.get_confirmation_audit_trail()
+
+        return {
+            "success": True,
+            "path": None,
+            "message": "Persisted.",
+        }
+
+    monkeypatch.setattr(
+        bridge,
+        "_persist_confirmation_audit_state_safely",
+        fake_persist,
+    )
+
+    bridge._record_confirmation_audit_event(
+        "rollover_trigger",
+        session_id="ROLLOVER-TRIGGER",
+        persist=True,
+    )
+
+    assert captured["anchor"] is not None
+    assert len(captured["events"]) == bridge.MAX_CONFIRMATION_AUDIT_EVENTS
+    assert (
+        captured["events"][0]["previous_hash"]
+        == captured["anchor"]
+    )
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_real_confirmation_lifecycle_requests_audit_persistence(
+    monkeypatch,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_pending_confirmation()
+    bridge.clear_confirmation_audit_trail()
+
+    decision = {
+        "title": "Lock the PC",
+        "action": "Lock the Windows PC.",
+        "source": "System Safety",
+    }
+
+    monkeypatch.setattr(
+        bridge,
+        "resolve_decision_action",
+        lambda item: {
+            "action_name": "lock_pc",
+            "status": bridge.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    persisted_states = []
+
+    def fake_persist():
+        persisted_states.append(
+            {
+                "events": bridge.get_confirmation_audit_trail(),
+                "anchor": bridge._CONFIRMATION_AUDIT_ANCHOR_HASH,
+            }
+        )
+
+        return {
+            "success": True,
+            "path": None,
+            "message": "Persisted.",
+        }
+
+    monkeypatch.setattr(
+        bridge,
+        "_persist_confirmation_audit_state_safely",
+        fake_persist,
+    )
+
+    created = bridge.create_pending_confirmation(decision)
+
+    assert created["success"] is True
+    assert len(persisted_states) == 1
+
+    first_state = persisted_states[0]
+
+    assert len(first_state["events"]) == 1
+
+    created_event = first_state["events"][0]
+
+    assert created_event["event_type"] == "confirmation_created"
+    assert created_event["action_name"] == "lock_pc"
+    assert created_event["session_id"] == created["session_id"]
+
+    # Confirmation secrets must never enter the persisted audit event.
+    assert "token" not in created_event
+    assert created["token"] not in str(created_event)
+
+    assert bridge.verify_confirmation_audit_integrity()["valid"] is True
+
+    bridge.clear_pending_confirmation()
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_initializer_handles_clean_first_run(
+    monkeypatch,
+    tmp_path,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    audit_file = (
+        tmp_path
+        / "data"
+        / "decision_confirmation_audit.json"
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_FILE",
+        audit_file,
+    )
+
+    result = bridge.initialize_confirmation_audit_state()
+
+    assert result["success"] is True
+    assert result["loaded"] is False
+    assert result["initialized"] is True
+    assert result["event_count"] == 0
+    assert bridge.get_confirmation_audit_trail() == []
+    assert bridge.verify_confirmation_audit_integrity()["valid"] is True
+
+
+def test_confirmation_audit_initializer_restores_persisted_state(
+    monkeypatch,
+    tmp_path,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    data_dir = tmp_path / "data"
+    audit_file = data_dir / "decision_confirmation_audit.json"
+
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_DATA_DIR",
+        data_dir,
+    )
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_FILE",
+        audit_file,
+    )
+
+    bridge._record_confirmation_audit_event(
+        "startup_restore_test",
+        action_name="lock_pc",
+        fingerprint="startup-fingerprint",
+        failed_attempts=0,
+        reason="Startup restoration test.",
+        session_id="STARTUP-SESSION",
+    )
+
+    expected = bridge.get_confirmation_audit_trail()
+
+    bridge._atomic_write_confirmation_audit_state()
+
+    # Simulate process-local state being lost on restart.
+    bridge.clear_confirmation_audit_trail()
+
+    result = bridge.initialize_confirmation_audit_state()
+
+    assert result["success"] is True
+    assert result["loaded"] is True
+    assert result["initialized"] is True
+    assert result["event_count"] == 1
+
+    assert bridge.get_confirmation_audit_trail() == expected
+    assert bridge.verify_confirmation_audit_integrity()["valid"] is True
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_initializer_rejects_corrupt_storage_without_mutation(
+    monkeypatch,
+    tmp_path,
+):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    bridge._record_confirmation_audit_event(
+        "existing_live_event",
+        session_id="LIVE-STARTUP-STATE",
+    )
+
+    before = bridge.get_confirmation_audit_trail()
+
+    audit_file = tmp_path / "decision_confirmation_audit.json"
+
+    audit_file.write_text(
+        "{corrupt startup audit state",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "CONFIRMATION_AUDIT_FILE",
+        audit_file,
+    )
+
+    result = bridge.initialize_confirmation_audit_state()
+
+    assert result["success"] is False
+    assert result["loaded"] is False
+    assert result["initialized"] is False
+
+    # Failed startup recovery must not partially replace live state.
+    assert bridge.get_confirmation_audit_trail() == before
+    assert bridge.verify_confirmation_audit_integrity()["valid"] is True
+
+    bridge.clear_confirmation_audit_trail()

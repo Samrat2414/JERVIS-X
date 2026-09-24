@@ -1,8 +1,12 @@
 """Bridge between JERVIS Decision Intelligence and safe automation actions."""
 
 import hashlib
+import json
+import os
 import secrets
+import sys
 import time
+from pathlib import Path
 
 from core.automation import (
     open_task_manager,
@@ -20,9 +24,240 @@ from core.automation import (
 PENDING_CONFIRMATION_TTL_SECONDS = 60
 MAX_CONFIRMATION_ATTEMPTS = 3
 MAX_CONFIRMATION_AUDIT_EVENTS = 100
+CONFIRMATION_AUDIT_STORAGE_VERSION = 1
 _PENDING_CONFIRMATION = None
 _CONFIRMATION_AUDIT_TRAIL = []
 _CONFIRMATION_AUDIT_ANCHOR_HASH = None
+
+
+def get_confirmation_audit_storage_root():
+    """Return the persistent storage root for confirmation audit data."""
+
+    if getattr(sys, "frozen", False):
+        local_app_data = os.getenv("LOCALAPPDATA")
+        base_dir = (
+            Path(local_app_data)
+            if local_app_data
+            else Path.home()
+        )
+        return base_dir / "JERVIS-X"
+
+    return Path(".")
+
+
+CONFIRMATION_AUDIT_STORAGE_ROOT = (
+    get_confirmation_audit_storage_root()
+)
+CONFIRMATION_AUDIT_DATA_DIR = (
+    CONFIRMATION_AUDIT_STORAGE_ROOT / "data"
+)
+CONFIRMATION_AUDIT_FILE = (
+    CONFIRMATION_AUDIT_DATA_DIR
+    / "decision_confirmation_audit.json"
+)
+
+
+def _serialize_confirmation_audit_state():
+    """Return token-free confirmation audit state for persistence."""
+
+    return {
+        "version": CONFIRMATION_AUDIT_STORAGE_VERSION,
+        "anchor_hash": _CONFIRMATION_AUDIT_ANCHOR_HASH,
+        "events": [
+            dict(event)
+            for event in _CONFIRMATION_AUDIT_TRAIL
+        ],
+    }
+
+
+def _atomic_write_confirmation_audit_state():
+    """Atomically persist the current confirmation audit state."""
+
+    state = _serialize_confirmation_audit_state()
+
+    CONFIRMATION_AUDIT_DATA_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    temporary_file = CONFIRMATION_AUDIT_FILE.with_name(
+        CONFIRMATION_AUDIT_FILE.name + ".tmp"
+    )
+
+    try:
+        temporary_file.write_text(
+            json.dumps(
+                state,
+                indent=2,
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        os.replace(
+            temporary_file,
+            CONFIRMATION_AUDIT_FILE,
+        )
+
+    except OSError:
+        try:
+            temporary_file.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+        raise
+
+    return CONFIRMATION_AUDIT_FILE
+
+
+def _persist_confirmation_audit_state_safely():
+    """Persist audit state without breaking confirmation enforcement."""
+
+    try:
+        path = _atomic_write_confirmation_audit_state()
+    except (OSError, TypeError, ValueError) as error:
+        return {
+            "success": False,
+            "path": None,
+            "message": (
+                "Could not persist confirmation audit state: "
+                f"{error}"
+            ),
+        }
+
+    return {
+        "success": True,
+        "path": path,
+        "message": "Confirmation audit state persisted successfully.",
+    }
+
+
+def _load_confirmation_audit_state():
+    """Load and validate persisted audit state without partial mutation."""
+
+    global _CONFIRMATION_AUDIT_ANCHOR_HASH
+
+    if not CONFIRMATION_AUDIT_FILE.exists():
+        return {
+            "success": True,
+            "loaded": False,
+            "event_count": 0,
+            "message": "No persisted confirmation audit state exists.",
+        }
+
+    try:
+        raw_text = CONFIRMATION_AUDIT_FILE.read_text(
+            encoding="utf-8",
+        )
+        state = json.loads(raw_text)
+    except (OSError, json.JSONDecodeError) as error:
+        return {
+            "success": False,
+            "loaded": False,
+            "event_count": 0,
+            "message": (
+                "Could not load confirmation audit state: "
+                f"{error}"
+            ),
+        }
+
+    if not isinstance(state, dict):
+        return {
+            "success": False,
+            "loaded": False,
+            "event_count": 0,
+            "message": "Confirmation audit state must be an object.",
+        }
+
+    if state.get("version") != CONFIRMATION_AUDIT_STORAGE_VERSION:
+        return {
+            "success": False,
+            "loaded": False,
+            "event_count": 0,
+            "message": "Unsupported confirmation audit storage version.",
+        }
+
+    if "anchor_hash" not in state or "events" not in state:
+        return {
+            "success": False,
+            "loaded": False,
+            "event_count": 0,
+            "message": "Confirmation audit state schema is incomplete.",
+        }
+
+    candidate_anchor = state["anchor_hash"]
+    candidate_events = state["events"]
+
+    validation = _validate_confirmation_audit_candidate(
+        candidate_anchor,
+        candidate_events,
+    )
+
+    if not validation.get("valid"):
+        return {
+            "success": False,
+            "loaded": False,
+            "event_count": validation.get("event_count", 0),
+            "message": (
+                "Confirmation audit state failed integrity validation: "
+                + str(validation.get("reason"))
+            ),
+        }
+
+    # Commit only after the complete candidate has passed validation.
+    restored_events = [
+        dict(event)
+        for event in candidate_events
+    ]
+
+    _CONFIRMATION_AUDIT_TRAIL.clear()
+    _CONFIRMATION_AUDIT_TRAIL.extend(restored_events)
+    _CONFIRMATION_AUDIT_ANCHOR_HASH = candidate_anchor
+
+    return {
+        "success": True,
+        "loaded": True,
+        "event_count": len(restored_events),
+        "message": "Confirmation audit state restored successfully.",
+    }
+
+
+def initialize_confirmation_audit_state():
+    """Initialize confirmation audit state from trusted persisted storage."""
+
+    result = _load_confirmation_audit_state()
+
+    if not result.get("success"):
+        return {
+            **result,
+            "initialized": False,
+        }
+
+    integrity = verify_confirmation_audit_integrity()
+
+    if not integrity.get("valid"):
+        return {
+            "success": False,
+            "loaded": result.get("loaded", False),
+            "initialized": False,
+            "event_count": integrity.get("event_count", 0),
+            "message": (
+                "Confirmation audit startup integrity verification failed: "
+                + str(integrity.get("reason"))
+            ),
+        }
+
+    return {
+        "success": True,
+        "loaded": result.get("loaded", False),
+        "initialized": True,
+        "event_count": integrity.get("event_count", 0),
+        "message": (
+            "Confirmation audit state initialized successfully."
+            if result.get("loaded")
+            else "Confirmation audit state initialized with no persisted state."
+        ),
+    }
 
 
 def _confirmation_audit_event_hash(event):
@@ -54,6 +289,7 @@ def _record_confirmation_audit_event(
     failed_attempts=None,
     reason=None,
     session_id=None,
+    persist=False,
 ):
     """Record a bounded, hash-linked event without confirmation secrets."""
 
@@ -90,6 +326,9 @@ def _record_confirmation_audit_event(
         _CONFIRMATION_AUDIT_ANCHOR_HASH = removed[-1]["event_hash"]
         del _CONFIRMATION_AUDIT_TRAIL[:overflow]
 
+    if persist:
+        _persist_confirmation_audit_state_safely()
+
     return dict(event)
 
 
@@ -110,16 +349,48 @@ def clear_confirmation_audit_trail():
     _CONFIRMATION_AUDIT_TRAIL.clear()
     _CONFIRMATION_AUDIT_ANCHOR_HASH = None
 
-def verify_confirmation_audit_integrity():
-    """Verify the retained confirmation audit hash chain."""
+def _validate_confirmation_audit_candidate(anchor_hash, events):
+    """Validate candidate audit state without modifying live state."""
 
-    expected_previous_hash = _CONFIRMATION_AUDIT_ANCHOR_HASH
+    if anchor_hash is not None and not isinstance(anchor_hash, str):
+        return {
+            "valid": False,
+            "event_count": len(events) if isinstance(events, list) else 0,
+            "failed_index": None,
+            "reason": "Audit anchor hash has an invalid type.",
+        }
 
-    for index, event in enumerate(_CONFIRMATION_AUDIT_TRAIL):
+    if not isinstance(events, list):
+        return {
+            "valid": False,
+            "event_count": 0,
+            "failed_index": None,
+            "reason": "Audit events must be a list.",
+        }
+
+    if len(events) > MAX_CONFIRMATION_AUDIT_EVENTS:
+        return {
+            "valid": False,
+            "event_count": len(events),
+            "failed_index": None,
+            "reason": "Audit event count exceeds the retention limit.",
+        }
+
+    expected_previous_hash = anchor_hash
+
+    for index, event in enumerate(events):
+        if not isinstance(event, dict):
+            return {
+                "valid": False,
+                "event_count": len(events),
+                "failed_index": index,
+                "reason": "Audit event must be an object.",
+            }
+
         if event.get("previous_hash") != expected_previous_hash:
             return {
                 "valid": False,
-                "event_count": len(_CONFIRMATION_AUDIT_TRAIL),
+                "event_count": len(events),
                 "failed_index": index,
                 "reason": "Previous audit hash does not match.",
             }
@@ -129,7 +400,7 @@ def verify_confirmation_audit_integrity():
         if not stored_hash:
             return {
                 "valid": False,
-                "event_count": len(_CONFIRMATION_AUDIT_TRAIL),
+                "event_count": len(events),
                 "failed_index": index,
                 "reason": "Audit event hash is missing.",
             }
@@ -142,7 +413,7 @@ def verify_confirmation_audit_integrity():
         ):
             return {
                 "valid": False,
-                "event_count": len(_CONFIRMATION_AUDIT_TRAIL),
+                "event_count": len(events),
                 "failed_index": index,
                 "reason": "Audit event hash does not match event data.",
             }
@@ -151,10 +422,26 @@ def verify_confirmation_audit_integrity():
 
     return {
         "valid": True,
-        "event_count": len(_CONFIRMATION_AUDIT_TRAIL),
+        "event_count": len(events),
         "failed_index": None,
-        "reason": "Confirmation audit trail integrity verified.",
+        "reason": "Confirmation audit chain is valid.",
     }
+
+
+def verify_confirmation_audit_integrity():
+    """Verify the retained confirmation audit hash chain."""
+
+    result = _validate_confirmation_audit_candidate(
+        _CONFIRMATION_AUDIT_ANCHOR_HASH,
+        _CONFIRMATION_AUDIT_TRAIL,
+    )
+
+    if result.get("valid"):
+        result["reason"] = (
+            "Confirmation audit trail integrity verified."
+        )
+
+    return result
 
 
 def _decision_fingerprint(decision, action_name):
@@ -224,6 +511,7 @@ def create_pending_confirmation(decision):
         failed_attempts=0,
         reason="Confirmation session created.",
         session_id=session_id,
+    persist=True,
     )
 
     return {
@@ -265,6 +553,7 @@ def get_pending_confirmation():
             ),
             reason="Confirmation session missing creation timestamp.",
             session_id=_PENDING_CONFIRMATION.get("session_id"),
+        persist=True,
         )
 
         clear_pending_confirmation()
@@ -283,6 +572,7 @@ def get_pending_confirmation():
             ),
             reason="Confirmation session TTL expired.",
             session_id=_PENDING_CONFIRMATION.get("session_id"),
+        persist=True,
         )
 
         clear_pending_confirmation()
@@ -527,6 +817,7 @@ def verify_pending_confirmation(decision, token=None):
             failed_attempts=failed_attempts,
             reason="Invalid confirmation token.",
             session_id=pending.get("session_id"),
+        persist=True,
         )
 
         if failed_attempts >= MAX_CONFIRMATION_ATTEMPTS:
@@ -537,6 +828,7 @@ def verify_pending_confirmation(decision, token=None):
                 failed_attempts=failed_attempts,
                 reason="Maximum confirmation attempts reached.",
                 session_id=pending.get("session_id"),
+            persist=True,
             )
 
             clear_pending_confirmation()
@@ -636,6 +928,7 @@ def consume_pending_confirmation(decision, token=None):
             ),
             reason="Confirmation verified and consumed.",
             session_id=pending.get("session_id"),
+        persist=True,
         )
 
     clear_pending_confirmation()
