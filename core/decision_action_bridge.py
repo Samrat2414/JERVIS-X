@@ -19,7 +19,55 @@ from core.automation import (
 # Pending confirmation is process-local and intentionally short-lived.
 PENDING_CONFIRMATION_TTL_SECONDS = 60
 MAX_CONFIRMATION_ATTEMPTS = 3
+MAX_CONFIRMATION_AUDIT_EVENTS = 100
 _PENDING_CONFIRMATION = None
+_CONFIRMATION_AUDIT_TRAIL = []
+
+
+def _record_confirmation_audit_event(
+    event_type,
+    action_name=None,
+    fingerprint=None,
+    failed_attempts=None,
+    reason=None,
+):
+    """Record a bounded security event without confirmation secrets."""
+
+    event = {
+        "event_type": str(event_type),
+        "timestamp": time.time(),
+        "action_name": action_name,
+        "fingerprint": fingerprint,
+        "failed_attempts": failed_attempts,
+        "reason": reason,
+    }
+
+    _CONFIRMATION_AUDIT_TRAIL.append(event)
+
+    overflow = (
+        len(_CONFIRMATION_AUDIT_TRAIL)
+        - MAX_CONFIRMATION_AUDIT_EVENTS
+    )
+
+    if overflow > 0:
+        del _CONFIRMATION_AUDIT_TRAIL[:overflow]
+
+    return dict(event)
+
+
+def get_confirmation_audit_trail():
+    """Return copies of recorded confirmation security events."""
+
+    return [
+        dict(event)
+        for event in _CONFIRMATION_AUDIT_TRAIL
+    ]
+
+
+def clear_confirmation_audit_trail():
+    """Clear confirmation security audit events."""
+
+    _CONFIRMATION_AUDIT_TRAIL.clear()
 
 
 def _decision_fingerprint(decision, action_name):
@@ -80,6 +128,14 @@ def create_pending_confirmation(decision):
         "failed_attempts": 0,
     }
 
+    _record_confirmation_audit_event(
+        "confirmation_created",
+        action_name=action_name,
+        fingerprint=fingerprint,
+        failed_attempts=0,
+        reason="Confirmation session created.",
+    )
+
     return {
         "success": True,
         "status": CONFIRM,
@@ -108,12 +164,34 @@ def get_pending_confirmation():
     created_at = _PENDING_CONFIRMATION.get("created_at")
 
     if created_at is None:
+        _record_confirmation_audit_event(
+            "confirmation_expired",
+            action_name=_PENDING_CONFIRMATION.get("action_name"),
+            fingerprint=_PENDING_CONFIRMATION.get("fingerprint"),
+            failed_attempts=_PENDING_CONFIRMATION.get(
+                "failed_attempts",
+                0,
+            ),
+            reason="Confirmation session missing creation timestamp.",
+        )
+
         clear_pending_confirmation()
         return None
 
     age = time.monotonic() - created_at
 
     if age >= PENDING_CONFIRMATION_TTL_SECONDS:
+        _record_confirmation_audit_event(
+            "confirmation_expired",
+            action_name=_PENDING_CONFIRMATION.get("action_name"),
+            fingerprint=_PENDING_CONFIRMATION.get("fingerprint"),
+            failed_attempts=_PENDING_CONFIRMATION.get(
+                "failed_attempts",
+                0,
+            ),
+            reason="Confirmation session TTL expired.",
+        )
+
         clear_pending_confirmation()
         return None
 
@@ -349,7 +427,23 @@ def verify_pending_confirmation(decision, token=None):
             pending.get("failed_attempts", 0)
         ) + 1
 
+        _record_confirmation_audit_event(
+            "confirmation_failed",
+            action_name=pending.get("action_name"),
+            fingerprint=pending.get("fingerprint"),
+            failed_attempts=failed_attempts,
+            reason="Invalid confirmation token.",
+        )
+
         if failed_attempts >= MAX_CONFIRMATION_ATTEMPTS:
+            _record_confirmation_audit_event(
+                "confirmation_locked_out",
+                action_name=pending.get("action_name"),
+                fingerprint=pending.get("fingerprint"),
+                failed_attempts=failed_attempts,
+                reason="Maximum confirmation attempts reached.",
+            )
+
             clear_pending_confirmation()
 
             return {
@@ -433,6 +527,20 @@ def consume_pending_confirmation(decision, token=None):
 
     if not result.get("success"):
         return result
+
+    pending = get_pending_confirmation()
+
+    if pending is not None:
+        _record_confirmation_audit_event(
+            "confirmation_consumed",
+            action_name=result.get("action_name"),
+            fingerprint=result.get("fingerprint"),
+            failed_attempts=pending.get(
+                "failed_attempts",
+                0,
+            ),
+            reason="Confirmation verified and consumed.",
+        )
 
     clear_pending_confirmation()
 

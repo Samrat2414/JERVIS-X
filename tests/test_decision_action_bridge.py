@@ -769,3 +769,351 @@ def test_correct_token_succeeds_after_failed_attempts(monkeypatch):
 
     # Successful consumption still preserves v7 one-time semantics.
     assert bridge.get_pending_confirmation() is None
+
+
+def test_confirmation_audit_event_records_safe_metadata(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    monkeypatch.setattr(
+        bridge.time,
+        "time",
+        lambda: 123456.0,
+    )
+
+    event = bridge._record_confirmation_audit_event(
+        "confirmation_created",
+        action_name="lock_pc",
+        fingerprint="abc123",
+        failed_attempts=0,
+        reason="Confirmation session created.",
+    )
+
+    assert event["event_type"] == "confirmation_created"
+    assert event["timestamp"] == 123456.0
+    assert event["action_name"] == "lock_pc"
+    assert event["fingerprint"] == "abc123"
+    assert event["failed_attempts"] == 0
+    assert event["reason"] == "Confirmation session created."
+
+    # Audit events must never expose confirmation secrets.
+    assert "token" not in event
+
+    trail = bridge.get_confirmation_audit_trail()
+
+    assert len(trail) == 1
+    assert trail[0] == event
+    assert "token" not in trail[0]
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_trail_returns_defensive_copies():
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    bridge._record_confirmation_audit_event(
+        "confirmation_failed",
+        action_name="lock_pc",
+        fingerprint="abc123",
+        failed_attempts=1,
+        reason="Invalid confirmation token.",
+    )
+
+    first = bridge.get_confirmation_audit_trail()
+
+    first[0]["event_type"] = "tampered"
+    first.append({"event_type": "injected"})
+
+    second = bridge.get_confirmation_audit_trail()
+
+    assert len(second) == 1
+    assert second[0]["event_type"] == "confirmation_failed"
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_audit_trail_is_bounded(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    monkeypatch.setattr(
+        bridge,
+        "MAX_CONFIRMATION_AUDIT_EVENTS",
+        3,
+    )
+
+    for index in range(5):
+        bridge._record_confirmation_audit_event(
+            f"event_{index}",
+            action_name="lock_pc",
+        )
+
+    trail = bridge.get_confirmation_audit_trail()
+
+    assert len(trail) == 3
+    assert [
+        event["event_type"]
+        for event in trail
+    ] == [
+        "event_2",
+        "event_3",
+        "event_4",
+    ]
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_confirmation_creation_is_audited_without_token(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_pending_confirmation()
+    bridge.clear_confirmation_audit_trail()
+
+    decision = {
+        "title": "Lock the PC",
+        "action": "Lock the Windows PC.",
+        "source": "System Safety",
+    }
+
+    monkeypatch.setattr(
+        bridge,
+        "resolve_decision_action",
+        lambda item: {
+            "action_name": "lock_pc",
+            "status": bridge.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    created = bridge.create_pending_confirmation(decision)
+
+    assert created["success"] is True
+    assert created["token"]
+
+    trail = bridge.get_confirmation_audit_trail()
+    assert len(trail) == 1
+
+    event = trail[0]
+
+    assert event["event_type"] == "confirmation_created"
+    assert event["action_name"] == "lock_pc"
+    assert event["fingerprint"] == created["fingerprint"]
+    assert event["failed_attempts"] == 0
+
+    assert "token" not in event
+
+    audit_values = {
+        str(value)
+        for value in event.values()
+        if value is not None
+    }
+
+    assert created["token"] not in audit_values
+
+    bridge.clear_pending_confirmation()
+    bridge.clear_confirmation_audit_trail()
+
+def test_confirmation_failures_and_lockout_are_audited_without_tokens(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_pending_confirmation()
+    bridge.clear_confirmation_audit_trail()
+
+    decision = {
+        "title": "Lock the PC",
+        "action": "Lock the Windows PC.",
+        "source": "System Safety",
+    }
+
+    monkeypatch.setattr(
+        bridge,
+        "resolve_decision_action",
+        lambda item: {
+            "action_name": "lock_pc",
+            "status": bridge.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    created = bridge.create_pending_confirmation(decision)
+
+    assert created["success"] is True
+
+    valid_token = created["token"]
+    wrong_tokens = ["111111", "222222", "333333"]
+
+    if valid_token in wrong_tokens:
+        wrong_tokens = ["AAAAAA", "BBBBBB", "CCCCCC"]
+
+    for wrong_token in wrong_tokens:
+        result = bridge.consume_pending_confirmation(
+            decision,
+            wrong_token,
+        )
+
+        assert result["success"] is False
+
+    assert bridge.get_pending_confirmation() is None
+
+    trail = bridge.get_confirmation_audit_trail()
+
+    assert [
+        event["event_type"]
+        for event in trail
+    ] == [
+        "confirmation_created",
+        "confirmation_failed",
+        "confirmation_failed",
+        "confirmation_failed",
+        "confirmation_locked_out",
+    ]
+
+    failed_events = [
+        event
+        for event in trail
+        if event["event_type"] == "confirmation_failed"
+    ]
+
+    assert [
+        event["failed_attempts"]
+        for event in failed_events
+    ] == [1, 2, 3]
+
+    lockout = trail[-1]
+
+    assert lockout["event_type"] == "confirmation_locked_out"
+    assert lockout["failed_attempts"] == 3
+    assert lockout["action_name"] == "lock_pc"
+    assert lockout["fingerprint"] == created["fingerprint"]
+
+    serialized_trail = repr(trail)
+
+    # Neither the valid token nor attempted tokens may be audited.
+    assert valid_token not in serialized_trail
+
+    for wrong_token in wrong_tokens:
+        assert wrong_token not in serialized_trail
+
+    assert all(
+        "token" not in event
+        for event in trail
+    )
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_successful_confirmation_consumption_is_audited(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_pending_confirmation()
+    bridge.clear_confirmation_audit_trail()
+
+    decision = {
+        "title": "Lock the PC",
+        "action": "Lock the Windows PC.",
+        "source": "System Safety",
+    }
+
+    monkeypatch.setattr(
+        bridge,
+        "resolve_decision_action",
+        lambda item: {
+            "action_name": "lock_pc",
+            "status": bridge.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    created = bridge.create_pending_confirmation(decision)
+
+    result = bridge.consume_pending_confirmation(
+        decision,
+        created["token"],
+    )
+
+    assert result["success"] is True
+    assert bridge.get_pending_confirmation() is None
+
+    trail = bridge.get_confirmation_audit_trail()
+
+    assert [
+        event["event_type"]
+        for event in trail
+    ] == [
+        "confirmation_created",
+        "confirmation_consumed",
+    ]
+
+    consumed = trail[-1]
+
+    assert consumed["action_name"] == "lock_pc"
+    assert consumed["fingerprint"] == created["fingerprint"]
+    assert consumed["failed_attempts"] == 0
+    assert "token" not in consumed
+    assert created["token"] not in repr(trail)
+
+    bridge.clear_confirmation_audit_trail()
+
+
+def test_expired_confirmation_is_audited_without_token(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_pending_confirmation()
+    bridge.clear_confirmation_audit_trail()
+
+    decision = {
+        "title": "Lock the PC",
+        "action": "Lock the Windows PC.",
+        "source": "System Safety",
+    }
+
+    clock = {"now": 700.0}
+
+    monkeypatch.setattr(
+        bridge.time,
+        "monotonic",
+        lambda: clock["now"],
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "resolve_decision_action",
+        lambda item: {
+            "action_name": "lock_pc",
+            "status": bridge.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    created = bridge.create_pending_confirmation(decision)
+
+    clock["now"] = (
+        700.0
+        + bridge.PENDING_CONFIRMATION_TTL_SECONDS
+    )
+
+    assert bridge.get_pending_confirmation() is None
+
+    trail = bridge.get_confirmation_audit_trail()
+
+    assert [
+        event["event_type"]
+        for event in trail
+    ] == [
+        "confirmation_created",
+        "confirmation_expired",
+    ]
+
+    expired = trail[-1]
+
+    assert expired["action_name"] == "lock_pc"
+    assert expired["fingerprint"] == created["fingerprint"]
+    assert expired["failed_attempts"] == 0
+    assert "token" not in expired
+    assert created["token"] not in repr(trail)
+
+    bridge.clear_confirmation_audit_trail()
