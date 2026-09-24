@@ -18,6 +18,7 @@ from core.automation import (
 
 # Pending confirmation is process-local and intentionally short-lived.
 PENDING_CONFIRMATION_TTL_SECONDS = 60
+MAX_CONFIRMATION_ATTEMPTS = 3
 _PENDING_CONFIRMATION = None
 
 
@@ -76,6 +77,7 @@ def create_pending_confirmation(decision):
         "action_name": action_name,
         "created_at": time.monotonic(),
         "token": confirmation_token,
+        "failed_attempts": 0,
     }
 
     return {
@@ -341,10 +343,39 @@ def verify_pending_confirmation(decision, token=None):
             stored_token,
         )
     ):
+        global _PENDING_CONFIRMATION
+
+        failed_attempts = int(
+            pending.get("failed_attempts", 0)
+        ) + 1
+
+        if failed_attempts >= MAX_CONFIRMATION_ATTEMPTS:
+            clear_pending_confirmation()
+
+            return {
+                "success": False,
+                "status": CONFIRM,
+                "message": (
+                    "Invalid confirmation token. "
+                    "Maximum confirmation attempts reached; "
+                    "pending confirmation invalidated."
+                ),
+            }
+
+        if _PENDING_CONFIRMATION is not None:
+            _PENDING_CONFIRMATION["failed_attempts"] = failed_attempts
+
+        remaining_attempts = (
+            MAX_CONFIRMATION_ATTEMPTS - failed_attempts
+        )
+
         return {
             "success": False,
             "status": CONFIRM,
-            "message": "Invalid confirmation token.",
+            "message": (
+                "Invalid confirmation token. "
+                f"{remaining_attempts} confirmation attempt(s) remaining."
+            ),
         }
 
     resolved = resolve_decision_action(decision)

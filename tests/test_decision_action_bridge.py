@@ -591,3 +591,181 @@ def test_pending_confirmation_rejects_wrong_token(monkeypatch):
     assert pending["token"] == created["token"]
 
     bridge.clear_pending_confirmation()
+
+
+def test_wrong_token_attempts_increment_and_invalidate_session(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_pending_confirmation()
+
+    decision = {
+        "title": "Lock the PC",
+        "action": "Lock the Windows PC.",
+        "source": "System Safety",
+    }
+
+    monkeypatch.setattr(
+        bridge,
+        "resolve_decision_action",
+        lambda item: {
+            "action_name": "lock_pc",
+            "status": bridge.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    created = bridge.create_pending_confirmation(decision)
+    assert created["success"] is True
+
+    wrong_token = (
+        "000000"
+        if created["token"] != "000000"
+        else "FFFFFF"
+    )
+
+    # Wrong attempt 1.
+    first = bridge.verify_pending_confirmation(
+        decision,
+        wrong_token,
+    )
+
+    assert first["success"] is False
+    assert "2 confirmation attempt(s) remaining" in first["message"]
+
+    pending = bridge.get_pending_confirmation()
+    assert pending is not None
+    assert pending["failed_attempts"] == 1
+
+    # Wrong attempt 2.
+    second = bridge.verify_pending_confirmation(
+        decision,
+        wrong_token,
+    )
+
+    assert second["success"] is False
+    assert "1 confirmation attempt(s) remaining" in second["message"]
+
+    pending = bridge.get_pending_confirmation()
+    assert pending is not None
+    assert pending["failed_attempts"] == 2
+
+    # Wrong attempt 3 reaches the limit and destroys the session.
+    third = bridge.verify_pending_confirmation(
+        decision,
+        wrong_token,
+    )
+
+    assert third["success"] is False
+    assert "Maximum confirmation attempts reached" in third["message"]
+    assert bridge.get_pending_confirmation() is None
+
+    # Any later attempt sees no authorization context.
+    fourth = bridge.verify_pending_confirmation(
+        decision,
+        created["token"],
+    )
+
+    assert fourth["success"] is False
+    assert "No pending decision confirmation exists" in fourth["message"]
+
+
+def test_missing_token_does_not_increment_failed_attempts(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_pending_confirmation()
+
+    decision = {
+        "title": "Lock the PC",
+        "action": "Lock the Windows PC.",
+        "source": "System Safety",
+    }
+
+    monkeypatch.setattr(
+        bridge,
+        "resolve_decision_action",
+        lambda item: {
+            "action_name": "lock_pc",
+            "status": bridge.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    created = bridge.create_pending_confirmation(decision)
+    assert created["success"] is True
+
+    before = bridge.get_pending_confirmation()
+    assert before is not None
+    assert before["failed_attempts"] == 0
+
+    result = bridge.verify_pending_confirmation(
+        decision,
+        None,
+    )
+
+    assert result["success"] is False
+    assert "Confirmation token is required." in result["message"]
+
+    after = bridge.get_pending_confirmation()
+    assert after is not None
+    assert after["failed_attempts"] == 0
+
+    bridge.clear_pending_confirmation()
+
+
+def test_correct_token_succeeds_after_failed_attempts(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_pending_confirmation()
+
+    decision = {
+        "title": "Lock the PC",
+        "action": "Lock the Windows PC.",
+        "source": "System Safety",
+    }
+
+    monkeypatch.setattr(
+        bridge,
+        "resolve_decision_action",
+        lambda item: {
+            "action_name": "lock_pc",
+            "status": bridge.CONFIRM,
+            "message": "Confirmation required.",
+        },
+    )
+
+    created = bridge.create_pending_confirmation(decision)
+    assert created["success"] is True
+
+    wrong_token = (
+        "000000"
+        if created["token"] != "000000"
+        else "FFFFFF"
+    )
+
+    first = bridge.verify_pending_confirmation(
+        decision,
+        wrong_token,
+    )
+    second = bridge.verify_pending_confirmation(
+        decision,
+        wrong_token,
+    )
+
+    assert first["success"] is False
+    assert second["success"] is False
+
+    pending = bridge.get_pending_confirmation()
+    assert pending is not None
+    assert pending["failed_attempts"] == 2
+
+    # Correct token remains valid before the attempt limit is reached.
+    confirmed = bridge.consume_pending_confirmation(
+        decision,
+        created["token"],
+    )
+
+    assert confirmed["success"] is True
+    assert confirmed["action_name"] == "lock_pc"
+
+    # Successful consumption still preserves v7 one-time semantics.
+    assert bridge.get_pending_confirmation() is None
