@@ -218,3 +218,66 @@ def get_security_health_score():
             f"with a score of {score}/100."
         ),
     }
+
+
+def get_security_health_recommendation():
+    """Return a safe recommendation based on security health."""
+
+    health = get_security_health_score()
+
+    status = health["status"]
+    score = health["score"]
+    consecutive_failures = health["consecutive_failures"]
+
+    if status == "UNKNOWN":
+        priority = "MEDIUM"
+        reason = "Security bootstrap history is not available."
+        recommended_action = (
+            "Run JERVIS normally to generate security bootstrap history."
+        )
+        requires_manual_review = False
+
+    elif status == "HEALTHY":
+        priority = "NONE"
+        reason = (
+            f"Security bootstrap health is healthy at {score}/100."
+        )
+        recommended_action = (
+            "No corrective action is required."
+        )
+        requires_manual_review = False
+
+    elif status == "WARNING":
+        priority = "HIGH"
+        reason = (
+            "Recent security bootstrap instability detected "
+            f"with {consecutive_failures} consecutive failure(s)."
+        )
+        recommended_action = (
+            "Review confirmation audit initialization and recent "
+            "security bootstrap history."
+        )
+        requires_manual_review = True
+
+    else:
+        priority = "CRITICAL"
+        reason = (
+            "Critical security bootstrap instability detected "
+            f"with {consecutive_failures} consecutive failure(s)."
+        )
+        recommended_action = (
+            "Inspect confirmation audit initialization failures "
+            "before relying on security-sensitive automation."
+        )
+        requires_manual_review = True
+
+    return {
+        "status": status,
+        "score": score,
+        "priority": priority,
+        "reason": reason,
+        "recommended_action": recommended_action,
+        "requires_manual_review": requires_manual_review,
+        "automation_allowed": False,
+        "source": "Security Health Intelligence",
+    }

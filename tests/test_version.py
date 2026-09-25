@@ -531,3 +531,109 @@ def test_security_health_commands_do_not_change_persistent_file():
     ).hexdigest()
 
     assert after == before
+
+
+def test_command_line_security_recommendation():
+    result = subprocess.run(
+        [sys.executable, "main.py", "--security-recommendation"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "JERVIS SECURITY RECOMMENDATION" in result.stdout
+    assert "Status:" in result.stdout
+    assert "Score:" in result.stdout
+    assert "Priority:" in result.stdout
+    assert "Reason:" in result.stdout
+    assert "Recommended Action:" in result.stdout
+    assert "Manual Review Required:" in result.stdout
+    assert "Automation Allowed: False" in result.stdout
+    assert "Source: Security Health Intelligence" in result.stdout
+
+
+def test_command_line_security_recommendation_json():
+    result = subprocess.run(
+        [
+            sys.executable,
+            "main.py",
+            "--security-recommendation-json",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    data = json.loads(result.stdout)
+
+    assert data["status"] in {
+        "UNKNOWN",
+        "HEALTHY",
+        "WARNING",
+        "CRITICAL",
+    }
+    assert isinstance(data["score"], int)
+    assert data["priority"] in {
+        "NONE",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL",
+    }
+    assert isinstance(data["reason"], str)
+    assert isinstance(data["recommended_action"], str)
+    assert isinstance(data["requires_manual_review"], bool)
+    assert data["automation_allowed"] is False
+    assert data["source"] == "Security Health Intelligence"
+
+
+def test_security_recommendation_cli_is_read_only():
+    from pathlib import Path
+
+    main_source = Path("main.py").read_text(encoding="utf-8")
+
+    recommendation_block_start = main_source.index(
+        '    if "--security-recommendation-json" in sys.argv:'
+    )
+    status_block_start = main_source.index(
+        '    if "--security-status-json" in sys.argv:'
+    )
+
+    recommendation_source = main_source[
+        recommendation_block_start:status_block_start
+    ]
+
+    assert "load_security_bootstrap_history" in recommendation_source
+    assert "get_security_health_recommendation" in recommendation_source
+    assert "initialize_security_bootstrap" not in recommendation_source
+
+
+def test_security_recommendation_commands_do_not_change_persistent_file():
+    import hashlib
+    from pathlib import Path
+
+    history_path = Path("data") / "security_bootstrap_history.json"
+
+    assert history_path.exists()
+
+    before = hashlib.sha256(
+        history_path.read_bytes()
+    ).hexdigest()
+
+    for option in (
+        "--security-recommendation",
+        "--security-recommendation-json",
+    ):
+        result = subprocess.run(
+            [sys.executable, "main.py", option],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        assert result.stdout
+
+    after = hashlib.sha256(
+        history_path.read_bytes()
+    ).hexdigest()
+
+    assert after == before

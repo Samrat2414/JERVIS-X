@@ -22,6 +22,8 @@ Options:
   --security-history-json Show startup security history as JSON
   --security-health Show startup security health intelligence
   --security-health-json Show startup security health as JSON
+  --security-recommendation Show security health recommendation
+  --security-recommendation-json Show security recommendation as JSON
   --log-path        Show the application log file path
   --data-path       Show the application data directory
   --backup          Create a backup of local JERVIS data
@@ -144,6 +146,50 @@ def main():
             f"{health['consecutive_failures']}"
         )
         print(f"Message: {health['message']}")
+        return
+
+    if "--security-recommendation-json" in sys.argv:
+        import json
+
+        from core.startup_bootstrap import (
+            get_security_health_recommendation,
+            load_security_bootstrap_history,
+        )
+
+        load_security_bootstrap_history()
+        recommendation = get_security_health_recommendation()
+
+        print(json.dumps(recommendation, indent=2))
+        return
+
+    if "--security-recommendation" in sys.argv:
+        from core.startup_bootstrap import (
+            get_security_health_recommendation,
+            load_security_bootstrap_history,
+        )
+
+        load_security_bootstrap_history()
+        recommendation = get_security_health_recommendation()
+
+        print("JERVIS SECURITY RECOMMENDATION")
+        print()
+        print(f"Status: {recommendation['status']}")
+        print(f"Score: {recommendation['score']}/100")
+        print(f"Priority: {recommendation['priority']}")
+        print(f"Reason: {recommendation['reason']}")
+        print(
+            "Recommended Action: "
+            f"{recommendation['recommended_action']}"
+        )
+        print(
+            "Manual Review Required: "
+            f"{recommendation['requires_manual_review']}"
+        )
+        print(
+            "Automation Allowed: "
+            f"{recommendation['automation_allowed']}"
+        )
+        print(f"Source: {recommendation['source']}")
         return
 
     if "--security-status-json" in sys.argv:

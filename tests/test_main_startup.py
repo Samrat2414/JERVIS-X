@@ -1192,3 +1192,94 @@ def test_security_health_two_consecutive_failures_caps_score(
     assert health["status"] == "CRITICAL"
     assert health["success_rate"] == 90.0
     assert health["consecutive_failures"] == 2
+
+
+def test_security_health_recommendation_unknown(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    monkeypatch.setattr(
+        bootstrap,
+        "get_security_health_score",
+        lambda: {
+            "status": "UNKNOWN",
+            "score": 0,
+            "consecutive_failures": 0,
+        },
+    )
+
+    result = bootstrap.get_security_health_recommendation()
+
+    assert result["status"] == "UNKNOWN"
+    assert result["score"] == 0
+    assert result["priority"] == "MEDIUM"
+    assert result["requires_manual_review"] is False
+    assert result["automation_allowed"] is False
+    assert result["source"] == "Security Health Intelligence"
+
+
+def test_security_health_recommendation_healthy(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    monkeypatch.setattr(
+        bootstrap,
+        "get_security_health_score",
+        lambda: {
+            "status": "HEALTHY",
+            "score": 100,
+            "consecutive_failures": 0,
+        },
+    )
+
+    result = bootstrap.get_security_health_recommendation()
+
+    assert result["status"] == "HEALTHY"
+    assert result["priority"] == "NONE"
+    assert result["requires_manual_review"] is False
+    assert result["automation_allowed"] is False
+    assert "No corrective action" in result["recommended_action"]
+
+
+def test_security_health_recommendation_warning(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    monkeypatch.setattr(
+        bootstrap,
+        "get_security_health_score",
+        lambda: {
+            "status": "WARNING",
+            "score": 79,
+            "consecutive_failures": 1,
+        },
+    )
+
+    result = bootstrap.get_security_health_recommendation()
+
+    assert result["status"] == "WARNING"
+    assert result["score"] == 79
+    assert result["priority"] == "HIGH"
+    assert result["requires_manual_review"] is True
+    assert result["automation_allowed"] is False
+    assert "1 consecutive failure" in result["reason"]
+
+
+def test_security_health_recommendation_critical(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    monkeypatch.setattr(
+        bootstrap,
+        "get_security_health_score",
+        lambda: {
+            "status": "CRITICAL",
+            "score": 39,
+            "consecutive_failures": 3,
+        },
+    )
+
+    result = bootstrap.get_security_health_recommendation()
+
+    assert result["status"] == "CRITICAL"
+    assert result["score"] == 39
+    assert result["priority"] == "CRITICAL"
+    assert result["requires_manual_review"] is True
+    assert result["automation_allowed"] is False
+    assert "3 consecutive failure" in result["reason"]
