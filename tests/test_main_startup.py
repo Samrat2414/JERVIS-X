@@ -281,3 +281,119 @@ def test_main_logs_invalid_security_bootstrap_result_and_still_runs_gui(
         "invalid" in message.lower()
         for message in warnings
     )
+
+
+def test_security_bootstrap_exposes_latest_status(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    monkeypatch.setattr(
+        bootstrap,
+        "initialize_confirmation_audit_state",
+        lambda: {
+            "success": True,
+            "loaded": True,
+            "initialized": True,
+            "event_count": 4,
+            "message": "Audit initialized.",
+        },
+    )
+
+    bootstrap.initialize_security_bootstrap()
+
+    status = bootstrap.get_security_bootstrap_status()
+
+    assert status["success"] is True
+    assert status["component"] == "confirmation_audit"
+    assert status["event_count"] == 4
+    assert status["message"] == "Audit initialized."
+
+
+def test_security_bootstrap_status_tracks_failure(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    monkeypatch.setattr(
+        bootstrap,
+        "initialize_confirmation_audit_state",
+        lambda: {
+            "success": False,
+            "loaded": False,
+            "initialized": False,
+            "event_count": 0,
+            "message": "Audit recovery failed.",
+        },
+    )
+
+    bootstrap.initialize_security_bootstrap()
+
+    status = bootstrap.get_security_bootstrap_status()
+
+    assert status["success"] is False
+    assert status["component"] == "confirmation_audit"
+    assert status["event_count"] == 0
+    assert status["message"] == "Audit recovery failed."
+
+
+def test_security_bootstrap_status_returns_copy(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    monkeypatch.setattr(
+        bootstrap,
+        "initialize_confirmation_audit_state",
+        lambda: {
+            "success": True,
+            "loaded": True,
+            "initialized": True,
+            "event_count": 2,
+            "message": "Audit initialized.",
+        },
+    )
+
+    bootstrap.initialize_security_bootstrap()
+
+    first = bootstrap.get_security_bootstrap_status()
+    first["success"] = False
+    first["event_count"] = 999
+
+    second = bootstrap.get_security_bootstrap_status()
+
+    assert second["success"] is True
+    assert second["event_count"] == 2
+
+
+def test_security_bootstrap_status_tracks_initializer_exception(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    def fail():
+        raise OSError("storage unavailable")
+
+    monkeypatch.setattr(
+        bootstrap,
+        "initialize_confirmation_audit_state",
+        fail,
+    )
+
+    result = bootstrap.initialize_security_bootstrap()
+    status = bootstrap.get_security_bootstrap_status()
+
+    assert result["success"] is False
+    assert status["success"] is False
+    assert status["component"] == "confirmation_audit"
+    assert "storage unavailable" in status["message"]
+
+
+def test_security_bootstrap_status_tracks_invalid_result(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    monkeypatch.setattr(
+        bootstrap,
+        "initialize_confirmation_audit_state",
+        lambda: None,
+    )
+
+    result = bootstrap.initialize_security_bootstrap()
+    status = bootstrap.get_security_bootstrap_status()
+
+    assert result["success"] is False
+    assert status["success"] is False
+    assert status["component"] == "confirmation_audit"
+    assert "invalid result" in status["message"].lower()
