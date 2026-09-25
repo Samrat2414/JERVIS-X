@@ -444,6 +444,34 @@ def verify_confirmation_audit_integrity():
     return result
 
 
+def get_confirmation_audit_status():
+    """Return a safe read-only summary of confirmation audit security state."""
+
+    integrity = verify_confirmation_audit_integrity()
+    events = get_confirmation_audit_trail()
+
+    latest_event = events[-1] if events else None
+    integrity_valid = bool(integrity.get("valid"))
+
+    return {
+        "status": (
+            "healthy"
+            if integrity_valid
+            else "integrity_failure"
+        ),
+        "integrity_valid": integrity_valid,
+        "event_count": len(events),
+        "max_events": MAX_CONFIRMATION_AUDIT_EVENTS,
+        "has_rollover_anchor": (
+            _CONFIRMATION_AUDIT_ANCHOR_HASH is not None
+        ),
+        "latest_event_type": (
+            latest_event.get("event_type")
+            if latest_event
+            else None
+        ),
+    }
+
 def _decision_fingerprint(decision, action_name):
     """Create a stable identity for a decision/action pair."""
 

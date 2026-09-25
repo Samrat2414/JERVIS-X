@@ -2440,3 +2440,123 @@ def test_security_health_decision_cannot_create_pending_confirmation():
     assert result["success"] is False
     assert result["status"] == bridge.UNSUPPORTED
     assert bridge.get_pending_confirmation() is None
+
+
+def test_confirmation_audit_status_empty_is_healthy():
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_confirmation_audit_trail()
+
+    status = bridge.get_confirmation_audit_status()
+
+    assert status["status"] == "healthy"
+    assert status["integrity_valid"] is True
+    assert status["event_count"] == 0
+    assert status["max_events"] == bridge.MAX_CONFIRMATION_AUDIT_EVENTS
+    assert status["has_rollover_anchor"] is False
+    assert status["latest_event_type"] is None
+
+
+def test_confirmation_audit_status_reports_latest_event(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    monkeypatch.setattr(
+        bridge,
+        "get_confirmation_audit_trail",
+        lambda: [
+            {"event_type": "confirmation_created"},
+            {"event_type": "confirmation_rejected"},
+        ],
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "verify_confirmation_audit_integrity",
+        lambda: {"valid": True},
+    )
+
+    status = bridge.get_confirmation_audit_status()
+
+    assert status["status"] == "healthy"
+    assert status["integrity_valid"] is True
+    assert status["event_count"] == 2
+    assert status["latest_event_type"] == "confirmation_rejected"
+
+
+def test_confirmation_audit_status_reports_integrity_failure(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    monkeypatch.setattr(
+        bridge,
+        "verify_confirmation_audit_integrity",
+        lambda: {
+            "valid": False,
+            "reason": "Test integrity failure.",
+        },
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "get_confirmation_audit_trail",
+        lambda: [],
+    )
+
+    status = bridge.get_confirmation_audit_status()
+
+    assert status["status"] == "integrity_failure"
+    assert status["integrity_valid"] is False
+
+
+def test_confirmation_audit_status_reports_rollover_anchor(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    monkeypatch.setattr(
+        bridge,
+        "_CONFIRMATION_AUDIT_ANCHOR_HASH",
+        "test-anchor-hash",
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "verify_confirmation_audit_integrity",
+        lambda: {"valid": True},
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "get_confirmation_audit_trail",
+        lambda: [],
+    )
+
+    status = bridge.get_confirmation_audit_status()
+
+    assert status["has_rollover_anchor"] is True
+
+
+def test_confirmation_audit_status_is_read_only(monkeypatch):
+    import core.decision_action_bridge as bridge
+
+    events = [
+        {
+            "event_type": "test_event",
+            "event_hash": "test-hash",
+        }
+    ]
+
+    monkeypatch.setattr(
+        bridge,
+        "get_confirmation_audit_trail",
+        lambda: [dict(event) for event in events],
+    )
+
+    monkeypatch.setattr(
+        bridge,
+        "verify_confirmation_audit_integrity",
+        lambda: {"valid": True},
+    )
+
+    before = [dict(event) for event in events]
+
+    bridge.get_confirmation_audit_status()
+
+    assert events == before

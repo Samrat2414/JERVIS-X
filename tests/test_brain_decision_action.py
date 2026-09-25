@@ -529,3 +529,146 @@ def test_security_decision_command_is_advisory_only(monkeypatch):
     assert "Automation Allowed: False" in result
     assert "advisory only" in result
     assert "No security action is executed automatically." in result
+
+def test_confirmation_audit_status_command(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_audit_status",
+        lambda: {
+            "status": "healthy",
+            "integrity_valid": True,
+            "event_count": 7,
+            "max_events": 100,
+            "has_rollover_anchor": True,
+            "latest_event_type": "confirmation_rejected",
+        },
+    )
+
+    result = brain.process_command(
+        "confirmation audit status"
+    )
+
+    assert "JERVIS CONFIRMATION AUDIT STATUS" in result
+    assert "Status: healthy" in result
+    assert "Integrity Valid: True" in result
+    assert "Stored Events: 7" in result
+    assert "Maximum Events: 100" in result
+    assert "Rollover Anchor Present: True" in result
+    assert "Latest Event Type: confirmation_rejected" in result
+    assert "read-only" in result
+
+
+def test_confirmation_audit_status_aliases(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_audit_status",
+        lambda: {
+            "status": "healthy",
+            "integrity_valid": True,
+            "event_count": 0,
+            "max_events": 100,
+            "has_rollover_anchor": False,
+            "latest_event_type": None,
+        },
+    )
+
+    commands = [
+        "confirmation audit status",
+        "confirmation security status",
+        "confirmation audit health",
+        "audit integrity status",
+    ]
+
+    for command in commands:
+        result = brain.process_command(command)
+
+        assert "JERVIS CONFIRMATION AUDIT STATUS" in result
+        assert "Status: healthy" in result
+
+
+def test_confirmation_audit_status_integrity_failure(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_audit_status",
+        lambda: {
+            "status": "integrity_failure",
+            "integrity_valid": False,
+            "event_count": 5,
+            "max_events": 100,
+            "has_rollover_anchor": False,
+            "latest_event_type": "confirmation_created",
+        },
+    )
+
+    result = brain.process_command(
+        "confirmation audit status"
+    )
+
+    assert "Status: integrity_failure" in result
+    assert "Integrity Valid: False" in result
+    assert "Stored Events: 5" in result
+
+
+def test_confirmation_audit_status_handles_empty_history(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_audit_status",
+        lambda: {
+            "status": "healthy",
+            "integrity_valid": True,
+            "event_count": 0,
+            "max_events": 100,
+            "has_rollover_anchor": False,
+            "latest_event_type": None,
+        },
+    )
+
+    result = brain.process_command(
+        "confirmation audit status"
+    )
+
+    assert "Stored Events: 0" in result
+    assert "Latest Event Type: None" in result
+
+
+def test_confirmation_audit_status_command_is_read_only(monkeypatch):
+    import core.brain as brain
+
+    calls = {"status": 0}
+
+    def fake_status():
+        calls["status"] += 1
+
+        return {
+            "status": "healthy",
+            "integrity_valid": True,
+            "event_count": 3,
+            "max_events": 100,
+            "has_rollover_anchor": False,
+            "latest_event_type": "confirmation_rejected",
+        }
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_audit_status",
+        fake_status,
+    )
+
+    result = brain.process_command(
+        "confirmation audit status"
+    )
+
+    assert calls["status"] == 1
+    assert "read-only" in result
+    assert (
+        "No confirmation state or audit event is modified."
+        in result
+    )

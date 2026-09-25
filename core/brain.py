@@ -167,6 +167,7 @@ from core.decision_action_bridge import (
     execute_decision,
     create_pending_confirmation,
     consume_pending_confirmation,
+    get_confirmation_audit_status,
 )
 from core.context_intelligence import (
     resolve_context,
@@ -1086,6 +1087,29 @@ def process_command(command):
             "It does not automatically execute system or productivity actions."
         )
 
+    # V28: Confirmation Audit Security Status
+    if command in [
+        "confirmation audit status",
+        "confirmation security status",
+        "confirmation audit health",
+        "audit integrity status",
+    ]:
+        status = get_confirmation_audit_status()
+
+        return (
+            "JERVIS CONFIRMATION AUDIT STATUS\n\n"
+            f"Status: {status.get('status', 'unknown')}\n"
+            f"Integrity Valid: "
+            f"{status.get('integrity_valid', False)}\n"
+            f"Stored Events: {status.get('event_count', 0)}\n"
+            f"Maximum Events: {status.get('max_events', 0)}\n"
+            f"Rollover Anchor Present: "
+            f"{status.get('has_rollover_anchor', False)}\n"
+            f"Latest Event Type: "
+            f"{status.get('latest_event_type') or 'None'}\n\n"
+            "Safety: Confirmation audit status is read-only. "
+            "No confirmation state or audit event is modified."
+        )
     # Decision Action Bridge - explicit confirmation
     if command.startswith("confirm decision action "):
         confirmation_text = command.removeprefix(
@@ -3083,9 +3107,9 @@ def process_command(command):
 
     # Step 40: Translation System
     # Step 40: Arrow-style translation
-    # Example: Hello Guru → Bengali
-    if "→" in original_command:
-        source_text, target_language = original_command.rsplit("→", 1)
+    # Example: Hello Guru â†’ Bengali
+    if "â†’" in original_command:
+        source_text, target_language = original_command.rsplit("â†’", 1)
         source_text = source_text.strip()
         target_language = target_language.strip()
 
