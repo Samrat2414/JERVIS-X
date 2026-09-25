@@ -991,3 +991,222 @@ def test_confirmation_threat_score_is_read_only(monkeypatch):
     assert calls["analysis"] == 1
     assert "read-only" in result
     assert "Automatic execution is disabled." in result
+
+
+def test_confirmation_threat_trend_command(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_trend_report",
+        lambda: "TEST V32 TREND REPORT",
+    )
+
+    result = brain.process_command(
+        "confirmation threat trend"
+    )
+
+    assert result == "TEST V32 TREND REPORT"
+
+
+def test_confirmation_threat_trend_report_aliases(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_trend_report",
+        lambda: "TEST V32 TREND REPORT",
+    )
+
+    commands = [
+        "confirmation threat trend",
+        "confirmation threat trend intelligence",
+        "confirmation threat trend report",
+        "confirmation risk trend",
+        "confirmation risk trend report",
+    ]
+
+    for command in commands:
+        result = brain.process_command(command)
+
+        assert result == "TEST V32 TREND REPORT"
+
+
+def test_confirmation_threat_trend_score_command(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_trend_intelligence",
+        lambda: {
+            "trend_score": 48,
+            "trend_classification": "worsening",
+            "integrity_valid": True,
+            "sufficient_history": True,
+            "history_truncated": False,
+            "retained_event_count": 42,
+            "retention_limit": 100,
+            "failure_delta": 4,
+            "lockout_delta": 1,
+            "expiry_delta": 2,
+            "success_delta": -3,
+            "human_review_required": True,
+            "automation_allowed": False,
+            "read_only": True,
+        },
+    )
+
+    result = brain.process_command(
+        "confirmation threat trend score"
+    )
+
+    assert "JERVIS CONFIRMATION THREAT TREND SCORE" in result
+    assert "Trend Score: 48" in result
+    assert "Trend Classification: worsening" in result
+    assert "Integrity Valid: True" in result
+    assert "Sufficient History: True" in result
+    assert "History Truncated: False" in result
+    assert "Retained Events: 42/100" in result
+    assert "Failure Delta: 4" in result
+    assert "Lockout Delta: 1" in result
+    assert "Expiry Delta: 2" in result
+    assert "Success Delta: -3" in result
+    assert "Human Review Required: True" in result
+    assert "read-only" in result
+    assert "Automatic execution is disabled." in result
+
+
+def test_confirmation_risk_trend_score_alias(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_trend_intelligence",
+        lambda: {
+            "trend_score": 20,
+            "trend_classification": "worsening",
+            "integrity_valid": True,
+            "sufficient_history": True,
+            "history_truncated": False,
+            "retained_event_count": 20,
+            "retention_limit": 100,
+            "failure_delta": 2,
+            "lockout_delta": 0,
+            "expiry_delta": 1,
+            "success_delta": -1,
+            "human_review_required": False,
+        },
+    )
+
+    result = brain.process_command(
+        "confirmation risk trend score"
+    )
+
+    assert "Trend Score: 20" in result
+    assert "Trend Classification: worsening" in result
+    assert "Human Review Required: False" in result
+
+
+def test_confirmation_threat_trend_insufficient_history(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_trend_intelligence",
+        lambda: {
+            "trend_score": 0,
+            "trend_classification": "insufficient_data",
+            "integrity_valid": True,
+            "sufficient_history": False,
+            "history_truncated": False,
+            "retained_event_count": 0,
+            "retention_limit": 100,
+            "failure_delta": 0,
+            "lockout_delta": 0,
+            "expiry_delta": 0,
+            "success_delta": 0,
+            "human_review_required": False,
+        },
+    )
+
+    result = brain.process_command(
+        "confirmation threat trend score"
+    )
+
+    assert "Trend Score: 0" in result
+    assert "Trend Classification: insufficient_data" in result
+    assert "Sufficient History: False" in result
+    assert "Retained Events: 0/100" in result
+    assert "Human Review Required: False" in result
+
+
+def test_confirmation_threat_trend_integrity_failure(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_trend_intelligence",
+        lambda: {
+            "trend_score": 100,
+            "trend_classification": "critical",
+            "integrity_valid": False,
+            "sufficient_history": True,
+            "history_truncated": False,
+            "retained_event_count": 75,
+            "retention_limit": 100,
+            "failure_delta": 8,
+            "lockout_delta": 3,
+            "expiry_delta": 4,
+            "success_delta": -5,
+            "human_review_required": True,
+        },
+    )
+
+    result = brain.process_command(
+        "confirmation threat trend score"
+    )
+
+    assert "Trend Score: 100" in result
+    assert "Trend Classification: critical" in result
+    assert "Integrity Valid: False" in result
+    assert "Human Review Required: True" in result
+
+
+def test_confirmation_threat_trend_score_is_read_only(monkeypatch):
+    import core.brain as brain
+
+    calls = {"trend": 0}
+
+    def fake_trend():
+        calls["trend"] += 1
+
+        return {
+            "trend_score": 10,
+            "trend_classification": "stable",
+            "integrity_valid": True,
+            "sufficient_history": True,
+            "history_truncated": False,
+            "retained_event_count": 15,
+            "retention_limit": 100,
+            "failure_delta": 0,
+            "lockout_delta": 0,
+            "expiry_delta": 0,
+            "success_delta": 1,
+            "human_review_required": False,
+            "automation_allowed": False,
+            "read_only": True,
+        }
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_trend_intelligence",
+        fake_trend,
+    )
+
+    result = brain.process_command(
+        "confirmation threat trend score"
+    )
+
+    assert calls["trend"] == 1
+    assert "read-only" in result
+    assert "Automatic execution is disabled." in result
