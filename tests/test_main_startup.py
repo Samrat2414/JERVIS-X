@@ -78,7 +78,6 @@ def test_main_gui_path_runs_security_bootstrap_before_gui(monkeypatch):
 
     import gui.app
     import core.performance_monitor
-    import core.startup_bootstrap
     import main
 
     calls = []
@@ -90,7 +89,7 @@ def test_main_gui_path_runs_security_bootstrap_before_gui(monkeypatch):
     )
 
     monkeypatch.setattr(
-        core.startup_bootstrap,
+        bootstrap,
         "initialize_security_bootstrap",
         lambda: (
             calls.append("security_bootstrap")
@@ -133,7 +132,6 @@ def test_main_logs_successful_security_bootstrap(monkeypatch):
     import gui.app
     import core.logger
     import core.performance_monitor
-    import core.startup_bootstrap
     import main
 
     logs = []
@@ -141,7 +139,7 @@ def test_main_logs_successful_security_bootstrap(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["main.py"])
 
     monkeypatch.setattr(
-        core.startup_bootstrap,
+        bootstrap,
         "initialize_security_bootstrap",
         lambda: {
             "success": True,
@@ -186,7 +184,6 @@ def test_main_logs_security_bootstrap_failure_and_still_runs_gui(monkeypatch):
     import gui.app
     import core.logger
     import core.performance_monitor
-    import core.startup_bootstrap
     import main
 
     calls = []
@@ -195,7 +192,7 @@ def test_main_logs_security_bootstrap_failure_and_still_runs_gui(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["main.py"])
 
     monkeypatch.setattr(
-        core.startup_bootstrap,
+        bootstrap,
         "initialize_security_bootstrap",
         lambda: {
             "success": False,
@@ -243,7 +240,6 @@ def test_main_logs_invalid_security_bootstrap_result_and_still_runs_gui(
     import gui.app
     import core.logger
     import core.performance_monitor
-    import core.startup_bootstrap
     import main
 
     calls = []
@@ -252,7 +248,7 @@ def test_main_logs_invalid_security_bootstrap_result_and_still_runs_gui(
     monkeypatch.setattr(sys, "argv", ["main.py"])
 
     monkeypatch.setattr(
-        core.startup_bootstrap,
+        bootstrap,
         "initialize_security_bootstrap",
         lambda: None,
     )
