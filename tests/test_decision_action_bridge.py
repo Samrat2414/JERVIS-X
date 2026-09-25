@@ -2352,3 +2352,91 @@ def test_confirmation_audit_initializer_rejects_corrupt_storage_without_mutation
     assert bridge.verify_confirmation_audit_integrity()["valid"] is True
 
     bridge.clear_confirmation_audit_trail()
+
+
+def test_security_health_decision_is_route_only():
+    import core.decision_action_bridge as bridge
+
+    decision = {
+        "title": "Review security bootstrap health",
+        "priority": "Critical",
+        "reason": "Security bootstrap instability detected.",
+        "impact": "Security bootstrap reliability",
+        "confidence": 99.0,
+        "action": "Review Security Health Intelligence.",
+        "source": "Security Health Intelligence",
+    }
+
+    result = bridge.resolve_decision_action(decision)
+
+    assert result["action_name"] is None
+    assert result["status"] == bridge.UNSUPPORTED
+    assert result["route"] == "security health intelligence"
+    assert "No security action will be executed automatically" in result["message"]
+
+
+def test_security_health_decision_cannot_execute():
+    import core.decision_action_bridge as bridge
+
+    decision = {
+        "title": "Review security bootstrap health",
+        "priority": "Critical",
+        "reason": "Security bootstrap instability detected.",
+        "impact": "Security bootstrap reliability",
+        "confidence": 99.0,
+        "action": "Review Security Health Intelligence.",
+        "source": "Security Health Intelligence",
+    }
+
+    result = bridge.execute_decision(decision)
+
+    assert result["success"] is False
+    assert result["status"] == bridge.UNSUPPORTED
+    assert result["action_name"] is None
+    assert result["route"] == "security health intelligence"
+
+
+def test_security_health_route_cannot_be_bypassed_by_confirmed_flag():
+    import core.decision_action_bridge as bridge
+
+    decision = {
+        "title": "Review security bootstrap health",
+        "priority": "Critical",
+        "reason": "Security bootstrap instability detected.",
+        "impact": "Security bootstrap reliability",
+        "confidence": 99.0,
+        "action": "Review Security Health Intelligence.",
+        "source": "Security Health Intelligence",
+    }
+
+    result = bridge.execute_decision(
+        decision,
+        confirmed=True,
+    )
+
+    assert result["success"] is False
+    assert result["status"] == bridge.UNSUPPORTED
+    assert result["action_name"] is None
+    assert result["route"] == "security health intelligence"
+
+
+def test_security_health_decision_cannot_create_pending_confirmation():
+    import core.decision_action_bridge as bridge
+
+    bridge.clear_pending_confirmation()
+
+    decision = {
+        "title": "Review security bootstrap health",
+        "priority": "Critical",
+        "reason": "Security bootstrap instability detected.",
+        "impact": "Security bootstrap reliability",
+        "confidence": 99.0,
+        "action": "Review Security Health Intelligence.",
+        "source": "Security Health Intelligence",
+    }
+
+    result = bridge.create_pending_confirmation(decision)
+
+    assert result["success"] is False
+    assert result["status"] == bridge.UNSUPPORTED
+    assert bridge.get_pending_confirmation() is None

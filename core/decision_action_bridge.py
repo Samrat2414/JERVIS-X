@@ -678,6 +678,22 @@ def resolve_decision_action(decision):
     source = str(decision.get("source", "")).lower()
     action_text = str(decision.get("action", "")).lower()
 
+    # V27: Security Health Intelligence route
+    #
+    # Security decisions are intentionally advisory-only.
+    # They must never become executable merely because they
+    # entered Decision Intelligence.
+    if "security health intelligence" in source:
+        return {
+            "action_name": None,
+            "status": UNSUPPORTED,
+            "route": "security health intelligence",
+            "message": (
+                "Open Security Health Intelligence to review the "
+                "security recommendation. No security action will "
+                "be executed automatically."
+            ),
+        }
     if "alert intelligence" in source:
         return {
             "action_name": None,
