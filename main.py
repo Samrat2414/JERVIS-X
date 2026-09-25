@@ -18,6 +18,8 @@ Options:
   --diagnostics-json Show diagnostics in JSON format
   --security-status Show startup security bootstrap status
   --security-status-json Show startup security status as JSON
+  --security-history Show startup security bootstrap history
+  --security-history-json Show startup security history as JSON
   --log-path        Show the application log file path
   --data-path       Show the application data directory
   --backup          Create a backup of local JERVIS data
@@ -45,6 +47,63 @@ def main():
 
     if "--version" in sys.argv or "-V" in sys.argv:
         print(VERSION_TEXT)
+        return
+
+    if "--security-history-json" in sys.argv:
+        import json
+
+        from core.startup_bootstrap import (
+            get_security_bootstrap_history,
+            initialize_security_bootstrap,
+        )
+
+        initialize_security_bootstrap()
+        history = get_security_bootstrap_history()
+
+        print(json.dumps(history, indent=2))
+        return
+
+    if "--security-history" in sys.argv:
+        from core.startup_bootstrap import (
+            get_security_bootstrap_history,
+            initialize_security_bootstrap,
+        )
+
+        initialize_security_bootstrap()
+        history = get_security_bootstrap_history()
+
+        print("JERVIS SECURITY HISTORY")
+        print()
+
+        if not history:
+            print("No security bootstrap history available.")
+            return
+
+        for index, status in enumerate(history, start=1):
+            print(f"Entry: {index}")
+            print(f"Component: {status.get('component', 'unknown')}")
+            print(
+                "Status: "
+                + (
+                    "HEALTHY"
+                    if status.get("success") is True
+                    else "DEGRADED"
+                )
+            )
+            print(f"Events: {status.get('event_count', 0)}")
+            print(
+                "Message: "
+                + str(
+                    status.get(
+                        "message",
+                        "No security bootstrap message available.",
+                    )
+                )
+            )
+
+            if index != len(history):
+                print()
+
         return
 
     if "--security-status-json" in sys.argv:

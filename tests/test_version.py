@@ -345,3 +345,39 @@ def test_command_line_security_status_json():
     assert data["component"] == "confirmation_audit"
     assert isinstance(data["event_count"], int)
     assert isinstance(data["message"], str)
+
+
+def test_command_line_security_history():
+    result = subprocess.run(
+        [sys.executable, "main.py", "--security-history"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "JERVIS SECURITY HISTORY" in result.stdout
+    assert "Component: confirmation_audit" in result.stdout
+    assert "Status: HEALTHY" in result.stdout
+    assert "Events:" in result.stdout
+    assert "Message:" in result.stdout
+
+
+def test_command_line_security_history_json():
+    result = subprocess.run(
+        [sys.executable, "main.py", "--security-history-json"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    data = json.loads(result.stdout)
+
+    assert isinstance(data, list)
+    assert len(data) >= 1
+
+    latest = data[-1]
+
+    assert latest["success"] is True
+    assert latest["component"] == "confirmation_audit"
+    assert isinstance(latest["event_count"], int)
+    assert isinstance(latest["message"], str)
