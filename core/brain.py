@@ -152,6 +152,7 @@ from core.goal_intelligence import (
     get_goal_recommendations,
     get_goal_intelligence_report,
 )
+from core.startup_bootstrap import get_security_decision
 from core.decision_intelligence import (
     get_decision_intelligence,
     get_decision_intelligence_report,
@@ -951,6 +952,31 @@ def process_command(command):
             "Goal step completion finished.",
         )
 
+    # V26: Security Health Decision Intelligence
+    if command in [
+        "security decision",
+        "security health decision",
+        "security decision intelligence",
+        "security bootstrap decision",
+    ]:
+        item = get_security_decision()
+
+        return (
+            "JERVIS SECURITY DECISION\n\n"
+            f"Decision: {item.get('title', 'Unknown')}\n"
+            f"Priority: {item.get('priority', 'Unknown')}\n"
+            f"Reason: {item.get('reason', '')}\n"
+            f"Impact: {item.get('impact', '')}\n"
+            f"Confidence: {item.get('confidence', 0)}%\n"
+            f"Recommended Action: {item.get('action', '')}\n"
+            f"Source: {item.get('source', 'Unknown')}\n"
+            f"Manual Review Required: "
+            f"{item.get('requires_manual_review', False)}\n"
+            f"Automation Allowed: "
+            f"{item.get('automation_allowed', False)}\n\n"
+            "Safety: Security Decision Intelligence is advisory only. "
+            "No security action is executed automatically."
+        )
     # Step 81: Smart Decision Intelligence
     if command in [
         "decision intelligence",
@@ -3057,9 +3083,9 @@ def process_command(command):
 
     # Step 40: Translation System
     # Step 40: Arrow-style translation
-    # Example: Hello Guru â†’ Bengali
-    if "â†’" in original_command:
-        source_text, target_language = original_command.rsplit("â†’", 1)
+    # Example: Hello Guru → Bengali
+    if "→" in original_command:
+        source_text, target_language = original_command.rsplit("→", 1)
         source_text = source_text.strip()
         target_language = target_language.strip()
 

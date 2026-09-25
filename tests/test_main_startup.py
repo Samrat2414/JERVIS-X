@@ -1283,3 +1283,122 @@ def test_security_health_recommendation_critical(monkeypatch):
     assert result["requires_manual_review"] is True
     assert result["automation_allowed"] is False
     assert "3 consecutive failure" in result["reason"]
+
+
+def test_security_decision_unknown(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    monkeypatch.setattr(
+        bootstrap,
+        "get_security_health_recommendation",
+        lambda: {
+            "status": "UNKNOWN",
+            "score": 0,
+            "priority": "MEDIUM",
+            "reason": "Security bootstrap history is not available.",
+            "recommended_action": "Generate security history.",
+            "requires_manual_review": False,
+            "automation_allowed": False,
+            "source": "Security Health Intelligence",
+        },
+    )
+
+    result = bootstrap.get_security_decision()
+
+    assert result["title"] == "Establish security bootstrap history"
+    assert result["priority"] == "Medium"
+    assert result["confidence"] == 90.0
+    assert result["impact"] == "Security health visibility"
+    assert result["requires_manual_review"] is False
+    assert result["automation_allowed"] is False
+    assert result["source"] == "Security Health Intelligence"
+
+
+def test_security_decision_healthy(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    monkeypatch.setattr(
+        bootstrap,
+        "get_security_health_recommendation",
+        lambda: {
+            "status": "HEALTHY",
+            "score": 100,
+            "priority": "NONE",
+            "reason": "Security bootstrap health is healthy.",
+            "recommended_action": "No corrective action is required.",
+            "requires_manual_review": False,
+            "automation_allowed": False,
+            "source": "Security Health Intelligence",
+        },
+    )
+
+    result = bootstrap.get_security_decision()
+
+    assert result["title"] == "Maintain security bootstrap health"
+    assert result["priority"] == "Low"
+    assert result["confidence"] == 100.0
+    assert result["impact"] == "Security bootstrap reliability"
+    assert result["requires_manual_review"] is False
+    assert result["automation_allowed"] is False
+
+
+def test_security_decision_warning(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    monkeypatch.setattr(
+        bootstrap,
+        "get_security_health_recommendation",
+        lambda: {
+            "status": "WARNING",
+            "score": 79,
+            "priority": "HIGH",
+            "reason": "Recent security bootstrap instability detected.",
+            "recommended_action": "Review security bootstrap history.",
+            "requires_manual_review": True,
+            "automation_allowed": False,
+            "source": "Security Health Intelligence",
+        },
+    )
+
+    result = bootstrap.get_security_decision()
+
+    assert result["title"] == "Review security bootstrap instability"
+    assert result["priority"] == "High"
+    assert result["confidence"] == 95.0
+    assert result["impact"] == "Security bootstrap reliability"
+    assert result["requires_manual_review"] is True
+    assert result["automation_allowed"] is False
+
+
+def test_security_decision_critical(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    monkeypatch.setattr(
+        bootstrap,
+        "get_security_health_recommendation",
+        lambda: {
+            "status": "CRITICAL",
+            "score": 39,
+            "priority": "CRITICAL",
+            "reason": "Critical security bootstrap instability detected.",
+            "recommended_action": "Inspect security initialization failures.",
+            "requires_manual_review": True,
+            "automation_allowed": False,
+            "source": "Security Health Intelligence",
+        },
+    )
+
+    result = bootstrap.get_security_decision()
+
+    assert (
+        result["title"]
+        == "Resolve critical security bootstrap instability"
+    )
+    assert result["priority"] == "Critical"
+    assert result["confidence"] == 99.0
+    assert (
+        result["impact"]
+        == "Security-sensitive automation reliability"
+    )
+    assert result["requires_manual_review"] is True
+    assert result["automation_allowed"] is False

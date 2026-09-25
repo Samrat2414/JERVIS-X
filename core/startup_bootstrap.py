@@ -281,3 +281,58 @@ def get_security_health_recommendation():
         "automation_allowed": False,
         "source": "Security Health Intelligence",
     }
+
+
+def get_security_decision():
+    """Convert security health intelligence into a decision-style result."""
+
+    recommendation = get_security_health_recommendation()
+
+    status = recommendation["status"]
+    priority = recommendation["priority"]
+
+    priority_map = {
+        "CRITICAL": "Critical",
+        "HIGH": "High",
+        "MEDIUM": "Medium",
+        "NONE": "Low",
+    }
+
+    confidence_map = {
+        "CRITICAL": 99.0,
+        "HIGH": 95.0,
+        "MEDIUM": 90.0,
+        "NONE": 100.0,
+    }
+
+    decision_priority = priority_map.get(priority, "Medium")
+    confidence = confidence_map.get(priority, 90.0)
+
+    if status == "HEALTHY":
+        title = "Maintain security bootstrap health"
+        impact = "Security bootstrap reliability"
+    elif status == "UNKNOWN":
+        title = "Establish security bootstrap history"
+        impact = "Security health visibility"
+    elif status == "WARNING":
+        title = "Review security bootstrap instability"
+        impact = "Security bootstrap reliability"
+    else:
+        title = "Resolve critical security bootstrap instability"
+        impact = "Security-sensitive automation reliability"
+
+    return {
+        "title": title,
+        "priority": decision_priority,
+        "reason": recommendation["reason"],
+        "impact": impact,
+        "confidence": confidence,
+        "action": recommendation["recommended_action"],
+        "source": recommendation["source"],
+        "requires_manual_review": recommendation[
+            "requires_manual_review"
+        ],
+        "automation_allowed": recommendation[
+            "automation_allowed"
+        ],
+    }

@@ -4,6 +4,7 @@ from core.productivity_intelligence import get_productivity_intelligence
 from core.memory_intelligence import get_memory_intelligence
 from core.personal_assistant_intelligence import get_personal_assistant_intelligence
 from core.context_intelligence import get_context_system_status
+from core.startup_bootstrap import get_security_decision
 
 
 PRIORITY_WEIGHT = {
@@ -66,6 +67,7 @@ def _collect_decisions():
     memory = _safe_result(get_memory_intelligence)
     assistant = _safe_result(get_personal_assistant_intelligence)
     context = _safe_result(get_context_system_status)
+    security = _safe_result(get_security_decision)
 
     decisions = []
 
@@ -397,6 +399,38 @@ def _collect_decisions():
             "Alert Intelligence",
         )
 
+    # Security bootstrap decisions.
+    security_priority = security.get("priority")
+
+    if security_priority in {"Critical", "High"}:
+        _add_decision(
+            decisions,
+            security.get(
+                "title",
+                "Review security bootstrap health",
+            ),
+            security_priority,
+            security.get(
+                "reason",
+                "Security bootstrap instability detected.",
+            ),
+            security.get(
+                "impact",
+                "Security bootstrap reliability",
+            ),
+            security.get(
+                "confidence",
+                90.0,
+            ),
+            security.get(
+                "action",
+                "Review Security Health Intelligence.",
+            ),
+            security.get(
+                "source",
+                "Security Health Intelligence",
+            ),
+        )
     if not decisions:
         _add_decision(
             decisions,

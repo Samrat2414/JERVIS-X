@@ -408,3 +408,124 @@ def test_confirm_decision_action_rejects_wrong_token(monkeypatch):
 
     assert "Confirmation rejected." in result
     assert "Invalid confirmation token." in result
+
+
+def test_security_decision_command_healthy(monkeypatch):
+    monkeypatch.setattr(
+        brain,
+        "get_security_decision",
+        lambda: {
+            "title": "Maintain security bootstrap health",
+            "priority": "Low",
+            "reason": "Security bootstrap health is healthy at 100/100.",
+            "impact": "Security bootstrap reliability",
+            "confidence": 100.0,
+            "action": "No corrective action is required.",
+            "source": "Security Health Intelligence",
+            "requires_manual_review": False,
+            "automation_allowed": False,
+        },
+    )
+
+    result = brain.process_command("security decision")
+
+    assert "JERVIS SECURITY DECISION" in result
+    assert "Maintain security bootstrap health" in result
+    assert "Priority: Low" in result
+    assert "Confidence: 100.0%" in result
+    assert "Manual Review Required: False" in result
+    assert "Automation Allowed: False" in result
+    assert "No security action is executed automatically." in result
+
+
+def test_security_decision_command_critical(monkeypatch):
+    monkeypatch.setattr(
+        brain,
+        "get_security_decision",
+        lambda: {
+            "title": "Resolve critical security bootstrap instability",
+            "priority": "Critical",
+            "reason": "Critical security bootstrap instability detected.",
+            "impact": "Security-sensitive automation reliability",
+            "confidence": 99.0,
+            "action": (
+                "Inspect confirmation audit initialization failures "
+                "before relying on security-sensitive automation."
+            ),
+            "source": "Security Health Intelligence",
+            "requires_manual_review": True,
+            "automation_allowed": False,
+        },
+    )
+
+    result = brain.process_command("security health decision")
+
+    assert "Resolve critical security bootstrap instability" in result
+    assert "Priority: Critical" in result
+    assert "Confidence: 99.0%" in result
+    assert "Manual Review Required: True" in result
+    assert "Automation Allowed: False" in result
+
+
+def test_security_decision_command_aliases(monkeypatch):
+    monkeypatch.setattr(
+        brain,
+        "get_security_decision",
+        lambda: {
+            "title": "Test security decision",
+            "priority": "High",
+            "reason": "Test reason.",
+            "impact": "Security reliability",
+            "confidence": 95.0,
+            "action": "Review security health.",
+            "source": "Security Health Intelligence",
+            "requires_manual_review": True,
+            "automation_allowed": False,
+        },
+    )
+
+    commands = [
+        "security decision",
+        "security health decision",
+        "security decision intelligence",
+        "security bootstrap decision",
+    ]
+
+    for command in commands:
+        result = brain.process_command(command)
+
+        assert "JERVIS SECURITY DECISION" in result
+        assert "Test security decision" in result
+        assert "Automation Allowed: False" in result
+
+
+def test_security_decision_command_is_advisory_only(monkeypatch):
+    called = {"count": 0}
+
+    def fake_security_decision():
+        called["count"] += 1
+
+        return {
+            "title": "Review security bootstrap instability",
+            "priority": "High",
+            "reason": "Security bootstrap instability detected.",
+            "impact": "Security bootstrap reliability",
+            "confidence": 95.0,
+            "action": "Review Security Health Intelligence.",
+            "source": "Security Health Intelligence",
+            "requires_manual_review": True,
+            "automation_allowed": False,
+        }
+
+    monkeypatch.setattr(
+        brain,
+        "get_security_decision",
+        fake_security_decision,
+    )
+
+    result = brain.process_command("security decision")
+
+    assert called["count"] == 1
+    assert "Automation Allowed: False" in result
+    assert "advisory only" in result
+    assert "No security action is executed automatically." in result
