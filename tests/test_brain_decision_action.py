@@ -844,3 +844,150 @@ def test_confirmation_audit_intelligence_brain_route_is_read_only(
     assert calls["intelligence"] == 1
     assert "read-only" in result
     assert "Automatic execution is disabled." in result
+
+
+def test_confirmation_threat_analysis_command(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_analysis_report",
+        lambda: "TEST V30 THREAT REPORT",
+    )
+
+    result = brain.process_command(
+        "confirmation threat analysis"
+    )
+
+    assert result == "TEST V30 THREAT REPORT"
+
+
+def test_confirmation_threat_analysis_aliases(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_analysis_report",
+        lambda: "TEST V30 THREAT REPORT",
+    )
+
+    commands = [
+        "confirmation threat analysis",
+        "confirmation threat analysis report",
+        "confirmation risk analysis",
+        "confirmation risk",
+    ]
+
+    for command in commands:
+        result = brain.process_command(command)
+
+        assert result == "TEST V30 THREAT REPORT"
+
+
+def test_confirmation_threat_score_command(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_analysis",
+        lambda: {
+            "risk_score": 82,
+            "risk_classification": "high",
+            "integrity_valid": True,
+            "event_count": 14,
+            "human_review_required": True,
+        },
+    )
+
+    result = brain.process_command(
+        "confirmation threat score"
+    )
+
+    assert "JERVIS CONFIRMATION THREAT ANALYSIS SCORE" in result
+    assert "Risk Score: 82/100" in result
+    assert "Risk Classification: high" in result
+    assert "Integrity Valid: True" in result
+    assert "Audit Events: 14" in result
+    assert "Human Review Required: True" in result
+    assert "read-only" in result
+    assert "Automatic execution is disabled." in result
+
+
+def test_confirmation_risk_score_alias(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_analysis",
+        lambda: {
+            "risk_score": 35,
+            "risk_classification": "moderate",
+            "integrity_valid": True,
+            "event_count": 5,
+            "human_review_required": False,
+        },
+    )
+
+    result = brain.process_command(
+        "confirmation risk score"
+    )
+
+    assert "Risk Score: 35/100" in result
+    assert "Risk Classification: moderate" in result
+    assert "Human Review Required: False" in result
+
+
+def test_confirmation_threat_score_integrity_failure(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_analysis",
+        lambda: {
+            "risk_score": 100,
+            "risk_classification": "critical",
+            "integrity_valid": False,
+            "event_count": 9,
+            "human_review_required": True,
+        },
+    )
+
+    result = brain.process_command(
+        "confirmation threat score"
+    )
+
+    assert "Risk Score: 100/100" in result
+    assert "Risk Classification: critical" in result
+    assert "Integrity Valid: False" in result
+    assert "Human Review Required: True" in result
+
+
+def test_confirmation_threat_score_is_read_only(monkeypatch):
+    import core.brain as brain
+
+    calls = {"analysis": 0}
+
+    def fake_analysis():
+        calls["analysis"] += 1
+
+        return {
+            "risk_score": 10,
+            "risk_classification": "low",
+            "integrity_valid": True,
+            "event_count": 2,
+            "human_review_required": False,
+        }
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_analysis",
+        fake_analysis,
+    )
+
+    result = brain.process_command(
+        "confirmation threat score"
+    )
+
+    assert calls["analysis"] == 1
+    assert "read-only" in result
+    assert "Automatic execution is disabled." in result

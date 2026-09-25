@@ -164,6 +164,10 @@ from core.confirmation_audit_intelligence import (
     get_confirmation_audit_intelligence,
     get_confirmation_audit_intelligence_report,
 )
+from core.confirmation_threat_analysis import (
+    get_confirmation_threat_analysis,
+    get_confirmation_threat_analysis_report,
+)
 from core.decision_action_bridge import (
     CONFIRM,
     resolve_decision_action,
@@ -1091,6 +1095,36 @@ def process_command(command):
             "It does not automatically execute system or productivity actions."
         )
 
+    # V30: Confirmation Threat Analysis
+    if command in [
+        "confirmation threat analysis",
+        "confirmation threat analysis report",
+        "confirmation risk analysis",
+        "confirmation risk",
+    ]:
+        return get_confirmation_threat_analysis_report()
+
+    if command in [
+        "confirmation threat score",
+        "confirmation risk score",
+    ]:
+        analysis = get_confirmation_threat_analysis()
+
+        return (
+            "JERVIS CONFIRMATION THREAT ANALYSIS SCORE\n\n"
+            f"Risk Score: "
+            f"{analysis.get('risk_score', 0)}/100\n"
+            f"Risk Classification: "
+            f"{analysis.get('risk_classification', 'unknown')}\n"
+            f"Integrity Valid: "
+            f"{analysis.get('integrity_valid', False)}\n"
+            f"Audit Events: "
+            f"{analysis.get('event_count', 0)}\n"
+            f"Human Review Required: "
+            f"{analysis.get('human_review_required', False)}\n\n"
+            "Safety: Confirmation Threat Analysis is read-only. "
+            "Automatic execution is disabled."
+        )
     # V29: Confirmation Audit Intelligence
     if command in [
         "confirmation audit intelligence",
@@ -3144,9 +3178,9 @@ def process_command(command):
 
     # Step 40: Translation System
     # Step 40: Arrow-style translation
-    # Example: Hello Guru ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Bengali
-    if "ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢" in original_command:
-        source_text, target_language = original_command.rsplit("ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢", 1)
+    # Example: Hello Guru ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ Bengali
+    if "ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢" in original_command:
+        source_text, target_language = original_command.rsplit("ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢", 1)
         source_text = source_text.strip()
         target_language = target_language.strip()
 
