@@ -5,6 +5,9 @@ from core.memory_intelligence import get_memory_intelligence
 from core.personal_assistant_intelligence import get_personal_assistant_intelligence
 from core.context_intelligence import get_context_system_status
 from core.startup_bootstrap import get_security_decision
+from core.confirmation_threat_decision_intelligence import (
+    get_confirmation_threat_decision,
+)
 
 
 PRIORITY_WEIGHT = {
@@ -68,6 +71,9 @@ def _collect_decisions():
     assistant = _safe_result(get_personal_assistant_intelligence)
     context = _safe_result(get_context_system_status)
     security = _safe_result(get_security_decision)
+    threat_decision = _safe_result(
+        get_confirmation_threat_decision
+    )
 
     decisions = []
 
@@ -399,6 +405,41 @@ def _collect_decisions():
             "Alert Intelligence",
         )
 
+    # V31: Confirmation threat decision intelligence.
+    #
+    # This is advisory only. It may enter global ranking, but it
+    # must never become an automatic execution path.
+    threat_priority = threat_decision.get("priority")
+
+    if threat_priority in {"Critical", "High", "Medium"}:
+        _add_decision(
+            decisions,
+            threat_decision.get(
+                "title",
+                "Review confirmation threat activity",
+            ),
+            threat_priority,
+            threat_decision.get(
+                "reason",
+                "Confirmation threat analysis requires review.",
+            ),
+            threat_decision.get(
+                "impact",
+                "Confirmation security and audit trust",
+            ),
+            threat_decision.get(
+                "confidence",
+                95.0,
+            ),
+            threat_decision.get(
+                "action",
+                "Review Confirmation Threat Analysis manually.",
+            ),
+            threat_decision.get(
+                "source",
+                "Confirmation Threat Decision Intelligence",
+            ),
+        )
     # Security bootstrap decisions.
     security_priority = security.get("priority")
 
