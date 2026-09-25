@@ -434,3 +434,100 @@ def test_security_history_commands_do_not_change_persistent_file():
     ).hexdigest()
 
     assert after == before
+
+
+def test_command_line_security_health():
+    result = subprocess.run(
+        [sys.executable, "main.py", "--security-health"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "JERVIS SECURITY HEALTH" in result.stdout
+    assert "Status:" in result.stdout
+    assert "Score:" in result.stdout
+    assert "Total Events:" in result.stdout
+    assert "Successful Events:" in result.stdout
+    assert "Failed Events:" in result.stdout
+    assert "Success Rate:" in result.stdout
+    assert "Consecutive Failures:" in result.stdout
+    assert "Message:" in result.stdout
+
+
+def test_command_line_security_health_json():
+    result = subprocess.run(
+        [sys.executable, "main.py", "--security-health-json"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    data = json.loads(result.stdout)
+
+    assert isinstance(data["score"], int)
+    assert data["status"] in {
+        "UNKNOWN",
+        "HEALTHY",
+        "WARNING",
+        "CRITICAL",
+    }
+    assert isinstance(data["total_events"], int)
+    assert isinstance(data["successful_events"], int)
+    assert isinstance(data["failed_events"], int)
+    assert isinstance(data["success_rate"], float)
+    assert isinstance(data["consecutive_failures"], int)
+    assert isinstance(data["message"], str)
+
+
+def test_security_health_cli_is_read_only():
+    from pathlib import Path
+
+    main_source = Path("main.py").read_text(encoding="utf-8")
+
+    health_block_start = main_source.index(
+        '    if "--security-health-json" in sys.argv:'
+    )
+    status_block_start = main_source.index(
+        '    if "--security-status-json" in sys.argv:'
+    )
+
+    health_source = main_source[
+        health_block_start:status_block_start
+    ]
+
+    assert "load_security_bootstrap_history" in health_source
+    assert "get_security_health_score" in health_source
+    assert "initialize_security_bootstrap" not in health_source
+
+
+def test_security_health_commands_do_not_change_persistent_file():
+    import hashlib
+    from pathlib import Path
+
+    history_path = Path("data") / "security_bootstrap_history.json"
+
+    assert history_path.exists()
+
+    before = hashlib.sha256(
+        history_path.read_bytes()
+    ).hexdigest()
+
+    for option in (
+        "--security-health",
+        "--security-health-json",
+    ):
+        result = subprocess.run(
+            [sys.executable, "main.py", option],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        assert result.stdout
+
+    after = hashlib.sha256(
+        history_path.read_bytes()
+    ).hexdigest()
+
+    assert after == before

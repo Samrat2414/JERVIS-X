@@ -20,6 +20,8 @@ Options:
   --security-status-json Show startup security status as JSON
   --security-history Show startup security bootstrap history
   --security-history-json Show startup security history as JSON
+  --security-health Show startup security health intelligence
+  --security-health-json Show startup security health as JSON
   --log-path        Show the application log file path
   --data-path       Show the application data directory
   --backup          Create a backup of local JERVIS data
@@ -104,6 +106,44 @@ def main():
             if index != len(history):
                 print()
 
+        return
+
+    if "--security-health-json" in sys.argv:
+        import json
+
+        from core.startup_bootstrap import (
+            get_security_health_score,
+            load_security_bootstrap_history,
+        )
+
+        load_security_bootstrap_history()
+        health = get_security_health_score()
+
+        print(json.dumps(health, indent=2))
+        return
+
+    if "--security-health" in sys.argv:
+        from core.startup_bootstrap import (
+            get_security_health_score,
+            load_security_bootstrap_history,
+        )
+
+        load_security_bootstrap_history()
+        health = get_security_health_score()
+
+        print("JERVIS SECURITY HEALTH")
+        print()
+        print(f"Status: {health['status']}")
+        print(f"Score: {health['score']}/100")
+        print(f"Total Events: {health['total_events']}")
+        print(f"Successful Events: {health['successful_events']}")
+        print(f"Failed Events: {health['failed_events']}")
+        print(f"Success Rate: {health['success_rate']}%")
+        print(
+            "Consecutive Failures: "
+            f"{health['consecutive_failures']}"
+        )
+        print(f"Message: {health['message']}")
         return
 
     if "--security-status-json" in sys.argv:

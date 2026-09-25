@@ -1064,3 +1064,131 @@ def test_security_bootstrap_history_load_trims_oversized_history(
     current = bootstrap.get_security_bootstrap_history()
 
     assert current == history
+
+
+def test_security_health_unknown_without_history():
+    import core.startup_bootstrap as bootstrap
+
+    bootstrap.clear_security_bootstrap_history()
+
+    health = bootstrap.get_security_health_score()
+
+    assert health["score"] == 0
+    assert health["status"] == "UNKNOWN"
+    assert health["total_events"] == 0
+    assert health["successful_events"] == 0
+    assert health["failed_events"] == 0
+    assert health["success_rate"] == 0.0
+    assert health["consecutive_failures"] == 0
+
+
+def test_security_health_is_healthy_for_successful_history(
+    monkeypatch,
+):
+    import core.startup_bootstrap as bootstrap
+
+    history = [
+        {"success": True}
+        for _ in range(10)
+    ]
+
+    monkeypatch.setattr(
+        bootstrap,
+        "_security_bootstrap_history",
+        history,
+    )
+
+    health = bootstrap.get_security_health_score()
+
+    assert health["score"] == 100
+    assert health["status"] == "HEALTHY"
+    assert health["total_events"] == 10
+    assert health["successful_events"] == 10
+    assert health["failed_events"] == 0
+    assert health["success_rate"] == 100.0
+    assert health["consecutive_failures"] == 0
+
+
+def test_security_health_warning_for_one_recent_failure(
+    monkeypatch,
+):
+    import core.startup_bootstrap as bootstrap
+
+    history = [
+        {"success": True}
+        for _ in range(9)
+    ] + [
+        {"success": False}
+    ]
+
+    monkeypatch.setattr(
+        bootstrap,
+        "_security_bootstrap_history",
+        history,
+    )
+
+    health = bootstrap.get_security_health_score()
+
+    assert health["score"] == 79
+    assert health["status"] == "WARNING"
+    assert health["successful_events"] == 9
+    assert health["failed_events"] == 1
+    assert health["success_rate"] == 90.0
+    assert health["consecutive_failures"] == 1
+
+
+def test_security_health_critical_for_three_consecutive_failures(
+    monkeypatch,
+):
+    import core.startup_bootstrap as bootstrap
+
+    history = [
+        {"success": True}
+        for _ in range(7)
+    ] + [
+        {"success": False},
+        {"success": False},
+        {"success": False},
+    ]
+
+    monkeypatch.setattr(
+        bootstrap,
+        "_security_bootstrap_history",
+        history,
+    )
+
+    health = bootstrap.get_security_health_score()
+
+    assert health["score"] == 39
+    assert health["status"] == "CRITICAL"
+    assert health["successful_events"] == 7
+    assert health["failed_events"] == 3
+    assert health["success_rate"] == 70.0
+    assert health["consecutive_failures"] == 3
+
+
+def test_security_health_two_consecutive_failures_caps_score(
+    monkeypatch,
+):
+    import core.startup_bootstrap as bootstrap
+
+    history = [
+        {"success": True}
+        for _ in range(18)
+    ] + [
+        {"success": False},
+        {"success": False},
+    ]
+
+    monkeypatch.setattr(
+        bootstrap,
+        "_security_bootstrap_history",
+        history,
+    )
+
+    health = bootstrap.get_security_health_score()
+
+    assert health["score"] == 59
+    assert health["status"] == "CRITICAL"
+    assert health["success_rate"] == 90.0
+    assert health["consecutive_failures"] == 2

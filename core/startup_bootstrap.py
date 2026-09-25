@@ -146,3 +146,75 @@ def initialize_security_bootstrap():
     _record_security_bootstrap_status(result)
 
     return result
+
+
+def get_security_health_score():
+    """Analyze bootstrap history and return security health intelligence."""
+
+    history = get_security_bootstrap_history()
+
+    if not history:
+        history = load_security_bootstrap_history()
+
+    total = len(history)
+
+    if total == 0:
+        return {
+            "score": 0,
+            "status": "UNKNOWN",
+            "total_events": 0,
+            "successful_events": 0,
+            "failed_events": 0,
+            "success_rate": 0.0,
+            "consecutive_failures": 0,
+            "message": "No security bootstrap history is available.",
+        }
+
+    successful = sum(
+        1
+        for event in history
+        if event.get("success") is True
+    )
+    failed = total - successful
+
+    consecutive_failures = 0
+
+    for event in reversed(history):
+        if event.get("success") is True:
+            break
+
+        consecutive_failures += 1
+
+    success_rate = (successful / total) * 100
+
+    score = round(success_rate)
+
+    if consecutive_failures >= 3:
+        score = min(score, 39)
+    elif consecutive_failures == 2:
+        score = min(score, 59)
+    elif consecutive_failures == 1:
+        score = min(score, 79)
+
+    score = max(0, min(100, score))
+
+    if score >= 80:
+        status = "HEALTHY"
+    elif score >= 60:
+        status = "WARNING"
+    else:
+        status = "CRITICAL"
+
+    return {
+        "score": score,
+        "status": status,
+        "total_events": total,
+        "successful_events": successful,
+        "failed_events": failed,
+        "success_rate": round(success_rate, 1),
+        "consecutive_failures": consecutive_failures,
+        "message": (
+            f"Security bootstrap health is {status.lower()} "
+            f"with a score of {score}/100."
+        ),
+    }
