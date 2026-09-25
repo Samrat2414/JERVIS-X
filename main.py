@@ -206,10 +206,43 @@ def main():
 
     from gui.app import run_gui
     from core.performance_monitor import record_startup_time
-    from core.logger import log_exception, log_info
+    from core.logger import log_exception, log_info, log_warning
     from core.startup_bootstrap import initialize_security_bootstrap
 
-    initialize_security_bootstrap()
+    security_bootstrap = initialize_security_bootstrap()
+
+    if not isinstance(security_bootstrap, dict):
+        log_warning(
+            "Security bootstrap returned an invalid result."
+        )
+    elif security_bootstrap.get("success") is True:
+        component = security_bootstrap.get(
+            "component",
+            "unknown",
+        )
+        event_count = security_bootstrap.get(
+            "event_count",
+            0,
+        )
+        log_info(
+            "Security bootstrap healthy | "
+            f"component={component} | "
+            f"event_count={event_count}"
+        )
+    else:
+        component = security_bootstrap.get(
+            "component",
+            "unknown",
+        )
+        reason = security_bootstrap.get(
+            "message",
+            "Security bootstrap initialization failed.",
+        )
+        log_warning(
+            "Security bootstrap degraded | "
+            f"component={component} | "
+            f"reason={reason}"
+        )
 
     startup_seconds = time.perf_counter() - STARTUP_TIMER
     record_startup_time(startup_seconds)
