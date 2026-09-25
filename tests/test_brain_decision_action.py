@@ -672,3 +672,175 @@ def test_confirmation_audit_status_command_is_read_only(monkeypatch):
         "No confirmation state or audit event is modified."
         in result
     )
+
+
+def test_confirmation_audit_intelligence_report_command(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_audit_intelligence_report",
+        lambda: "TEST CONFIRMATION AUDIT INTELLIGENCE REPORT",
+    )
+
+    result = brain.process_command(
+        "confirmation audit intelligence"
+    )
+
+    assert result == "TEST CONFIRMATION AUDIT INTELLIGENCE REPORT"
+
+
+def test_confirmation_audit_intelligence_report_aliases(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_audit_intelligence_report",
+        lambda: "TEST AUDIT REPORT",
+    )
+
+    commands = [
+        "confirmation audit intelligence",
+        "confirmation audit intelligence report",
+        "confirmation intelligence",
+        "confirmation intelligence report",
+    ]
+
+    for command in commands:
+        result = brain.process_command(command)
+
+        assert result == "TEST AUDIT REPORT"
+
+
+def test_confirmation_audit_score_command(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_audit_intelligence",
+        lambda: {
+            "score": 72,
+            "status": "warning",
+            "integrity_valid": True,
+            "event_count": 9,
+            "failed_confirmations": 3,
+            "lockouts": 0,
+            "expired_confirmations": 1,
+            "successful_confirmations": 5,
+            "automation_allowed": False,
+            "read_only": True,
+        },
+    )
+
+    result = brain.process_command(
+        "confirmation audit score"
+    )
+
+    assert "JERVIS CONFIRMATION AUDIT INTELLIGENCE SCORE" in result
+    assert "Score: 72/100" in result
+    assert "Status: warning" in result
+    assert "Integrity Valid: True" in result
+    assert "Audit Events: 9" in result
+    assert "Failed Confirmations: 3" in result
+    assert "Lockouts: 0" in result
+    assert "Expired Confirmations: 1" in result
+    assert "Successful Confirmations: 5" in result
+    assert "read-only" in result
+    assert "Automatic execution is disabled." in result
+
+
+def test_confirmation_audit_score_alias(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_audit_intelligence",
+        lambda: {
+            "score": 100,
+            "status": "healthy",
+            "integrity_valid": True,
+            "event_count": 0,
+            "failed_confirmations": 0,
+            "lockouts": 0,
+            "expired_confirmations": 0,
+            "successful_confirmations": 0,
+            "automation_allowed": False,
+            "read_only": True,
+        },
+    )
+
+    result = brain.process_command(
+        "confirmation intelligence score"
+    )
+
+    assert "Score: 100/100" in result
+    assert "Status: healthy" in result
+
+
+def test_confirmation_audit_score_integrity_failure(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_audit_intelligence",
+        lambda: {
+            "score": 0,
+            "status": "critical",
+            "integrity_valid": False,
+            "event_count": 5,
+            "failed_confirmations": 0,
+            "lockouts": 0,
+            "expired_confirmations": 0,
+            "successful_confirmations": 0,
+            "automation_allowed": False,
+            "read_only": True,
+        },
+    )
+
+    result = brain.process_command(
+        "confirmation audit score"
+    )
+
+    assert "Score: 0/100" in result
+    assert "Status: critical" in result
+    assert "Integrity Valid: False" in result
+
+
+def test_confirmation_audit_intelligence_brain_route_is_read_only(
+    monkeypatch,
+):
+    import core.brain as brain
+
+    calls = {
+        "intelligence": 0,
+    }
+
+    def fake_intelligence():
+        calls["intelligence"] += 1
+
+        return {
+            "score": 100,
+            "status": "healthy",
+            "integrity_valid": True,
+            "event_count": 0,
+            "failed_confirmations": 0,
+            "lockouts": 0,
+            "expired_confirmations": 0,
+            "successful_confirmations": 0,
+            "automation_allowed": False,
+            "read_only": True,
+        }
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_audit_intelligence",
+        fake_intelligence,
+    )
+
+    result = brain.process_command(
+        "confirmation audit score"
+    )
+
+    assert calls["intelligence"] == 1
+    assert "read-only" in result
+    assert "Automatic execution is disabled." in result

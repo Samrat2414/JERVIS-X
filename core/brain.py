@@ -160,6 +160,10 @@ from core.decision_intelligence import (
     get_best_next_action,
     get_decision_recommendations,
 )
+from core.confirmation_audit_intelligence import (
+    get_confirmation_audit_intelligence,
+    get_confirmation_audit_intelligence_report,
+)
 from core.decision_action_bridge import (
     CONFIRM,
     resolve_decision_action,
@@ -1087,6 +1091,39 @@ def process_command(command):
             "It does not automatically execute system or productivity actions."
         )
 
+    # V29: Confirmation Audit Intelligence
+    if command in [
+        "confirmation audit intelligence",
+        "confirmation audit intelligence report",
+        "confirmation intelligence",
+        "confirmation intelligence report",
+    ]:
+        return get_confirmation_audit_intelligence_report()
+
+    if command in [
+        "confirmation audit score",
+        "confirmation intelligence score",
+    ]:
+        intelligence = get_confirmation_audit_intelligence()
+
+        return (
+            "JERVIS CONFIRMATION AUDIT INTELLIGENCE SCORE\n\n"
+            f"Score: {intelligence.get('score', 0)}/100\n"
+            f"Status: {intelligence.get('status', 'unknown')}\n"
+            f"Integrity Valid: "
+            f"{intelligence.get('integrity_valid', False)}\n"
+            f"Audit Events: "
+            f"{intelligence.get('event_count', 0)}\n"
+            f"Failed Confirmations: "
+            f"{intelligence.get('failed_confirmations', 0)}\n"
+            f"Lockouts: {intelligence.get('lockouts', 0)}\n"
+            f"Expired Confirmations: "
+            f"{intelligence.get('expired_confirmations', 0)}\n"
+            f"Successful Confirmations: "
+            f"{intelligence.get('successful_confirmations', 0)}\n\n"
+            "Safety: Confirmation Audit Intelligence is read-only. "
+            "Automatic execution is disabled."
+        )
     # V28: Confirmation Audit Security Status
     if command in [
         "confirmation audit status",
@@ -3107,9 +3144,9 @@ def process_command(command):
 
     # Step 40: Translation System
     # Step 40: Arrow-style translation
-    # Example: Hello Guru â†’ Bengali
-    if "â†’" in original_command:
-        source_text, target_language = original_command.rsplit("â†’", 1)
+    # Example: Hello Guru ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Bengali
+    if "ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢" in original_command:
+        source_text, target_language = original_command.rsplit("ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢", 1)
         source_text = source_text.strip()
         target_language = target_language.strip()
 
