@@ -77,8 +77,10 @@ def test_command_line_diagnostics_json():
         text=True,
     )
     data = json.loads(result.stdout)
-    assert data["total"] == 5
-    assert len(data["checks"]) == 5
+    assert data["total"] == 6
+    assert data["checks"]["Security Bootstrap"] is True
+    assert data["security_bootstrap"]["healthy"] is True
+    assert len(data["checks"]) == 6
     assert "healthy" in data
 
 
