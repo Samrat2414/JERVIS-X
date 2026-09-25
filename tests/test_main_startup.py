@@ -393,3 +393,155 @@ def test_security_bootstrap_status_tracks_invalid_result(monkeypatch):
     assert status["success"] is False
     assert status["component"] == "confirmation_audit"
     assert "invalid result" in status["message"].lower()
+
+
+def test_security_bootstrap_records_status_history(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    bootstrap.clear_security_bootstrap_history()
+
+    monkeypatch.setattr(
+        bootstrap,
+        "initialize_confirmation_audit_state",
+        lambda: {
+            "success": True,
+            "loaded": True,
+            "initialized": True,
+            "event_count": 3,
+            "message": "Audit initialized.",
+        },
+    )
+
+    bootstrap.initialize_security_bootstrap()
+
+    history = bootstrap.get_security_bootstrap_history()
+
+    assert len(history) == 1
+    assert history[0]["success"] is True
+    assert history[0]["component"] == "confirmation_audit"
+    assert history[0]["event_count"] == 3
+    assert history[0]["message"] == "Audit initialized."
+
+
+def test_security_bootstrap_history_records_multiple_results(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    bootstrap.clear_security_bootstrap_history()
+
+    results = iter(
+        [
+            {
+                "success": True,
+                "loaded": True,
+                "initialized": True,
+                "event_count": 1,
+                "message": "First startup.",
+            },
+            {
+                "success": False,
+                "loaded": False,
+                "initialized": False,
+                "event_count": 0,
+                "message": "Second startup failed.",
+            },
+        ]
+    )
+
+    monkeypatch.setattr(
+        bootstrap,
+        "initialize_confirmation_audit_state",
+        lambda: next(results),
+    )
+
+    bootstrap.initialize_security_bootstrap()
+    bootstrap.initialize_security_bootstrap()
+
+    history = bootstrap.get_security_bootstrap_history()
+
+    assert len(history) == 2
+    assert history[0]["success"] is True
+    assert history[0]["message"] == "First startup."
+    assert history[1]["success"] is False
+    assert history[1]["message"] == "Second startup failed."
+
+
+def test_security_bootstrap_history_records_exception(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    bootstrap.clear_security_bootstrap_history()
+
+    def fail():
+        raise OSError("history storage unavailable")
+
+    monkeypatch.setattr(
+        bootstrap,
+        "initialize_confirmation_audit_state",
+        fail,
+    )
+
+    bootstrap.initialize_security_bootstrap()
+
+    history = bootstrap.get_security_bootstrap_history()
+
+    assert len(history) == 1
+    assert history[0]["success"] is False
+    assert history[0]["component"] == "confirmation_audit"
+    assert "history storage unavailable" in history[0]["message"]
+
+
+def test_security_bootstrap_history_returns_defensive_copies(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    bootstrap.clear_security_bootstrap_history()
+
+    monkeypatch.setattr(
+        bootstrap,
+        "initialize_confirmation_audit_state",
+        lambda: {
+            "success": True,
+            "loaded": True,
+            "initialized": True,
+            "event_count": 7,
+            "message": "Protected history.",
+        },
+    )
+
+    bootstrap.initialize_security_bootstrap()
+
+    first = bootstrap.get_security_bootstrap_history()
+
+    first[0]["success"] = False
+    first[0]["event_count"] = 999
+    first.append({"success": False})
+
+    second = bootstrap.get_security_bootstrap_history()
+
+    assert len(second) == 1
+    assert second[0]["success"] is True
+    assert second[0]["event_count"] == 7
+
+
+def test_clear_security_bootstrap_history(monkeypatch):
+    import core.startup_bootstrap as bootstrap
+
+    bootstrap.clear_security_bootstrap_history()
+
+    monkeypatch.setattr(
+        bootstrap,
+        "initialize_confirmation_audit_state",
+        lambda: {
+            "success": True,
+            "loaded": True,
+            "initialized": True,
+            "event_count": 1,
+            "message": "Recorded.",
+        },
+    )
+
+    bootstrap.initialize_security_bootstrap()
+
+    assert len(bootstrap.get_security_bootstrap_history()) == 1
+
+    bootstrap.clear_security_bootstrap_history()
+
+    assert bootstrap.get_security_bootstrap_history() == []

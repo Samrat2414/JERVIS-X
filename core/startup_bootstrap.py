@@ -4,6 +4,32 @@ from core.decision_action_bridge import initialize_confirmation_audit_state
 
 
 _security_bootstrap_status = None
+_security_bootstrap_history = []
+
+
+def get_security_bootstrap_history():
+    """Return copies of recorded security bootstrap statuses."""
+
+    return [
+        dict(status)
+        for status in _security_bootstrap_history
+    ]
+
+
+def clear_security_bootstrap_history():
+    """Clear recorded security bootstrap status history."""
+
+    _security_bootstrap_history.clear()
+
+
+def _record_security_bootstrap_status(result):
+    """Store the latest status and append it to history."""
+
+    global _security_bootstrap_status
+
+    snapshot = dict(result)
+    _security_bootstrap_status = snapshot
+    _security_bootstrap_history.append(dict(snapshot))
 
 
 def get_security_bootstrap_status():
@@ -29,7 +55,7 @@ def initialize_security_bootstrap():
             "message": f"Confirmation audit initialization failed: {exc}",
         }
 
-        _security_bootstrap_status = dict(result)
+        _record_security_bootstrap_status(result)
         return result
 
     if not isinstance(result, dict):
@@ -39,7 +65,7 @@ def initialize_security_bootstrap():
             "message": "Confirmation audit initializer returned an invalid result.",
         }
 
-        _security_bootstrap_status = dict(result)
+        _record_security_bootstrap_status(result)
         return result
 
     result = {
@@ -47,6 +73,6 @@ def initialize_security_bootstrap():
         "component": "confirmation_audit",
     }
 
-    _security_bootstrap_status = dict(result)
+    _record_security_bootstrap_status(result)
 
     return result
