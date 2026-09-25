@@ -314,3 +314,34 @@ def test_command_line_what_should_i_do_to_become_job_ready():
     assert "Action:" in result.stdout
     assert "Priority:" in result.stdout
     assert "Reason:" in result.stdout
+
+
+def test_command_line_security_status():
+    result = subprocess.run(
+        [sys.executable, "main.py", "--security-status"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "JERVIS SECURITY STATUS" in result.stdout
+    assert "Component: confirmation_audit" in result.stdout
+    assert "Status: HEALTHY" in result.stdout
+    assert "Events:" in result.stdout
+    assert "Message:" in result.stdout
+
+
+def test_command_line_security_status_json():
+    result = subprocess.run(
+        [sys.executable, "main.py", "--security-status-json"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    data = json.loads(result.stdout)
+
+    assert data["success"] is True
+    assert data["component"] == "confirmation_audit"
+    assert isinstance(data["event_count"], int)
+    assert isinstance(data["message"], str)

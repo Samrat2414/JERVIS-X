@@ -16,6 +16,8 @@ Options:
   -V, --version    Show the JERVIS-X version
   -d, --diagnostics Show the system diagnostics report
   --diagnostics-json Show diagnostics in JSON format
+  --security-status Show startup security bootstrap status
+  --security-status-json Show startup security status as JSON
   --log-path        Show the application log file path
   --data-path       Show the application data directory
   --backup          Create a backup of local JERVIS data
@@ -43,6 +45,64 @@ def main():
 
     if "--version" in sys.argv or "-V" in sys.argv:
         print(VERSION_TEXT)
+        return
+
+    if "--security-status-json" in sys.argv:
+        import json
+
+        from core.startup_bootstrap import (
+            get_security_bootstrap_status,
+            initialize_security_bootstrap,
+        )
+
+        initialize_security_bootstrap()
+        status = get_security_bootstrap_status()
+
+        if not isinstance(status, dict):
+            status = {
+                "success": False,
+                "component": "unknown",
+                "event_count": 0,
+                "message": "Security bootstrap status unavailable.",
+            }
+
+        print(json.dumps(status, indent=2))
+        return
+
+    if "--security-status" in sys.argv:
+        from core.startup_bootstrap import (
+            get_security_bootstrap_status,
+            initialize_security_bootstrap,
+        )
+
+        initialize_security_bootstrap()
+        status = get_security_bootstrap_status()
+
+        if not isinstance(status, dict):
+            status = {
+                "success": False,
+                "component": "unknown",
+                "event_count": 0,
+                "message": "Security bootstrap status unavailable.",
+            }
+
+        print("JERVIS SECURITY STATUS")
+        print()
+        print(f"Component: {status.get('component', 'unknown')}")
+        print(
+            "Status: "
+            + ("HEALTHY" if status.get("success") is True else "DEGRADED")
+        )
+        print(f"Events: {status.get('event_count', 0)}")
+        print(
+            "Message: "
+            + str(
+                status.get(
+                    "message",
+                    "No security bootstrap message available.",
+                )
+            )
+        )
         return
 
     if "--diagnostics-json" in sys.argv:
