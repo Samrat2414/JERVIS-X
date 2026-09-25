@@ -13,6 +13,8 @@ SECURITY_BOOTSTRAP_HISTORY_FILE = (
     Path("data") / "security_bootstrap_history.json"
 )
 
+MAX_SECURITY_BOOTSTRAP_HISTORY = 100
+
 
 def get_security_bootstrap_history():
     """Return copies of recorded security bootstrap statuses."""
@@ -47,7 +49,7 @@ def load_security_bootstrap_history():
             dict(status)
             for status in data
             if isinstance(status, dict)
-        ]
+        ][-MAX_SECURITY_BOOTSTRAP_HISTORY:]
 
         _security_bootstrap_history = history
 
@@ -78,6 +80,11 @@ def _record_security_bootstrap_status(result):
     snapshot = dict(result)
     _security_bootstrap_status = snapshot
     _security_bootstrap_history.append(dict(snapshot))
+
+    if len(_security_bootstrap_history) > MAX_SECURITY_BOOTSTRAP_HISTORY:
+        del _security_bootstrap_history[
+            :-MAX_SECURITY_BOOTSTRAP_HISTORY
+        ]
 
     try:
         SECURITY_BOOTSTRAP_HISTORY_FILE.parent.mkdir(

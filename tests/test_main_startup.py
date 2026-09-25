@@ -852,3 +852,215 @@ assert history[0]["message"] == "Existing startup."
 
     assert len(persisted) == 1
     assert persisted[0]["message"] == "Existing startup."
+
+
+def test_security_bootstrap_history_retains_latest_100_entries(
+    tmp_path,
+    monkeypatch,
+):
+    import json
+
+    import core.startup_bootstrap as bootstrap
+
+    history_path = tmp_path / "security_bootstrap_history.json"
+
+    existing = [
+        {
+            "success": True,
+            "component": "confirmation_audit",
+            "event_count": index,
+            "message": f"Startup {index}.",
+        }
+        for index in range(100)
+    ]
+
+    history_path.write_text(
+        json.dumps(existing),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        bootstrap,
+        "SECURITY_BOOTSTRAP_HISTORY_FILE",
+        history_path,
+    )
+
+    bootstrap.clear_security_bootstrap_history()
+
+    monkeypatch.setattr(
+        bootstrap,
+        "initialize_confirmation_audit_state",
+        lambda: {
+            "success": True,
+            "loaded": True,
+            "initialized": True,
+            "event_count": 100,
+            "message": "Startup 100.",
+        },
+    )
+
+    bootstrap.initialize_security_bootstrap()
+
+    history = bootstrap.get_security_bootstrap_history()
+
+    assert len(history) == 100
+    assert history[0]["message"] == "Startup 1."
+    assert history[-1]["message"] == "Startup 100."
+
+    persisted = json.loads(
+        history_path.read_text(encoding="utf-8")
+    )
+
+    assert len(persisted) == 100
+    assert persisted[0]["message"] == "Startup 1."
+    assert persisted[-1]["message"] == "Startup 100."
+
+
+def test_security_bootstrap_history_below_limit_is_not_trimmed(
+    tmp_path,
+    monkeypatch,
+):
+    import json
+
+    import core.startup_bootstrap as bootstrap
+
+    history_path = tmp_path / "security_bootstrap_history.json"
+
+    existing = [
+        {
+            "success": True,
+            "component": "confirmation_audit",
+            "event_count": index,
+            "message": f"Startup {index}.",
+        }
+        for index in range(98)
+    ]
+
+    history_path.write_text(
+        json.dumps(existing),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        bootstrap,
+        "SECURITY_BOOTSTRAP_HISTORY_FILE",
+        history_path,
+    )
+
+    bootstrap.clear_security_bootstrap_history()
+
+    monkeypatch.setattr(
+        bootstrap,
+        "initialize_confirmation_audit_state",
+        lambda: {
+            "success": True,
+            "event_count": 98,
+            "message": "Startup 98.",
+        },
+    )
+
+    bootstrap.initialize_security_bootstrap()
+
+    history = bootstrap.get_security_bootstrap_history()
+
+    assert len(history) == 99
+    assert history[0]["message"] == "Startup 0."
+    assert history[-1]["message"] == "Startup 98."
+
+
+def test_security_bootstrap_history_exact_limit_is_preserved(
+    tmp_path,
+    monkeypatch,
+):
+    import json
+
+    import core.startup_bootstrap as bootstrap
+
+    history_path = tmp_path / "security_bootstrap_history.json"
+
+    existing = [
+        {
+            "success": True,
+            "component": "confirmation_audit",
+            "event_count": index,
+            "message": f"Startup {index}.",
+        }
+        for index in range(99)
+    ]
+
+    history_path.write_text(
+        json.dumps(existing),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        bootstrap,
+        "SECURITY_BOOTSTRAP_HISTORY_FILE",
+        history_path,
+    )
+
+    bootstrap.clear_security_bootstrap_history()
+
+    monkeypatch.setattr(
+        bootstrap,
+        "initialize_confirmation_audit_state",
+        lambda: {
+            "success": True,
+            "event_count": 99,
+            "message": "Startup 99.",
+        },
+    )
+
+    bootstrap.initialize_security_bootstrap()
+
+    history = bootstrap.get_security_bootstrap_history()
+
+    assert len(history) == 100
+    assert history[0]["message"] == "Startup 0."
+    assert history[-1]["message"] == "Startup 99."
+
+
+def test_security_bootstrap_history_load_trims_oversized_history(
+    tmp_path,
+    monkeypatch,
+):
+    import json
+
+    import core.startup_bootstrap as bootstrap
+
+    history_path = tmp_path / "security_bootstrap_history.json"
+
+    existing = [
+        {
+            "success": True,
+            "component": "confirmation_audit",
+            "event_count": index,
+            "message": f"Startup {index}.",
+        }
+        for index in range(150)
+    ]
+
+    history_path.write_text(
+        json.dumps(existing),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        bootstrap,
+        "SECURITY_BOOTSTRAP_HISTORY_FILE",
+        history_path,
+    )
+
+    bootstrap.clear_security_bootstrap_history()
+
+    history = bootstrap.load_security_bootstrap_history()
+
+    assert len(history) == 100
+    assert history[0]["event_count"] == 50
+    assert history[0]["message"] == "Startup 50."
+    assert history[-1]["event_count"] == 149
+    assert history[-1]["message"] == "Startup 149."
+
+    current = bootstrap.get_security_bootstrap_history()
+
+    assert current == history
