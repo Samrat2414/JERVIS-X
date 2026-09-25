@@ -1,6 +1,28 @@
 import core.startup_bootstrap as bootstrap
 
 
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def isolate_security_bootstrap_history(tmp_path, monkeypatch):
+    """Keep security bootstrap persistence isolated between tests."""
+
+    history_path = tmp_path / "security_bootstrap_history.json"
+
+    monkeypatch.setattr(
+        bootstrap,
+        "SECURITY_BOOTSTRAP_HISTORY_FILE",
+        history_path,
+    )
+
+    bootstrap.clear_security_bootstrap_history()
+
+    yield
+
+    bootstrap.clear_security_bootstrap_history()
+
+
 def test_security_bootstrap_returns_success(monkeypatch):
     monkeypatch.setattr(
         bootstrap,
@@ -545,3 +567,235 @@ def test_clear_security_bootstrap_history(monkeypatch):
     bootstrap.clear_security_bootstrap_history()
 
     assert bootstrap.get_security_bootstrap_history() == []
+
+
+def test_security_bootstrap_history_persists_to_disk(tmp_path, monkeypatch):
+    import json
+
+    import core.startup_bootstrap as bootstrap
+
+    history_path = tmp_path / "security_bootstrap_history.json"
+
+    monkeypatch.setattr(
+        bootstrap,
+        "SECURITY_BOOTSTRAP_HISTORY_FILE",
+        history_path,
+        raising=False,
+    )
+
+    bootstrap.clear_security_bootstrap_history()
+
+    monkeypatch.setattr(
+        bootstrap,
+        "initialize_confirmation_audit_state",
+        lambda: {
+            "success": True,
+            "loaded": True,
+            "initialized": True,
+            "event_count": 5,
+            "message": "Persistent audit initialized.",
+        },
+    )
+
+    bootstrap.initialize_security_bootstrap()
+
+    assert history_path.exists()
+
+    data = json.loads(
+        history_path.read_text(encoding="utf-8")
+    )
+
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert data[0]["success"] is True
+    assert data[0]["component"] == "confirmation_audit"
+    assert data[0]["event_count"] == 5
+    assert data[0]["message"] == "Persistent audit initialized."
+
+
+def test_security_bootstrap_history_loads_from_disk(tmp_path, monkeypatch):
+    import json
+
+    import core.startup_bootstrap as bootstrap
+
+    history_path = tmp_path / "security_bootstrap_history.json"
+
+    history_path.write_text(
+        json.dumps(
+            [
+                {
+                    "success": True,
+                    "component": "confirmation_audit",
+                    "event_count": 8,
+                    "message": "Recovered persistent history.",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        bootstrap,
+        "SECURITY_BOOTSTRAP_HISTORY_FILE",
+        history_path,
+    )
+
+    bootstrap.clear_security_bootstrap_history()
+
+    history = bootstrap.load_security_bootstrap_history()
+
+    assert len(history) == 1
+    assert history[0]["success"] is True
+    assert history[0]["component"] == "confirmation_audit"
+    assert history[0]["event_count"] == 8
+    assert history[0]["message"] == "Recovered persistent history."
+
+    current = bootstrap.get_security_bootstrap_history()
+
+    assert current == history
+
+
+def test_security_bootstrap_history_load_handles_missing_file(
+    tmp_path,
+    monkeypatch,
+):
+    import core.startup_bootstrap as bootstrap
+
+    history_path = tmp_path / "missing_history.json"
+
+    monkeypatch.setattr(
+        bootstrap,
+        "SECURITY_BOOTSTRAP_HISTORY_FILE",
+        history_path,
+    )
+
+    bootstrap.clear_security_bootstrap_history()
+
+    history = bootstrap.load_security_bootstrap_history()
+
+    assert history == []
+    assert bootstrap.get_security_bootstrap_history() == []
+
+
+def test_security_bootstrap_history_load_handles_corrupt_json(
+    tmp_path,
+    monkeypatch,
+):
+    import core.startup_bootstrap as bootstrap
+
+    history_path = tmp_path / "corrupt_history.json"
+    history_path.write_text(
+        "{ definitely not valid json",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        bootstrap,
+        "SECURITY_BOOTSTRAP_HISTORY_FILE",
+        history_path,
+    )
+
+    bootstrap.clear_security_bootstrap_history()
+
+    history = bootstrap.load_security_bootstrap_history()
+
+    assert history == []
+    assert bootstrap.get_security_bootstrap_history() == []
+
+
+def test_security_bootstrap_history_load_rejects_invalid_structure(
+    tmp_path,
+    monkeypatch,
+):
+    import json
+
+    import core.startup_bootstrap as bootstrap
+
+    history_path = tmp_path / "invalid_history.json"
+    history_path.write_text(
+        json.dumps(
+            {
+                "success": True,
+                "message": "This should have been a list.",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        bootstrap,
+        "SECURITY_BOOTSTRAP_HISTORY_FILE",
+        history_path,
+    )
+
+    bootstrap.clear_security_bootstrap_history()
+
+    history = bootstrap.load_security_bootstrap_history()
+
+    assert history == []
+    assert bootstrap.get_security_bootstrap_history() == []
+
+
+def test_security_bootstrap_appends_to_persisted_history(
+    tmp_path,
+    monkeypatch,
+):
+    import json
+
+    import core.startup_bootstrap as bootstrap
+
+    history_path = tmp_path / "security_bootstrap_history.json"
+
+    history_path.write_text(
+        json.dumps(
+            [
+                {
+                    "success": True,
+                    "component": "confirmation_audit",
+                    "event_count": 2,
+                    "message": "Previous process startup.",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        bootstrap,
+        "SECURITY_BOOTSTRAP_HISTORY_FILE",
+        history_path,
+    )
+
+    bootstrap.clear_security_bootstrap_history()
+
+    monkeypatch.setattr(
+        bootstrap,
+        "initialize_confirmation_audit_state",
+        lambda: {
+            "success": True,
+            "loaded": True,
+            "initialized": True,
+            "event_count": 6,
+            "message": "Current process startup.",
+        },
+    )
+
+    bootstrap.initialize_security_bootstrap()
+
+    history = bootstrap.get_security_bootstrap_history()
+
+    assert len(history) == 2
+
+    assert history[0]["message"] == "Previous process startup."
+    assert history[0]["event_count"] == 2
+
+    assert history[1]["message"] == "Current process startup."
+    assert history[1]["event_count"] == 6
+
+    persisted = json.loads(
+        history_path.read_text(encoding="utf-8")
+    )
+
+    assert len(persisted) == 2
+    assert persisted[0]["message"] == "Previous process startup."
+    assert persisted[1]["message"] == "Current process startup."

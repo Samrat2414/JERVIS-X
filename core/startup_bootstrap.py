@@ -1,10 +1,17 @@
 """Safe startup security bootstrap for JERVIS-X."""
 
+import json
+from pathlib import Path
+
 from core.decision_action_bridge import initialize_confirmation_audit_state
 
 
 _security_bootstrap_status = None
 _security_bootstrap_history = []
+
+SECURITY_BOOTSTRAP_HISTORY_FILE = (
+    Path("data") / "security_bootstrap_history.json"
+)
 
 
 def get_security_bootstrap_history():
@@ -14,6 +21,44 @@ def get_security_bootstrap_history():
         dict(status)
         for status in _security_bootstrap_history
     ]
+
+
+def load_security_bootstrap_history():
+    """Load persisted security bootstrap history from disk."""
+
+    global _security_bootstrap_history
+
+    try:
+        if not SECURITY_BOOTSTRAP_HISTORY_FILE.exists():
+            _security_bootstrap_history = []
+            return []
+
+        data = json.loads(
+            SECURITY_BOOTSTRAP_HISTORY_FILE.read_text(
+                encoding="utf-8",
+            )
+        )
+
+        if not isinstance(data, list):
+            _security_bootstrap_history = []
+            return []
+
+        history = [
+            dict(status)
+            for status in data
+            if isinstance(status, dict)
+        ]
+
+        _security_bootstrap_history = history
+
+        return [
+            dict(status)
+            for status in _security_bootstrap_history
+        ]
+
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        _security_bootstrap_history = []
+        return []
 
 
 def clear_security_bootstrap_history():
@@ -27,9 +72,27 @@ def _record_security_bootstrap_status(result):
 
     global _security_bootstrap_status
 
+    if not _security_bootstrap_history:
+        load_security_bootstrap_history()
+
     snapshot = dict(result)
     _security_bootstrap_status = snapshot
     _security_bootstrap_history.append(dict(snapshot))
+
+    try:
+        SECURITY_BOOTSTRAP_HISTORY_FILE.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+        SECURITY_BOOTSTRAP_HISTORY_FILE.write_text(
+            json.dumps(
+                _security_bootstrap_history,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+    except (OSError, TypeError, ValueError):
+        pass
 
 
 def get_security_bootstrap_status():
