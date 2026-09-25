@@ -381,3 +381,56 @@ def test_command_line_security_history_json():
     assert latest["component"] == "confirmation_audit"
     assert isinstance(latest["event_count"], int)
     assert isinstance(latest["message"], str)
+
+
+def test_security_history_cli_is_read_only():
+    from pathlib import Path
+
+    main_source = Path("main.py").read_text(encoding="utf-8")
+
+    history_block_start = main_source.index(
+        '    if "--security-history-json" in sys.argv:'
+    )
+    status_block_start = main_source.index(
+        '    if "--security-status-json" in sys.argv:'
+    )
+
+    history_source = main_source[
+        history_block_start:status_block_start
+    ]
+
+    assert "load_security_bootstrap_history" in history_source
+    assert "initialize_security_bootstrap" not in history_source
+
+
+def test_security_history_commands_do_not_change_persistent_file():
+    import hashlib
+    from pathlib import Path
+
+    history_path = Path("data/security_bootstrap_history.json")
+
+    if not history_path.exists():
+        return
+
+    before = hashlib.sha256(
+        history_path.read_bytes()
+    ).hexdigest()
+
+    for option in (
+        "--security-history",
+        "--security-history-json",
+    ):
+        result = subprocess.run(
+            [sys.executable, "main.py", option],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        assert result.stdout
+
+    after = hashlib.sha256(
+        history_path.read_bytes()
+    ).hexdigest()
+
+    assert after == before

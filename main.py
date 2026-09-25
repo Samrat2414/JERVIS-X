@@ -54,10 +54,10 @@ def main():
 
         from core.startup_bootstrap import (
             get_security_bootstrap_history,
-            initialize_security_bootstrap,
+            load_security_bootstrap_history,
         )
 
-        initialize_security_bootstrap()
+        load_security_bootstrap_history()
         history = get_security_bootstrap_history()
 
         print(json.dumps(history, indent=2))
@@ -66,10 +66,10 @@ def main():
     if "--security-history" in sys.argv:
         from core.startup_bootstrap import (
             get_security_bootstrap_history,
-            initialize_security_bootstrap,
+            load_security_bootstrap_history,
         )
 
-        initialize_security_bootstrap()
+        load_security_bootstrap_history()
         history = get_security_bootstrap_history()
 
         print("JERVIS SECURITY HISTORY")

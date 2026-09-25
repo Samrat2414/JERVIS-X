@@ -6,7 +6,9 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def isolate_security_bootstrap_history(tmp_path, monkeypatch):
-    """Keep security bootstrap persistence isolated between tests."""
+    """Keep startup bootstrap tests isolated from production history."""
+
+    import core.startup_bootstrap as bootstrap
 
     history_path = tmp_path / "security_bootstrap_history.json"
 
@@ -799,3 +801,54 @@ def test_security_bootstrap_appends_to_persisted_history(
     assert len(persisted) == 2
     assert persisted[0]["message"] == "Previous process startup."
     assert persisted[1]["message"] == "Current process startup."
+
+
+def test_security_history_cli_does_not_append_history(tmp_path):
+    import json
+    import subprocess
+    import sys
+
+    history_path = tmp_path / "security_bootstrap_history.json"
+
+    history_path.write_text(
+        json.dumps(
+            [
+                {
+                    "success": True,
+                    "component": "confirmation_audit",
+                    "event_count": 4,
+                    "message": "Existing startup.",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    script = """
+from pathlib import Path
+import core.startup_bootstrap as bootstrap
+
+bootstrap.SECURITY_BOOTSTRAP_HISTORY_FILE = Path(r'%s')
+bootstrap.clear_security_bootstrap_history()
+bootstrap.load_security_bootstrap_history()
+
+history = bootstrap.get_security_bootstrap_history()
+
+assert len(history) == 1
+assert history[0]["message"] == "Existing startup."
+""" % str(history_path)
+
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+    persisted = json.loads(
+        history_path.read_text(encoding="utf-8")
+    )
+
+    assert len(persisted) == 1
+    assert persisted[0]["message"] == "Existing startup."
