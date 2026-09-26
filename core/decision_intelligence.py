@@ -8,6 +8,9 @@ from core.startup_bootstrap import get_security_decision
 from core.confirmation_threat_decision_intelligence import (
     get_confirmation_threat_decision,
 )
+from core.confirmation_threat_trend_decision_intelligence import (
+    get_confirmation_threat_trend_decision,
+)
 
 
 PRIORITY_WEIGHT = {
@@ -73,6 +76,9 @@ def _collect_decisions():
     security = _safe_result(get_security_decision)
     threat_decision = _safe_result(
         get_confirmation_threat_decision
+    )
+    trend_threat_decision = _safe_result(
+        get_confirmation_threat_trend_decision
     )
 
     decisions = []
@@ -438,6 +444,42 @@ def _collect_decisions():
             threat_decision.get(
                 "source",
                 "Confirmation Threat Decision Intelligence",
+            ),
+        )
+    # V33: Confirmation threat trend decision intelligence.
+    #
+    # This is advisory only. Low-priority monitoring decisions
+    # remain outside the global ranking, matching the V31 policy.
+    # This must never become an automatic execution path.
+    trend_threat_priority = trend_threat_decision.get("priority")
+
+    if trend_threat_priority in {"Critical", "High", "Medium"}:
+        _add_decision(
+            decisions,
+            trend_threat_decision.get(
+                "title",
+                "Review confirmation threat trend",
+            ),
+            trend_threat_priority,
+            trend_threat_decision.get(
+                "reason",
+                "Confirmation threat trend requires review.",
+            ),
+            trend_threat_decision.get(
+                "impact",
+                "Confirmation security trend",
+            ),
+            trend_threat_decision.get(
+                "confidence",
+                95.0,
+            ),
+            trend_threat_decision.get(
+                "action",
+                "Review confirmation threat trend manually.",
+            ),
+            trend_threat_decision.get(
+                "source",
+                "Confirmation Threat Trend Decision Intelligence",
             ),
         )
     # Security bootstrap decisions.
