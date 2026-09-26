@@ -1210,3 +1210,191 @@ def test_confirmation_threat_trend_score_is_read_only(monkeypatch):
     assert calls["trend"] == 1
     assert "read-only" in result
     assert "Automatic execution is disabled." in result
+
+
+def test_confirmation_threat_forecast_command(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_forecast_report",
+        lambda: "TEST V34 FORECAST REPORT",
+    )
+
+    result = brain.process_command(
+        "confirmation threat forecast"
+    )
+
+    assert result == "TEST V34 FORECAST REPORT"
+
+
+def test_confirmation_threat_forecast_aliases(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_forecast_report",
+        lambda: "TEST V34 FORECAST REPORT",
+    )
+
+    commands = [
+        "confirmation threat forecast",
+        "confirmation threat forecast report",
+        "confirmation forecast",
+        "confirmation forecast report",
+        "confirmation risk forecast",
+    ]
+
+    for command in commands:
+        assert (
+            brain.process_command(command)
+            == "TEST V34 FORECAST REPORT"
+        )
+
+
+def test_confirmation_threat_forecast_score(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_forecast_intelligence",
+        lambda: {
+            "forecast_score": 55,
+            "forecast_classification": "rapidly_worsening",
+            "current_trend_score": 40,
+            "current_trend_classification": "worsening",
+            "projected_direction": "worsening",
+            "forecast_confidence": 70.0,
+            "risk_acceleration": 30,
+            "human_review_required": True,
+            "automation_allowed": False,
+            "read_only": True,
+        },
+    )
+
+    result = brain.process_command(
+        "confirmation threat forecast score"
+    )
+
+    assert "JERVIS CONFIRMATION THREAT FORECAST SCORE" in result
+    assert "Forecast Score: 55" in result
+    assert "Forecast Classification: rapidly_worsening" in result
+    assert "Current Trend Score: 40" in result
+    assert "Current Trend Classification: worsening" in result
+    assert "Projected Direction: worsening" in result
+    assert "Forecast Confidence: 70.0%" in result
+    assert "Risk Acceleration: 30" in result
+    assert "Human Review Required: True" in result
+    assert "read-only" in result
+    assert "Automatic security execution is disabled." in result
+
+
+def test_confirmation_forecast_score_aliases(monkeypatch):
+    import core.brain as brain
+
+    calls = {"forecast": 0}
+
+    def fake_forecast():
+        calls["forecast"] += 1
+
+        return {
+            "forecast_score": 10,
+            "forecast_classification": "stable",
+            "current_trend_score": 5,
+            "current_trend_classification": "stable",
+            "projected_direction": "stable",
+            "forecast_confidence": 70.0,
+            "risk_acceleration": 10,
+            "human_review_required": False,
+            "automation_allowed": False,
+            "read_only": True,
+        }
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_forecast_intelligence",
+        fake_forecast,
+    )
+
+    commands = [
+        "confirmation threat forecast score",
+        "confirmation forecast score",
+        "confirmation risk forecast score",
+    ]
+
+    for command in commands:
+        result = brain.process_command(command)
+
+        assert "Forecast Score: 10" in result
+        assert "Forecast Classification: stable" in result
+        assert "Projected Direction: stable" in result
+        assert "Human Review Required: False" in result
+
+    assert calls["forecast"] == len(commands)
+
+
+def test_confirmation_forecast_insufficient_data(monkeypatch):
+    import core.brain as brain
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_forecast_intelligence",
+        lambda: {
+            "forecast_score": 0,
+            "forecast_classification": "insufficient_data",
+            "current_trend_score": 0,
+            "current_trend_classification": "insufficient_data",
+            "projected_direction": "unknown",
+            "forecast_confidence": 0.0,
+            "risk_acceleration": 0,
+            "human_review_required": False,
+            "automation_allowed": False,
+            "read_only": True,
+        },
+    )
+
+    result = brain.process_command(
+        "confirmation forecast score"
+    )
+
+    assert "Forecast Score: 0" in result
+    assert "Forecast Classification: insufficient_data" in result
+    assert "Projected Direction: unknown" in result
+    assert "Forecast Confidence: 0.0%" in result
+
+
+def test_confirmation_forecast_brain_route_is_read_only(monkeypatch):
+    import core.brain as brain
+
+    calls = {"forecast": 0}
+
+    def fake_forecast():
+        calls["forecast"] += 1
+
+        return {
+            "forecast_score": 100,
+            "forecast_classification": "rapidly_worsening",
+            "current_trend_score": 90,
+            "current_trend_classification": "rapidly_worsening",
+            "projected_direction": "worsening",
+            "forecast_confidence": 70.0,
+            "risk_acceleration": 100,
+            "human_review_required": True,
+            "automation_allowed": False,
+            "read_only": True,
+        }
+
+    monkeypatch.setattr(
+        brain,
+        "get_confirmation_threat_forecast_intelligence",
+        fake_forecast,
+    )
+
+    result = brain.process_command(
+        "confirmation threat forecast score"
+    )
+
+    assert calls["forecast"] == 1
+    assert "Human Review Required: True" in result
+    assert "read-only" in result
+    assert "Automatic security execution is disabled." in result

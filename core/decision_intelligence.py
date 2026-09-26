@@ -11,6 +11,9 @@ from core.confirmation_threat_decision_intelligence import (
 from core.confirmation_threat_trend_decision_intelligence import (
     get_confirmation_threat_trend_decision,
 )
+from core.confirmation_threat_forecast_decision_intelligence import (
+    get_confirmation_threat_forecast_decision,
+)
 
 
 PRIORITY_WEIGHT = {
@@ -79,6 +82,10 @@ def _collect_decisions():
     )
     trend_threat_decision = _safe_result(
         get_confirmation_threat_trend_decision
+    )
+
+    forecast_threat_decision = _safe_result(
+        get_confirmation_threat_forecast_decision
     )
 
     decisions = []
@@ -448,6 +455,48 @@ def _collect_decisions():
         )
     # V33: Confirmation threat trend decision intelligence.
     #
+    # V34: Confirmation threat forecast decision intelligence.
+    #
+    # Low priority remains advisory-only and is intentionally
+    # excluded from the global ranked decision list.
+    forecast_threat_priority = forecast_threat_decision.get(
+        "priority"
+    )
+
+    if forecast_threat_priority in {
+        "Critical",
+        "High",
+        "Medium",
+    }:
+        decisions.append(
+            {
+                "title": forecast_threat_decision.get(
+                    "title",
+                    "Review confirmation threat forecast",
+                ),
+                "priority": forecast_threat_priority,
+                "reason": forecast_threat_decision.get(
+                    "reason",
+                    "Confirmation threat forecast requires review.",
+                ),
+                "impact": forecast_threat_decision.get(
+                    "impact",
+                    "Confirmation security forecast",
+                ),
+                "confidence": forecast_threat_decision.get(
+                    "confidence",
+                    0.0,
+                ),
+                "action": forecast_threat_decision.get(
+                    "action",
+                    "Review confirmation threat forecast.",
+                ),
+                "source": forecast_threat_decision.get(
+                    "source",
+                    "Confirmation Threat Forecast Decision Intelligence",
+                ),
+            }
+        )
     # This is advisory only. Low-priority monitoring decisions
     # remain outside the global ranking, matching the V31 policy.
     # This must never become an automatic execution path.
