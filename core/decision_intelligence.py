@@ -17,6 +17,9 @@ from core.confirmation_threat_forecast_decision_intelligence import (
 from core.confirmation_threat_forecast_calibration_decision_intelligence import (
     get_confirmation_threat_forecast_calibration_decision,
 )
+from core.confirmation_threat_forecast_calibration_trend_decision_intelligence import (
+    get_confirmation_threat_forecast_calibration_trend_decision,
+)
 
 
 PRIORITY_WEIGHT = {
@@ -93,6 +96,9 @@ def _collect_decisions():
 
     calibration_threat_decision = _safe_result(
         get_confirmation_threat_forecast_calibration_decision
+    )
+    calibration_trend_threat_decision = _safe_result(
+        get_confirmation_threat_forecast_calibration_trend_decision
     )
 
     decisions = []
@@ -547,6 +553,59 @@ def _collect_decisions():
                 "source": calibration_threat_decision.get(
                     "source",
                     "Confirmation Threat Forecast Calibration Decision Intelligence",
+                ),
+            }
+        )
+
+    # V36: Confirmation threat forecast calibration trend decision intelligence.
+    #
+    # Low-priority calibration-trend monitoring remains advisory-only and is
+    # intentionally excluded from the global ranked decision list.
+    # This must never become an automatic execution path.
+    calibration_trend_threat_priority = (
+        calibration_trend_threat_decision.get("priority")
+    )
+
+    if calibration_trend_threat_priority in {
+        "Critical",
+        "High",
+        "Medium",
+    }:
+        decisions.append(
+            {
+                "title": calibration_trend_threat_decision.get(
+                    "title",
+                    "Review confirmation threat forecast calibration trend",
+                ),
+                "priority": calibration_trend_threat_priority,
+                "reason": calibration_trend_threat_decision.get(
+                    "reason",
+                    (
+                        "Confirmation threat forecast calibration trend "
+                        "requires review."
+                    ),
+                ),
+                "impact": calibration_trend_threat_decision.get(
+                    "impact",
+                    "Confirmation threat forecast calibration trend",
+                ),
+                "confidence": calibration_trend_threat_decision.get(
+                    "confidence",
+                    0.0,
+                ),
+                "action": calibration_trend_threat_decision.get(
+                    "action",
+                    (
+                        "Review confirmation threat forecast calibration "
+                        "trend manually."
+                    ),
+                ),
+                "source": calibration_trend_threat_decision.get(
+                    "source",
+                    (
+                        "Confirmation Threat Forecast Calibration Trend "
+                        "Decision Intelligence"
+                    ),
                 ),
             }
         )
