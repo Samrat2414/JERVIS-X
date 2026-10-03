@@ -29,6 +29,9 @@ from core.confirmation_threat_forecast_calibration_trend_forecast_calibration_de
 from core.confirmation_threat_forecast_calibration_trend_forecast_calibration_trend_decision_intelligence import (
     get_confirmation_threat_forecast_calibration_trend_forecast_calibration_trend_decision_intelligence,
 )
+from core.confirmation_threat_forecast_calibration_trend_forecast_calibration_trend_confidence_reliability_decision_intelligence import (
+    get_confirmation_threat_forecast_calibration_trend_forecast_calibration_trend_confidence_reliability_decision_intelligence,
+)
 
 
 PRIORITY_WEIGHT = {
@@ -845,6 +848,75 @@ def _collect_decisions():
                 "Confirmation Threat Trend Decision Intelligence",
             ),
         )
+
+    # V44: Confirmation threat forecast calibration trend forecast
+    # calibration trend confidence reliability decision intelligence.
+    #
+    # Advisory only. It may enter global ranking, but must never
+    # become an automatic execution path.
+    reliability_threat_decision = get_confirmation_threat_forecast_calibration_trend_forecast_calibration_trend_confidence_reliability_decision_intelligence()
+
+    reliability_threat_priority = (
+        reliability_threat_decision.get("priority")
+    )
+
+    if reliability_threat_priority in {
+        "Critical",
+        "High",
+        "Medium",
+    }:
+        decisions.append(
+            {
+                "title": reliability_threat_decision.get(
+                    "title",
+                    (
+                        "Review confirmation threat forecast calibration "
+                        "trend forecast calibration trend confidence "
+                        "reliability"
+                    ),
+                ),
+                "priority": reliability_threat_priority,
+                "reason": reliability_threat_decision.get(
+                    "reason",
+                    (
+                        "Confirmation threat confidence reliability "
+                        "requires review."
+                    ),
+                ),
+                "impact": reliability_threat_decision.get(
+                    "impact",
+                    (
+                        "Confirmation threat confidence reliability "
+                        "assessment"
+                    ),
+                ),
+                "confidence": float(
+                    reliability_threat_decision.get(
+                        "confidence",
+                        0.0,
+                    )
+                ),
+                "action": reliability_threat_decision.get(
+                    "action",
+                    reliability_threat_decision.get(
+                        "recommended_action",
+                        (
+                            "Review confirmation threat confidence "
+                            "reliability manually."
+                        ),
+                    ),
+                ),
+                "source": reliability_threat_decision.get(
+                    "source",
+                    (
+                        "Confirmation Threat Forecast Calibration Trend "
+                        "Forecast Calibration Trend Confidence "
+                        "Reliability Decision Intelligence"
+                    ),
+                ),
+            }
+        )
+
     # Security bootstrap decisions.
     security_priority = security.get("priority")
 
