@@ -1121,6 +1121,16 @@ def get_decision_intelligence():
 
 
 def get_ranked_decisions(limit=10):
+    if isinstance(limit, bool) or not isinstance(limit, int):
+        raise TypeError(
+            "limit must be an integer."
+        )
+
+    if limit < 0:
+        raise ValueError(
+            "limit must be greater than or equal to 0."
+        )
+
     result = get_decision_intelligence()
 
     return result["decisions"][:limit]
