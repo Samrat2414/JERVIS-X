@@ -1,3 +1,5 @@
+import math
+
 from core.system_health import get_system_health
 from core.alert_intelligence import get_alert_intelligence
 from core.productivity_intelligence import get_productivity_intelligence
@@ -64,6 +66,31 @@ def _number(data, *keys, default=0):
     return float(default)
 
 
+def _safe_confidence(value):
+    # Global decision confidence is a bounded 0-100 ranking value.
+    #
+    # Preserve valid existing values exactly after float conversion.
+    # In particular, do not reinterpret 0-1 values as percentages.
+    #
+    # Malformed, boolean, non-finite, or out-of-range confidence must
+    # fail closed so it cannot gain ranking influence.
+    if isinstance(value, bool):
+        return 0.0
+
+    try:
+        confidence = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return 0.0
+
+    if not math.isfinite(confidence):
+        return 0.0
+
+    if confidence < 0.0 or confidence > 100.0:
+        return 0.0
+
+    return confidence
+
+
 def _add_decision(
     decisions,
     title,
@@ -80,7 +107,7 @@ def _add_decision(
             "priority": priority,
             "reason": reason,
             "impact": impact,
-            "confidence": float(confidence),
+            "confidence": _safe_confidence(confidence),
             "action": action,
             "source": source,
         }
