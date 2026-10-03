@@ -91,6 +91,17 @@ def _safe_confidence(value):
     return confidence
 
 
+def _safe_priority(value):
+    """Return a canonical fail-closed decision priority."""
+    try:
+        if value in PRIORITY_WEIGHT:
+            return value
+    except (TypeError, ValueError):
+        pass
+
+    return "Low"
+
+
 def _add_decision(
     decisions,
     title,
@@ -104,7 +115,7 @@ def _add_decision(
     decisions.append(
         {
             "title": title,
-            "priority": priority,
+            "priority": _safe_priority(priority),
             "reason": reason,
             "impact": impact,
             "confidence": _safe_confidence(confidence),
