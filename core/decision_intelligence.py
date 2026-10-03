@@ -102,6 +102,12 @@ def _safe_priority(value):
     return "Low"
 
 
+def _safe_text(value):
+    if isinstance(value, str):
+        return value
+    return ""
+
+
 def _add_decision(
     decisions,
     title,
@@ -114,13 +120,13 @@ def _add_decision(
 ):
     decisions.append(
         {
-            "title": title,
+            "title": _safe_text(title),
             "priority": _safe_priority(priority),
-            "reason": reason,
-            "impact": impact,
+            "reason": _safe_text(reason),
+            "impact": _safe_text(impact),
             "confidence": _safe_confidence(confidence),
-            "action": action,
-            "source": source,
+            "action": _safe_text(action),
+            "source": _safe_text(source),
         }
     )
 
