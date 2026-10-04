@@ -1165,9 +1165,43 @@ def get_best_next_action():
 
 
 def get_decision_recommendations():
-    return get_decision_intelligence()[
-        "recommendations"
-    ]
+    result = get_decision_intelligence()
+
+    if not isinstance(result, dict):
+        raise TypeError(
+            "decision intelligence result "
+            "must be a dictionary"
+        )
+
+    if "recommendations" not in result:
+        raise KeyError("recommendations")
+
+    recommendations = result["recommendations"]
+
+    if not isinstance(recommendations, list):
+        raise TypeError(
+            "recommendations must be a list"
+        )
+
+    if not recommendations:
+        raise ValueError(
+            "recommendations must not be empty"
+        )
+
+    for item in recommendations:
+        if not isinstance(item, str):
+            raise TypeError(
+                "recommendation items "
+                "must be strings"
+            )
+
+        if not item.strip():
+            raise ValueError(
+                "recommendation items "
+                "must not be blank"
+            )
+
+    return recommendations
 
 
 def get_decision_intelligence_report():
