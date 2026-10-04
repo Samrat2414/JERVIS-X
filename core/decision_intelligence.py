@@ -1137,9 +1137,31 @@ def get_ranked_decisions(limit=10):
 
 
 def get_best_next_action():
-    return get_decision_intelligence()[
-        "best_next_action"
-    ]
+    result = get_decision_intelligence()
+
+    if not isinstance(result, dict):
+        raise TypeError(
+            "decision intelligence result must be a dictionary."
+        )
+
+    if "best_next_action" not in result:
+        raise KeyError(
+            "best_next_action"
+        )
+
+    best_next_action = result["best_next_action"]
+
+    if not isinstance(best_next_action, dict):
+        raise TypeError(
+            "best_next_action must be a dictionary."
+        )
+
+    if not best_next_action:
+        raise ValueError(
+            "best_next_action must not be empty."
+        )
+
+    return best_next_action
 
 
 def get_decision_recommendations():
