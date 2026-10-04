@@ -1228,6 +1228,51 @@ def get_decision_recommendations():
 def get_decision_intelligence_report():
     result = get_decision_intelligence()
 
+    if not isinstance(result, dict):
+        raise TypeError(
+            "decision intelligence result must be a dictionary."
+        )
+
+    if "decisions" not in result:
+        raise KeyError("decisions")
+
+    decisions = result["decisions"]
+
+    if not isinstance(decisions, list):
+        raise TypeError(
+            "decisions must be a list."
+        )
+
+    if "best_next_action" not in result:
+        raise KeyError("best_next_action")
+
+    best_next_action = result["best_next_action"]
+
+    if not isinstance(best_next_action, dict):
+        raise TypeError(
+            "best_next_action must be a dictionary."
+        )
+
+    if "alternative_actions" not in result:
+        raise KeyError("alternative_actions")
+
+    alternative_actions = result["alternative_actions"]
+
+    if not isinstance(alternative_actions, list):
+        raise TypeError(
+            "alternative_actions must be a list."
+        )
+
+    if "recommendations" not in result:
+        raise KeyError("recommendations")
+
+    recommendations = result["recommendations"]
+
+    if not isinstance(recommendations, list):
+        raise TypeError(
+            "recommendations must be a list."
+        )
+
     lines = [
         "JERVIS SMART DECISION INTELLIGENCE",
         "",
