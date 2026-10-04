@@ -1133,7 +1133,28 @@ def get_ranked_decisions(limit=10):
 
     result = get_decision_intelligence()
 
-    return result["decisions"][:limit]
+    if not isinstance(result, dict):
+        raise TypeError(
+            "decision intelligence result must be a dictionary"
+        )
+
+    if "decisions" not in result:
+        raise KeyError("decisions")
+
+    decisions = result["decisions"]
+
+    if not isinstance(decisions, list):
+        raise TypeError(
+            "decisions must be a list"
+        )
+
+    for item in decisions:
+        if not isinstance(item, dict):
+            raise TypeError(
+                "decision items must be dictionaries"
+            )
+
+    return decisions[:limit]
 
 
 def get_best_next_action():
