@@ -1018,6 +1018,21 @@ def _collect_decisions():
 def get_decision_intelligence():
     decisions = _collect_decisions()
 
+    if not isinstance(decisions, list) or not decisions:
+        raise ValueError(
+            "Decision Intelligence collector must return a non-empty list"
+        )
+
+    if any(
+        not isinstance(item, dict)
+        or "priority" not in item
+        or "confidence" not in item
+        for item in decisions
+    ):
+        raise ValueError(
+            "Decision Intelligence collector returned an invalid decision item"
+        )
+
     critical = sum(
         1
         for item in decisions
