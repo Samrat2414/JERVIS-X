@@ -1,4 +1,4 @@
-﻿"""Boundary tests for the global Decision Intelligence report."""
+"""Boundary tests for the global Decision Intelligence report."""
 
 import pytest
 
@@ -569,3 +569,69 @@ def test_report_accepts_section_minimal_contracts(
     assert "Probe" in report
     assert "Probe action" in report
     assert "Alternative" in report
+
+@pytest.mark.parametrize(
+    "invalid_rank",
+    [
+        None,
+        "1",
+        1.5,
+        [],
+        {},
+        True,
+        False,
+    ],
+)
+def test_report_rejects_non_integer_decision_rank(
+    monkeypatch,
+    invalid_rank,
+):
+    result = _v56_valid_report_result()
+
+    result["decisions"][0]["rank"] = invalid_rank
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^decision rank must be an integer\.$",
+    ):
+        (
+            decision_intelligence
+            .get_decision_intelligence_report()
+        )
+
+
+@pytest.mark.parametrize(
+    "invalid_rank",
+    [
+        0,
+        -1,
+    ],
+)
+def test_report_rejects_non_positive_decision_rank(
+    monkeypatch,
+    invalid_rank,
+):
+    result = _v56_valid_report_result()
+
+    result["decisions"][0]["rank"] = invalid_rank
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"^decision rank must be greater than 0\.$",
+    ):
+        (
+            decision_intelligence
+            .get_decision_intelligence_report()
+        )

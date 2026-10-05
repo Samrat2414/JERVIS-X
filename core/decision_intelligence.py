@@ -1355,6 +1355,19 @@ def get_decision_intelligence_report():
                 "decision priority must be a string."
             )
 
+        if isinstance(item["rank"], bool) or not isinstance(
+            item["rank"],
+            int,
+        ):
+            raise TypeError(
+                "decision rank must be an integer."
+            )
+
+        if item["rank"] <= 0:
+            raise ValueError(
+                "decision rank must be greater than 0."
+            )
+
         lines.extend(
             [
                 (
