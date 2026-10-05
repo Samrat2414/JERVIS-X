@@ -1033,30 +1033,38 @@ def get_decision_intelligence():
             "Decision Intelligence collector returned an invalid decision item"
         )
 
+    normalized_fields = [
+        (
+            _safe_priority(item["priority"]),
+            _safe_confidence(item["confidence"]),
+        )
+        for item in decisions
+    ]
+
     critical = sum(
         1
-        for item in decisions
-        if item["priority"] == "Critical"
+        for priority, _ in normalized_fields
+        if priority == "Critical"
     )
 
     high = sum(
         1
-        for item in decisions
-        if item["priority"] == "High"
+        for priority, _ in normalized_fields
+        if priority == "High"
     )
 
     medium = sum(
         1
-        for item in decisions
-        if item["priority"] == "Medium"
+        for priority, _ in normalized_fields
+        if priority == "Medium"
     )
 
     # Decision readiness measures whether JERVIS has a
     # clear, confident ranked action plan.
     average_confidence = round(
         sum(
-            item["confidence"]
-            for item in decisions
+            confidence
+            for _, confidence in normalized_fields
         )
         / len(decisions),
         1,
