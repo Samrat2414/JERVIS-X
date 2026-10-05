@@ -1340,6 +1340,11 @@ def get_decision_intelligence_report():
     ]
 
     for item in result["decisions"]:
+        if not isinstance(item, dict):
+            raise TypeError(
+                "each decision must be a dictionary."
+            )
+
         lines.extend(
             [
                 (
@@ -1398,6 +1403,11 @@ def get_decision_intelligence_report():
         for item in result[
             "alternative_actions"
         ]:
+            if not isinstance(item, dict):
+                raise TypeError(
+                    "each alternative action must be a dictionary."
+                )
+
             lines.append(
                 (
                     f"- #{item['rank']} "
@@ -1420,6 +1430,11 @@ def get_decision_intelligence_report():
     for item in result[
         "recommendations"
     ]:
+        if not isinstance(item, str):
+            raise TypeError(
+                "each recommendation must be a string."
+            )
+
         lines.append(
             f"- {item}"
         )

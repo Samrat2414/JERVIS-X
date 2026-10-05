@@ -254,3 +254,249 @@ def test_report_rejects_non_list_recommendations(
         match="recommendations must be a list",
     ):
         di.get_decision_intelligence_report()
+
+import core.decision_intelligence as decision_intelligence
+
+
+# === V56 REPORT CONTRACT REGRESSION TESTS ===
+
+
+def _v56_valid_report_result():
+    decision = {
+        "rank": 1,
+        "title": "Probe",
+        "priority": "High",
+        "reason": "Probe reason",
+        "impact": "Probe impact",
+        "confidence": 90.0,
+        "action": "Probe action",
+        "source": "Probe source",
+    }
+
+    return {
+        "score": 90,
+        "status": "High Priority Action",
+        "readiness": "Excellent",
+        "total_decisions": 1,
+        "critical_decisions": 0,
+        "high_decisions": 1,
+        "medium_decisions": 0,
+        "average_confidence": 90.0,
+        "best_next_action": dict(decision),
+        "alternative_actions": [dict(decision)],
+        "decisions": [dict(decision)],
+        "recommendations": [
+            "Review ranked actions."
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "score",
+        "status",
+        "readiness",
+        "average_confidence",
+        "total_decisions",
+        "critical_decisions",
+        "high_decisions",
+        "medium_decisions",
+    ],
+)
+def test_report_rejects_missing_scalar_result_fields(
+    monkeypatch,
+    field,
+):
+    result = _v56_valid_report_result()
+    del result[field]
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(KeyError) as exc_info:
+        decision_intelligence.get_decision_intelligence_report()
+
+    assert exc_info.value.args == (field,)
+
+
+def test_report_rejects_non_dict_decision_items(
+    monkeypatch,
+):
+    result = _v56_valid_report_result()
+    result["decisions"] = [123]
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match="each decision must be a dictionary",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "rank",
+        "title",
+        "priority",
+        "reason",
+        "impact",
+        "confidence",
+        "action",
+        "source",
+    ],
+)
+def test_report_rejects_missing_decision_item_fields(
+    monkeypatch,
+    field,
+):
+    result = _v56_valid_report_result()
+    del result["decisions"][0][field]
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(KeyError) as exc_info:
+        decision_intelligence.get_decision_intelligence_report()
+
+    assert exc_info.value.args == (field,)
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "title",
+        "priority",
+        "action",
+    ],
+)
+def test_report_rejects_missing_best_action_fields(
+    monkeypatch,
+    field,
+):
+    result = _v56_valid_report_result()
+    del result["best_next_action"][field]
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(KeyError) as exc_info:
+        decision_intelligence.get_decision_intelligence_report()
+
+    assert exc_info.value.args == (field,)
+
+
+def test_report_rejects_non_dict_alternative_items(
+    monkeypatch,
+):
+    result = _v56_valid_report_result()
+    result["alternative_actions"] = [123]
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match="each alternative action must be a dictionary",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "rank",
+        "title",
+        "priority",
+    ],
+)
+def test_report_rejects_missing_alternative_fields(
+    monkeypatch,
+    field,
+):
+    result = _v56_valid_report_result()
+    del result["alternative_actions"][0][field]
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(KeyError) as exc_info:
+        decision_intelligence.get_decision_intelligence_report()
+
+    assert exc_info.value.args == (field,)
+
+
+def test_report_rejects_non_string_recommendations(
+    monkeypatch,
+):
+    result = _v56_valid_report_result()
+    result["recommendations"] = [123]
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match="each recommendation must be a string",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
+
+
+def test_report_accepts_section_minimal_contracts(
+    monkeypatch,
+):
+    result = _v56_valid_report_result()
+
+    result["best_next_action"] = {
+        "title": "Probe",
+        "priority": "High",
+        "action": "Probe action",
+    }
+
+    result["alternative_actions"] = [
+        {
+            "rank": 2,
+            "title": "Alternative",
+            "priority": "Medium",
+        }
+    ]
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    report = (
+        decision_intelligence
+        .get_decision_intelligence_report()
+    )
+
+    assert isinstance(report, str)
+    assert "Probe" in report
+    assert "Probe action" in report
+    assert "Alternative" in report
