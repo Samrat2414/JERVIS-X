@@ -1345,6 +1345,11 @@ def get_decision_intelligence_report():
                 "each decision must be a dictionary."
             )
 
+        if not isinstance(item["title"], str):
+            raise TypeError(
+                "decision title must be a string."
+            )
+
         lines.extend(
             [
                 (
