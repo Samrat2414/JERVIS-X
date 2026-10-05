@@ -501,6 +501,40 @@ def test_report_rejects_non_string_decision_title(
             .get_decision_intelligence_report()
         )
 
+@pytest.mark.parametrize(
+    "invalid_priority",
+    [
+        None,
+        123,
+        1.5,
+        [],
+        {},
+        True,
+    ],
+)
+def test_report_rejects_non_string_decision_priority(
+    monkeypatch,
+    invalid_priority,
+):
+    result = _v56_valid_report_result()
+
+    result["decisions"][0]["priority"] = invalid_priority
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^decision priority must be a string\.$",
+    ):
+        (
+            decision_intelligence
+            .get_decision_intelligence_report()
+        )
+
 def test_report_accepts_section_minimal_contracts(
     monkeypatch,
 ):

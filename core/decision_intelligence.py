@@ -1350,6 +1350,11 @@ def get_decision_intelligence_report():
                 "decision title must be a string."
             )
 
+        if not isinstance(item["priority"], str):
+            raise TypeError(
+                "decision priority must be a string."
+            )
+
         lines.extend(
             [
                 (
