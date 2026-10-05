@@ -535,6 +535,38 @@ def test_report_rejects_non_string_decision_priority(
             .get_decision_intelligence_report()
         )
 
+
+@pytest.mark.parametrize(
+    "invalid_reason",
+    [
+        None,
+        0,
+        1.5,
+        True,
+        [],
+        {},
+        (),
+    ],
+)
+def test_report_rejects_non_string_decision_reason(
+    monkeypatch,
+    invalid_reason,
+):
+    result = _v56_valid_report_result()
+    result["decisions"][0]["reason"] = invalid_reason
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^decision reason must be a string\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
+
 def test_report_accepts_section_minimal_contracts(
     monkeypatch,
 ):
