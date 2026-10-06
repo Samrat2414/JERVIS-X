@@ -1390,6 +1390,11 @@ def get_decision_intelligence_report():
             raise TypeError(
                 "decision source must be a string."
             )
+
+        if not isinstance(item["action"], str):
+            raise TypeError(
+                "decision action must be a string."
+            )
         lines.extend(
             [
                 (
