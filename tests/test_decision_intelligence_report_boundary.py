@@ -770,3 +770,26 @@ def test_report_rejects_non_string_decision_action(
         match=r"^decision action must be a string\.$",
     ):
         decision_intelligence.get_decision_intelligence_report()
+
+@pytest.mark.parametrize(
+    "invalid_title",
+    [None, 0, 1.5, True, [], {}],
+)
+def test_report_rejects_non_string_best_next_action_title(
+    monkeypatch,
+    invalid_title,
+):
+    result = _v56_valid_report_result()
+    result["best_next_action"]["title"] = invalid_title
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^best next action title must be a string\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()

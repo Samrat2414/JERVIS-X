@@ -1276,6 +1276,11 @@ def get_decision_intelligence_report():
             "best_next_action must be a dictionary."
         )
 
+    if not isinstance(best_next_action["title"], str):
+        raise TypeError(
+            "best next action title must be a string."
+        )
+
     if "alternative_actions" not in result:
         raise KeyError("alternative_actions")
 
