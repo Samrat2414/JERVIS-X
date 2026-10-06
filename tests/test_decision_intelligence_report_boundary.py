@@ -722,3 +722,27 @@ def test_report_rejects_non_numeric_decision_confidence(
         match=r"^decision confidence must be a number\.$",
     ):
         decision_intelligence.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize(
+    "invalid_source",
+    [None, 0, 1.5, True, [], {}],
+)
+def test_report_rejects_non_string_decision_source(
+    monkeypatch,
+    invalid_source,
+):
+    result = _v56_valid_report_result()
+    result["decisions"][0]["source"] = invalid_source
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^decision source must be a string\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()

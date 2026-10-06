@@ -1385,6 +1385,11 @@ def get_decision_intelligence_report():
             raise TypeError(
                 "decision confidence must be a number."
             )
+
+        if not isinstance(item["source"], str):
+            raise TypeError(
+                "decision source must be a string."
+            )
         lines.extend(
             [
                 (
