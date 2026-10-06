@@ -603,6 +603,37 @@ def test_report_accepts_section_minimal_contracts(
     assert "Alternative" in report
 
 @pytest.mark.parametrize(
+    "invalid_impact",
+    [
+        None,
+        0,
+        1.5,
+        True,
+        [],
+        {},
+    ],
+)
+def test_report_rejects_non_string_decision_impact(
+    monkeypatch,
+    invalid_impact,
+):
+    result = _v56_valid_report_result()
+    result["decisions"][0]["impact"] = invalid_impact
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^decision impact must be a string\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize(
     "invalid_rank",
     [
         None,
