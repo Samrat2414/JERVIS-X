@@ -698,3 +698,27 @@ def test_report_rejects_non_positive_decision_rank(
             decision_intelligence
             .get_decision_intelligence_report()
         )
+
+
+@pytest.mark.parametrize(
+    "invalid_confidence",
+    [None, "90", True, [], {}],
+)
+def test_report_rejects_non_numeric_decision_confidence(
+    monkeypatch,
+    invalid_confidence,
+):
+    result = _v56_valid_report_result()
+    result["decisions"][0]["confidence"] = invalid_confidence
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^decision confidence must be a number\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()

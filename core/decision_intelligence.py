@@ -1378,6 +1378,13 @@ def get_decision_intelligence_report():
                 "decision rank must be greater than 0."
             )
 
+        if isinstance(item["confidence"], bool) or not isinstance(
+            item["confidence"],
+            (int, float),
+        ):
+            raise TypeError(
+                "decision confidence must be a number."
+            )
         lines.extend(
             [
                 (
