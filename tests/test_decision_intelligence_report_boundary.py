@@ -840,3 +840,27 @@ def test_report_rejects_non_string_best_next_action_action(
         match=r"^best next action action must be a string\.$",
     ):
         decision_intelligence.get_decision_intelligence_report()
+
+@pytest.mark.parametrize(
+    "invalid_rank",
+    [None, 0.0, 1.5, True, [], {}],
+)
+def test_report_rejects_non_integer_alternative_action_rank(
+    monkeypatch,
+    invalid_rank,
+):
+    result = _v56_valid_report_result()
+    result["alternative_actions"][0]["rank"] = invalid_rank
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^alternative action rank must be an integer\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
+

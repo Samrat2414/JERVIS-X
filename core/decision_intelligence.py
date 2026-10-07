@@ -1473,6 +1473,14 @@ def get_decision_intelligence_report():
                     "each alternative action must be a dictionary."
                 )
 
+            if (
+                isinstance(item["rank"], bool)
+                or not isinstance(item["rank"], int)
+            ):
+                raise TypeError(
+                    "alternative action rank must be an integer."
+                )
+
             lines.append(
                 (
                     f"- #{item['rank']} "
