@@ -1286,6 +1286,11 @@ def get_decision_intelligence_report():
             "best next action priority must be a string."
         )
 
+    if not isinstance(best_next_action["action"], str):
+        raise TypeError(
+            "best next action action must be a string."
+        )
+
     if "alternative_actions" not in result:
         raise KeyError("alternative_actions")
 

@@ -816,3 +816,27 @@ def test_report_rejects_non_string_best_next_action_priority(
         match=r"^best next action priority must be a string\.$",
     ):
         decision_intelligence.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize(
+    "invalid_action",
+    [None, 0, 1.5, True, [], {}],
+)
+def test_report_rejects_non_string_best_next_action_action(
+    monkeypatch,
+    invalid_action,
+):
+    result = _v56_valid_report_result()
+    result["best_next_action"]["action"] = invalid_action
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^best next action action must be a string\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
