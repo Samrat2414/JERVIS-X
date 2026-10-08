@@ -1481,6 +1481,11 @@ def get_decision_intelligence_report():
                     "alternative action rank must be an integer."
                 )
 
+            if item["rank"] <= 0:
+                raise ValueError(
+                    "alternative action rank must be greater than 0."
+                )
+
             lines.append(
                 (
                     f"- #{item['rank']} "

@@ -864,3 +864,26 @@ def test_report_rejects_non_integer_alternative_action_rank(
     ):
         decision_intelligence.get_decision_intelligence_report()
 
+@pytest.mark.parametrize(
+    "invalid_rank",
+    [0, -1],
+)
+def test_report_rejects_non_positive_alternative_action_rank(
+    monkeypatch,
+    invalid_rank,
+):
+    result = _v56_valid_report_result()
+    result["alternative_actions"][0]["rank"] = invalid_rank
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"^alternative action rank must be greater than 0\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
+
