@@ -887,3 +887,27 @@ def test_report_rejects_non_positive_alternative_action_rank(
     ):
         decision_intelligence.get_decision_intelligence_report()
 
+
+
+@pytest.mark.parametrize(
+    "invalid_title",
+    [None, 123, True, [], {}],
+)
+def test_report_rejects_non_string_alternative_action_title(
+    monkeypatch,
+    invalid_title,
+):
+    result = _v56_valid_report_result()
+    result["alternative_actions"][0]["title"] = invalid_title
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^alternative action title must be a string\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()

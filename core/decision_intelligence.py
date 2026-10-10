@@ -1473,6 +1473,11 @@ def get_decision_intelligence_report():
                     "each alternative action must be a dictionary."
                 )
 
+            if not isinstance(item["title"], str):
+                raise TypeError(
+                    "alternative action title must be a string."
+                )
+
             if (
                 isinstance(item["rank"], bool)
                 or not isinstance(item["rank"], int)
