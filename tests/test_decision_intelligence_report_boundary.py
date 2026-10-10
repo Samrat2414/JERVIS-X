@@ -958,3 +958,27 @@ def test_report_rejects_non_numeric_score(
         match=r"^decision score must be a number\.$",
     ):
         decision_intelligence.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize(
+    "invalid_status",
+    [None, 123, True, [], {}],
+)
+def test_report_rejects_non_string_status(
+    monkeypatch,
+    invalid_status,
+):
+    result = _v56_valid_report_result()
+    result["status"] = invalid_status
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^decision status must be a string\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
