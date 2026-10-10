@@ -1491,6 +1491,11 @@ def get_decision_intelligence_report():
                     "alternative action rank must be greater than 0."
                 )
 
+            if not isinstance(item["priority"], str):
+                raise TypeError(
+                    "alternative action priority must be a string."
+                )
+
             lines.append(
                 (
                     f"- #{item['rank']} "

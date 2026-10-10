@@ -911,3 +911,27 @@ def test_report_rejects_non_string_alternative_action_title(
         match=r"^alternative action title must be a string\.$",
     ):
         decision_intelligence.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize(
+    "invalid_priority",
+    [None, 123, True, [], {}],
+)
+def test_report_rejects_non_string_alternative_action_priority(
+    monkeypatch,
+    invalid_priority,
+):
+    result = _v56_valid_report_result()
+    result["alternative_actions"][0]["priority"] = invalid_priority
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^alternative action priority must be a string\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
