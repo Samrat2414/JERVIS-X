@@ -1311,6 +1311,14 @@ def get_decision_intelligence_report():
             "recommendations must be a list."
         )
 
+    if isinstance(result["score"], bool) or not isinstance(
+        result["score"],
+        (int, float),
+    ):
+        raise TypeError(
+            "decision score must be a number."
+        )
+
     lines = [
         "JERVIS SMART DECISION INTELLIGENCE",
         "",

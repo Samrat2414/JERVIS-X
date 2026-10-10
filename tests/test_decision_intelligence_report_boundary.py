@@ -935,3 +935,26 @@ def test_report_rejects_non_string_alternative_action_priority(
         match=r"^alternative action priority must be a string\.$",
     ):
         decision_intelligence.get_decision_intelligence_report()
+
+@pytest.mark.parametrize(
+    "invalid_score",
+    [None, "85", True, [], {}],
+)
+def test_report_rejects_non_numeric_score(
+    monkeypatch,
+    invalid_score,
+):
+    result = _v56_valid_report_result()
+    result["score"] = invalid_score
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^decision score must be a number\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
