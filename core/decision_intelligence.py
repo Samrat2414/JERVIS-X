@@ -1344,6 +1344,13 @@ def get_decision_intelligence_report():
         raise TypeError(
             "decision total decisions must be an integer."
         )
+    if isinstance(result["critical_decisions"], bool) or not isinstance(
+        result["critical_decisions"],
+        int,
+    ):
+        raise TypeError(
+            "decision critical decisions must be an integer."
+        )
 
     lines = [
         "JERVIS SMART DECISION INTELLIGENCE",

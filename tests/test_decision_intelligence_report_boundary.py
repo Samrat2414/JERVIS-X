@@ -1033,6 +1033,29 @@ def test_report_rejects_non_integer_total_decisions(
 
 
 @pytest.mark.parametrize(
+    "invalid_critical_decisions",
+    [None, "0", 0.5, True, False, [], {}],
+)
+def test_report_rejects_non_integer_critical_decisions(
+    monkeypatch,
+    invalid_critical_decisions,
+):
+    result = _v56_valid_report_result()
+    result["critical_decisions"] = invalid_critical_decisions
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^decision critical decisions must be an integer\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
+
+@pytest.mark.parametrize(
     "invalid_readiness",
     [None, 123, True, [], {}],
 )
