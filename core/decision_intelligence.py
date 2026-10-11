@@ -1324,6 +1324,11 @@ def get_decision_intelligence_report():
             "decision status must be a string."
         )
 
+    if not isinstance(result["readiness"], str):
+        raise TypeError(
+            "decision readiness must be a string."
+        )
+
     lines = [
         "JERVIS SMART DECISION INTELLIGENCE",
         "",

@@ -982,3 +982,27 @@ def test_report_rejects_non_string_status(
         match=r"^decision status must be a string\.$",
     ):
         decision_intelligence.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize(
+    "invalid_readiness",
+    [None, 123, True, [], {}],
+)
+def test_report_rejects_non_string_readiness(
+    monkeypatch,
+    invalid_readiness,
+):
+    result = _v56_valid_report_result()
+    result["readiness"] = invalid_readiness
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^decision readiness must be a string\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()

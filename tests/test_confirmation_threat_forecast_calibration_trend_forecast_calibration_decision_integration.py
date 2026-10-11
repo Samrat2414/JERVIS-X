@@ -177,10 +177,21 @@ def test_best_next_action_remains_valid_with_v38():
 def test_identical_v38_input_is_deterministic():
     decision = _decision("High", 93.0)
 
-    with _patch_v38(decision):
-        first = _v38_decisions(get_ranked_decisions())
+    fixed_system_health = {
+        "score": 95,
+        "cpu": 20.0,
+        "ram": {"percent": 30.0},
+        "disk": {"percent": 40.0},
+    }
 
-    with _patch_v38(decision):
-        second = _v38_decisions(get_ranked_decisions())
+    with patch(
+        "core.decision_intelligence.get_system_health",
+        return_value=fixed_system_health,
+    ):
+        with _patch_v38(decision):
+            first = _v38_decisions(get_ranked_decisions())
+
+        with _patch_v38(decision):
+            second = _v38_decisions(get_ranked_decisions())
 
     assert first == second
