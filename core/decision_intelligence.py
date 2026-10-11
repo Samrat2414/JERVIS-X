@@ -1329,6 +1329,14 @@ def get_decision_intelligence_report():
             "decision readiness must be a string."
         )
 
+    if isinstance(result["average_confidence"], bool) or not isinstance(
+        result["average_confidence"],
+        (int, float),
+    ):
+        raise TypeError(
+            "decision average confidence must be a number."
+        )
+
     lines = [
         "JERVIS SMART DECISION INTELLIGENCE",
         "",

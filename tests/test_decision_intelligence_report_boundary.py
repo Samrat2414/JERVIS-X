@@ -985,6 +985,30 @@ def test_report_rejects_non_string_status(
 
 
 @pytest.mark.parametrize(
+    "invalid_average_confidence",
+    [None, "85", True, [], {}],
+)
+def test_report_rejects_non_numeric_average_confidence(
+    monkeypatch,
+    invalid_average_confidence,
+):
+    result = _v56_valid_report_result()
+    result["average_confidence"] = invalid_average_confidence
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^decision average confidence must be a number\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize(
     "invalid_readiness",
     [None, 123, True, [], {}],
 )
