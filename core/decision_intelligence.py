@@ -1337,6 +1337,14 @@ def get_decision_intelligence_report():
             "decision average confidence must be a number."
         )
 
+    if isinstance(result["total_decisions"], bool) or not isinstance(
+        result["total_decisions"],
+        int,
+    ):
+        raise TypeError(
+            "decision total decisions must be an integer."
+        )
+
     lines = [
         "JERVIS SMART DECISION INTELLIGENCE",
         "",
