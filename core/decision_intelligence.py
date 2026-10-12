@@ -1359,6 +1359,14 @@ def get_decision_intelligence_report():
             "decision high decisions must be an integer."
         )
 
+    if isinstance(result["medium_decisions"], bool) or not isinstance(
+        result["medium_decisions"],
+        int,
+    ):
+        raise TypeError(
+            "decision medium decisions must be an integer."
+        )
+
     lines = [
         "JERVIS SMART DECISION INTELLIGENCE",
         "",

@@ -1079,6 +1079,30 @@ def test_report_rejects_non_integer_high_decisions(
         decision_intelligence.get_decision_intelligence_report()
 
 @pytest.mark.parametrize(
+    "invalid_medium_decisions",
+    [None, "0", 0.5, True, False, [], {}],
+)
+def test_report_rejects_non_integer_medium_decisions(
+    monkeypatch,
+    invalid_medium_decisions,
+):
+    result = _v56_valid_report_result()
+    result["medium_decisions"] = invalid_medium_decisions
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        TypeError,
+        match=r"^decision medium decisions must be an integer\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize(
     "invalid_readiness",
     [None, 123, True, [], {}],
 )
