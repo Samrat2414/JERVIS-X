@@ -1367,6 +1367,29 @@ def get_decision_intelligence_report():
             "decision medium decisions must be an integer."
         )
 
+    count_fields = (
+        "total_decisions",
+        "critical_decisions",
+        "high_decisions",
+        "medium_decisions",
+    )
+
+    if any(result[field] < 0 for field in count_fields):
+        raise ValueError(
+            "decision counts must be non-negative."
+        )
+
+    priority_total = (
+        result["critical_decisions"]
+        + result["high_decisions"]
+        + result["medium_decisions"]
+    )
+
+    if priority_total > result["total_decisions"]:
+        raise ValueError(
+            "decision priority counts must not exceed total decisions."
+        )
+
     lines = [
         "JERVIS SMART DECISION INTELLIGENCE",
         "",

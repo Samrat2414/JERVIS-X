@@ -1103,6 +1103,86 @@ def test_report_rejects_non_integer_medium_decisions(
 
 
 @pytest.mark.parametrize(
+    "field",
+    [
+        "total_decisions",
+        "critical_decisions",
+        "high_decisions",
+        "medium_decisions",
+    ],
+)
+def test_report_rejects_negative_decision_counts(monkeypatch, field):
+    result = _v56_valid_report_result()
+    result[field] = -1
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"^decision counts must be non-negative\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "critical_decisions",
+        "high_decisions",
+        "medium_decisions",
+    ],
+)
+def test_report_rejects_priority_counts_above_total(monkeypatch, field):
+    result = _v56_valid_report_result()
+    result[field] = 2
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"^decision priority counts must not exceed "
+            r"total decisions\.$"
+        ),
+    ):
+        decision_intelligence.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize(
+    "counts",
+    [
+        (1, 0, 0, 0),
+        (1, 0, 1, 0),
+        (2, 0, 1, 1),
+    ],
+)
+def test_report_accepts_consistent_decision_counts(monkeypatch, counts):
+    result = _v56_valid_report_result()
+    total, critical, high, medium = counts
+    result["total_decisions"] = total
+    result["critical_decisions"] = critical
+    result["high_decisions"] = high
+    result["medium_decisions"] = medium
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    report = decision_intelligence.get_decision_intelligence_report()
+    assert isinstance(report, str)
+
+
+@pytest.mark.parametrize(
     "invalid_readiness",
     [None, 123, True, [], {}],
 )
