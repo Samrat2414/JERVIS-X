@@ -1390,6 +1390,11 @@ def get_decision_intelligence_report():
             "decision priority counts must not exceed total decisions."
         )
 
+    if result["total_decisions"] != len(decisions):
+        raise ValueError(
+            "decision total decisions must match decisions list length."
+        )
+
     lines = [
         "JERVIS SMART DECISION INTELLIGENCE",
         "",

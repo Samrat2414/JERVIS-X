@@ -1161,7 +1161,7 @@ def test_report_rejects_priority_counts_above_total(monkeypatch, field):
     [
         (1, 0, 0, 0),
         (1, 0, 1, 0),
-        (2, 0, 1, 1),
+        (1, 1, 0, 0),
     ],
 )
 def test_report_accepts_consistent_decision_counts(monkeypatch, counts):
@@ -1202,5 +1202,35 @@ def test_report_rejects_non_string_readiness(
     with pytest.raises(
         TypeError,
         match=r"^decision readiness must be a string\.$",
+    ):
+        decision_intelligence.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize(
+    "invalid_total",
+    [0, 2, 5],
+)
+def test_report_rejects_total_decisions_list_length_mismatch(
+    monkeypatch,
+    invalid_total,
+):
+    result = _v56_valid_report_result()
+    result["total_decisions"] = invalid_total
+    result["critical_decisions"] = 0
+    result["high_decisions"] = 0
+    result["medium_decisions"] = 0
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"^decision total decisions must match "
+            r"decisions list length\.$"
+        ),
     ):
         decision_intelligence.get_decision_intelligence_report()
