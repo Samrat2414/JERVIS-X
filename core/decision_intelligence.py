@@ -1548,6 +1548,21 @@ def get_decision_intelligence_report():
             raise ValueError(
                 "decision priority counts must match decisions list priorities."
             )
+    # V83: The reported best action must match the top-ranked decision.
+    # Compare the report's minimal public action contract only.
+    if not decisions:
+        raise ValueError(
+            "best next action requires a non-empty decisions list."
+        )
+
+    top_decision = decisions[0]
+
+    for field in ("title", "priority", "action"):
+        if best_next_action[field] != top_decision[field]:
+            raise ValueError(
+                "best next action must match the first ranked decision."
+            )
+
     best = result[
         "best_next_action"
     ]

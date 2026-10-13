@@ -1170,6 +1170,7 @@ def test_report_accepts_consistent_decision_counts(monkeypatch, priority_and_cou
     result = _v56_valid_report_result()
     priority, counts = priority_and_counts
     result["decisions"][0]["priority"] = priority
+    result["best_next_action"]["priority"] = priority
     total, critical, high, medium = counts
     result["total_decisions"] = total
     result["critical_decisions"] = critical
@@ -1278,3 +1279,67 @@ def test_report_rejects_priority_distribution_mismatch(
         ),
     ):
         decision_intelligence.get_decision_intelligence_report()
+
+# === V83 BEST NEXT ACTION CONSISTENCY TESTS ===
+
+
+@pytest.mark.parametrize(
+    "field, replacement",
+    [
+        ("title", "Different title"),
+        ("priority", "Critical"),
+        ("action", "Different action"),
+    ],
+)
+def test_report_rejects_best_action_mismatch(
+    monkeypatch,
+    field,
+    replacement,
+):
+    result = _v56_valid_report_result()
+    result["best_next_action"][field] = replacement
+
+    monkeypatch.setattr(
+        di,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"^best next action must match the first ranked decision\.$",
+    ):
+        di.get_decision_intelligence_report()
+
+
+def test_report_accepts_copied_matching_best_action(monkeypatch):
+    result = _v56_valid_report_result()
+    result["best_next_action"] = dict(result["decisions"][0])
+
+    monkeypatch.setattr(
+        di,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    report = di.get_decision_intelligence_report()
+    assert "BEST NEXT ACTION" in report
+
+
+def test_report_rejects_empty_decisions_with_best_action(monkeypatch):
+    result = _v56_valid_report_result()
+    result["decisions"] = []
+    result["total_decisions"] = 0
+    result["high_decisions"] = 0
+
+    monkeypatch.setattr(
+        di,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"^best next action requires a non-empty decisions list\.$",
+    ):
+        di.get_decision_intelligence_report()
