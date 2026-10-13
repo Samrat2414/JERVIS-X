@@ -1528,6 +1528,26 @@ def get_decision_intelligence_report():
             ]
         )
 
+    actual_counts = {
+        "Critical": 0,
+        "High": 0,
+        "Medium": 0,
+    }
+
+    for item in decisions:
+        priority = _safe_priority(item["priority"])
+        if priority in actual_counts:
+            actual_counts[priority] += 1
+
+    for priority, field in (
+        ("Critical", "critical_decisions"),
+        ("High", "high_decisions"),
+        ("Medium", "medium_decisions"),
+    ):
+        if result[field] != actual_counts[priority]:
+            raise ValueError(
+                "decision priority counts must match decisions list priorities."
+            )
     best = result[
         "best_next_action"
     ]

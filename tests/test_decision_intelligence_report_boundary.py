@@ -1157,15 +1157,19 @@ def test_report_rejects_priority_counts_above_total(monkeypatch, field):
 
 
 @pytest.mark.parametrize(
-    "counts",
+    "priority_and_counts",
     [
-        (1, 0, 0, 0),
-        (1, 0, 1, 0),
-        (1, 1, 0, 0),
+        ("High", (1, 0, 1, 0)),
+        ("Critical", (1, 1, 0, 0)),
+        ("Medium", (1, 0, 0, 1)),
+        ("Low", (1, 0, 0, 0)),
+        ("high", (1, 0, 0, 0)),
     ],
 )
-def test_report_accepts_consistent_decision_counts(monkeypatch, counts):
+def test_report_accepts_consistent_decision_counts(monkeypatch, priority_and_counts):
     result = _v56_valid_report_result()
+    priority, counts = priority_and_counts
+    result["decisions"][0]["priority"] = priority
     total, critical, high, medium = counts
     result["total_decisions"] = total
     result["critical_decisions"] = critical
@@ -1231,6 +1235,46 @@ def test_report_rejects_total_decisions_list_length_mismatch(
         match=(
             r"^decision total decisions must match "
             r"decisions list length\.$"
+        ),
+    ):
+        decision_intelligence.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize(
+    ("priority", "counts"),
+    [
+        ("High", (0, 0, 0)),
+        ("High", (1, 0, 0)),
+        ("Critical", (0, 1, 0)),
+        ("Medium", (0, 1, 0)),
+        ("Low", (0, 1, 0)),
+        ("high", (0, 1, 0)),
+    ],
+)
+def test_report_rejects_priority_distribution_mismatch(
+    monkeypatch,
+    priority,
+    counts,
+):
+    result = _v56_valid_report_result()
+    result["decisions"][0]["priority"] = priority
+
+    critical, high, medium = counts
+    result["critical_decisions"] = critical
+    result["high_decisions"] = high
+    result["medium_decisions"] = medium
+
+    monkeypatch.setattr(
+        decision_intelligence,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"^decision priority counts must match "
+            r"decisions list priorities\.$"
         ),
     ):
         decision_intelligence.get_decision_intelligence_report()
