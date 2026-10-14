@@ -1431,6 +1431,79 @@ def test_v84_accepts_copied_matching_alternative(monkeypatch):
     assert "Review job pipeline" in report
 
 
+@pytest.mark.parametrize(
+    "ranks",
+    [
+        (1, 1),
+        (1, 3),
+        (2, 1),
+        (2, 2),
+    ],
+)
+def test_v85_rejects_nonconsecutive_decision_ranks(
+    monkeypatch,
+    ranks,
+):
+    result = _valid_result()
+
+    for decision, rank in zip(result["decisions"], ranks):
+        decision["rank"] = rank
+
+    result["alternative_actions"] = [
+        dict(result["decisions"][1])
+    ]
+
+    monkeypatch.setattr(
+        di,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"^decision ranks must be consecutive starting at 1\.$",
+    ):
+        di.get_decision_intelligence_report()
+
+
+def test_v85_accepts_consecutive_decision_ranks(monkeypatch):
+    result = _valid_result()
+
+    result["alternative_actions"] = [
+        {
+            "rank": result["decisions"][1]["rank"],
+            "title": result["decisions"][1]["title"],
+            "priority": result["decisions"][1]["priority"],
+        }
+    ]
+
+    monkeypatch.setattr(
+        di,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    report = di.get_decision_intelligence_report()
+
+    assert "DECISION #1" in report
+    assert "DECISION #2" in report
+
+
+def test_v85_preserves_single_decision_rank_contract(monkeypatch):
+    result = _v56_valid_report_result()
+
+    monkeypatch.setattr(
+        di,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    report = di.get_decision_intelligence_report()
+
+    assert "DECISION #1" in report
+    assert "ALTERNATIVE ACTIONS" in report
+
+
 def test_v84_preserves_single_decision_legacy_contract(
     monkeypatch,
 ):

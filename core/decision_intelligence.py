@@ -1528,6 +1528,14 @@ def get_decision_intelligence_report():
             ]
         )
 
+    # V85: Ranked decisions must have consecutive ranks.
+    # Run after existing per-decision field validation.
+    for expected_rank, decision in enumerate(decisions, start=1):
+        if decision["rank"] != expected_rank:
+            raise ValueError(
+                "decision ranks must be consecutive starting at 1."
+            )
+
     actual_counts = {
         "Critical": 0,
         "High": 0,
