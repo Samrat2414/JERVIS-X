@@ -1536,6 +1536,19 @@ def get_decision_intelligence_report():
                 "decision ranks must be consecutive starting at 1."
             )
 
+    # V86: Ranked decisions must follow priority-first ordering.
+    # Preserve V85 rank validation precedence.
+    for previous, current in zip(decisions, decisions[1:]):
+        previous_priority = _safe_priority(previous['priority'])
+        current_priority = _safe_priority(current['priority'])
+        if (
+            PRIORITY_WEIGHT[previous_priority]
+            < PRIORITY_WEIGHT[current_priority]
+        ):
+            raise ValueError(
+                "decision priorities must be ranked highest first."
+            )
+
     actual_counts = {
         "Critical": 0,
         "High": 0,

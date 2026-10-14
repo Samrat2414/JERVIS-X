@@ -1504,6 +1504,108 @@ def test_v85_preserves_single_decision_rank_contract(monkeypatch):
     assert "ALTERNATIVE ACTIONS" in report
 
 
+@pytest.mark.parametrize(
+    "priorities",
+    [
+        ("Low", "High"),
+        ("Medium", "Critical"),
+        ("High", "Critical"),
+        ("Low", "Medium"),
+    ],
+)
+def test_v86_rejects_increasing_decision_priority(
+    monkeypatch,
+    priorities,
+):
+    result = _valid_result()
+
+    for decision, priority in zip(result["decisions"], priorities):
+        decision["priority"] = priority
+
+    result["critical_decisions"] = priorities.count("Critical")
+    result["high_decisions"] = priorities.count("High")
+    result["medium_decisions"] = priorities.count("Medium")
+
+    result["best_next_action"]["priority"] = priorities[0]
+    result["alternative_actions"] = [
+        {
+            "rank": result["decisions"][1]["rank"],
+            "title": result["decisions"][1]["title"],
+            "priority": priorities[1],
+        }
+    ]
+
+    monkeypatch.setattr(
+        di,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"^decision priorities must be ranked highest first\.$",
+    ):
+        di.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize(
+    "priorities",
+    [
+        ("Critical", "High"),
+        ("High", "Medium"),
+        ("Medium", "Low"),
+        ("Low", "Low"),
+        ("High", "High"),
+    ],
+)
+def test_v86_accepts_nonincreasing_decision_priority(
+    monkeypatch,
+    priorities,
+):
+    result = _valid_result()
+
+    for decision, priority in zip(result["decisions"], priorities):
+        decision["priority"] = priority
+
+    result["critical_decisions"] = priorities.count("Critical")
+    result["high_decisions"] = priorities.count("High")
+    result["medium_decisions"] = priorities.count("Medium")
+
+    result["best_next_action"]["priority"] = priorities[0]
+    result["alternative_actions"] = [
+        {
+            "rank": result["decisions"][1]["rank"],
+            "title": result["decisions"][1]["title"],
+            "priority": priorities[1],
+        }
+    ]
+
+    monkeypatch.setattr(
+        di,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    report = di.get_decision_intelligence_report()
+
+    assert "DECISION #1" in report
+    assert "DECISION #2" in report
+
+
+def test_v86_preserves_single_decision_legacy_contract(monkeypatch):
+    result = _v56_valid_report_result()
+
+    monkeypatch.setattr(
+        di,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    report = di.get_decision_intelligence_report()
+
+    assert "DECISION #1" in report
+
+
 def test_v84_preserves_single_decision_legacy_contract(
     monkeypatch,
 ):
