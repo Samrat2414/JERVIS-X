@@ -1,6 +1,8 @@
 def classify_command(command):
     command = command.strip().lower()
 
+    if command.startswith("career interview readiness "):
+        return "JOB_APPLICATION"
     if "interview" in command:
         return "INTERVIEW"
 
@@ -22,8 +24,6 @@ def classify_command(command):
     if command.startswith("career portfolio readiness "):
         return "JOB_APPLICATION"
 
-    if command.startswith("career interview readiness "):
-        return "JOB_APPLICATION"
 
     if command.startswith("career resume readiness "):
         return "JOB_APPLICATION"

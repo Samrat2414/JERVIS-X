@@ -537,3 +537,10 @@ def test_routing_plan_selects_joining_countdown_handler():
 
     assert plan["handler"] == "job_application_handlers.handle_get_joining_countdown"
 
+
+def test_classify_command_prioritizes_career_interview_readiness():
+    result = classify_command(
+        "career interview readiness Python Developer"
+    )
+
+    assert result == "JOB_APPLICATION"
