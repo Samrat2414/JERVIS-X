@@ -1343,3 +1343,106 @@ def test_report_rejects_empty_decisions_with_best_action(monkeypatch):
         match=r"^best next action requires a non-empty decisions list\.$",
     ):
         di.get_decision_intelligence_report()
+
+
+# V84: Alternative actions must agree with ranked decisions when
+# multiple ranked decisions are available.
+
+
+@pytest.mark.parametrize(
+    "field,replacement",
+    [
+        ("rank", 3),
+        ("title", "Incorrect alternative"),
+        ("priority", "Critical"),
+    ],
+)
+def test_v84_rejects_mismatched_alternative_action(
+    monkeypatch,
+    field,
+    replacement,
+):
+    result = _valid_result()
+    result["alternative_actions"] = [
+        dict(result["decisions"][1])
+    ]
+    result["alternative_actions"][0][field] = replacement
+
+    monkeypatch.setattr(
+        di,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="alternative actions must match ranked decisions",
+    ):
+        di.get_decision_intelligence_report()
+
+
+@pytest.mark.parametrize("replacement", [[], None])
+def test_v84_rejects_missing_or_extra_alternatives(
+    monkeypatch,
+    replacement,
+):
+    result = _valid_result()
+
+    if replacement is None:
+        result["alternative_actions"] = [
+            dict(result["decisions"][1]),
+            dict(result["decisions"][1]),
+        ]
+    else:
+        result["alternative_actions"] = replacement
+
+    monkeypatch.setattr(
+        di,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="alternative actions must match ranked decisions",
+    ):
+        di.get_decision_intelligence_report()
+
+
+def test_v84_accepts_copied_matching_alternative(monkeypatch):
+    result = _valid_result()
+    result["alternative_actions"] = [
+        {
+            "rank": result["decisions"][1]["rank"],
+            "title": result["decisions"][1]["title"],
+            "priority": result["decisions"][1]["priority"],
+        }
+    ]
+
+    monkeypatch.setattr(
+        di,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    report = di.get_decision_intelligence_report()
+
+    assert "ALTERNATIVE ACTIONS" in report
+    assert "Review job pipeline" in report
+
+
+def test_v84_preserves_single_decision_legacy_contract(
+    monkeypatch,
+):
+    result = _v56_valid_report_result()
+
+    monkeypatch.setattr(
+        di,
+        "get_decision_intelligence",
+        lambda: result,
+    )
+
+    report = di.get_decision_intelligence_report()
+
+    assert "ALTERNATIVE ACTIONS" in report
+    assert isinstance(report, str)

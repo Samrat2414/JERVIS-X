@@ -1627,6 +1627,26 @@ def get_decision_intelligence_report():
             "- No alternative action is currently required."
         )
 
+    # V84: Validate alternatives against ranked decisions.
+    # Preserve the historical single-decision report contract.
+    if len(decisions) > 1:
+        expected_alternatives = decisions[1:4]
+
+        if len(alternative_actions) != len(expected_alternatives):
+            raise ValueError(
+                "alternative actions must match ranked decisions."
+            )
+
+        for alternative, ranked in zip(
+            alternative_actions,
+            expected_alternatives,
+        ):
+            for field in ("rank", "title", "priority"):
+                if alternative[field] != ranked[field]:
+                    raise ValueError(
+                        "alternative actions must match ranked decisions."
+                    )
+
     lines.extend(
         [
             "",
