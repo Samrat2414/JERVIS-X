@@ -544,3 +544,17 @@ def test_classify_command_prioritizes_career_interview_readiness():
     )
 
     assert result == "JOB_APPLICATION"
+
+
+def test_routing_plan_selects_handler_for_job_application_interview_reminders():
+    from core.router import classify_command, get_routing_plan
+
+    command = "job application interview reminders"
+
+    assert classify_command(command) == "JOB_APPLICATION"
+
+    plan = get_routing_plan(command)
+
+    assert plan["handler"] == (
+        "job_application_handlers.handle_get_application_interview_reminders"
+    )

@@ -3,6 +3,8 @@ def classify_command(command):
 
     if command.startswith("career interview readiness "):
         return "JOB_APPLICATION"
+    if command == "job application interview reminders":
+        return "JOB_APPLICATION"
     if "interview" in command:
         return "INTERVIEW"
 
@@ -204,6 +206,7 @@ def get_routing_plan(command):
 
     elif normalized_command in (
         "application interview reminders",
+        "job application interview reminders",
         "interview reminders",
         "upcoming application interviews",
     ):
